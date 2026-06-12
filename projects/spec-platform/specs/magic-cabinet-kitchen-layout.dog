@@ -671,7 +671,7 @@ version: 0.1.0
 ```
 question: What is the actual measurement accuracy of our user base?
   importance: blocking
-  owner: Justin
+  owner: specdog
   deadline: 2026-07-01
   resolution: null
 
@@ -683,7 +683,7 @@ question: Can we source a backup material supplier with <14 day lead time?
 
 question: Will installers adopt the in-app obstacle reporting flow or just call the office?
   importance: medium
-  owner: Justin
+  owner: specdog
   deadline: 2026-09-01
   resolution: null
 ```
