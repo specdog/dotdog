@@ -10,7 +10,16 @@ import { parse } from './parser';
 
 function resolvePath(p: string): string {
   if (p.startsWith('~')) p = join(homedir(), p.slice(1));
-  return p.startsWith('/') ? p : join(process.cwd(), p);
+  const resolved = p.startsWith('/') ? p : join(process.cwd(), p);
+  // Prevent traversal outside working directory for relative paths
+  if (!p.startsWith('/') && !p.startsWith('~')) {
+    const rel = resolve(process.cwd(), p);
+    if (!rel.startsWith(process.cwd() + '/') && rel !== process.cwd()) {
+      throw new Error(`Path traversal blocked: ${p}`);
+    }
+    return rel;
+  }
+  return resolved;
 }
 
 // --- Inline engine functions (no deps) ---
@@ -42,7 +51,8 @@ const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url),
 program.name('spec').alias('dotdog').description('The spec dog — validate, analyze, generate, simulate .dog files').version(pkg.version);
 
 program.command('validate [dir]').action((d='.') => {
-  const dirs = [join(d,'projects'),join(d,'specs')];
+  const dir = resolvePath(d);
+  const dirs = [join(dir,'projects'),join(dir,'specs')];
   let found = false;
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
@@ -200,7 +210,7 @@ program.command('visualize [dir]').option('-s, --save').action((d='.', opts) => 
   }
 });
 
-program.command('serve [dir]').description('MCP server — expose .dag graph to AI agents over stdio').action((d='.') => serve(d));
+program.command('serve [dir]').description('MCP server — expose .dag graph to AI agents over stdio').action((d='.') => serve(resolvePath(d)));
 
 program.command('analyze [dir]').description('Analyze a spec project — score, gaps, suggestions').option('-p, --project <name>').action((d='.', opts) => {
   const dir = resolvePath(d);
