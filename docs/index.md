@@ -14,11 +14,7 @@
     <ellipse id="tongue" cx="60" cy="84" rx="5" ry="6" fill="#ef4444" opacity="0" style="transition:opacity .2s"/>
     <!-- bone in mouth -->
     <g id="bone" opacity="0">
-      <rect x="42" y="78" width="26" height="7" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
-      <circle cx="42" cy="81.5" r="6" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
-      <circle cx="42" cy="81.5" r="3" fill="#d97706"/>
-      <circle cx="68" cy="81.5" r="6" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
-      <circle cx="68" cy="81.5" r="3" fill="#d97706"/>
+      <path d="M48 78 Q48 72 55 75 L65 75 Q72 72 72 78 Q72 84 65 81 L55 81 Q48 84 48 78 Z" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
     </g>
   </svg>
   <div id="dog-status" style="font-size:.75em;color:#9ca3af;min-height:18px;margin:4px 0">🐕 Spec</div>
