@@ -133,6 +133,25 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
   if (!found) console.log(chalk.yellow('No projects found.'));
 });
 
+program.command('visualize [dir]').action((d='.') => {
+  const dir = resolvePath(d);
+  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  for (const dd of dirs) {
+    if (!existsSync(dd)) continue;
+    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    for (const p of projects) {
+      const dagFile = join(dd,p,`${p}.dag`);
+      if (!existsSync(dagFile)) continue;
+      const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
+      console.log('```mermaid');
+      console.log('graph LR');
+      for (const n of dag.nodes||[]) console.log(`    ${n.id.replace(/\s+/g,'_')}[${n.id}]`);
+      for (const e of dag.edges||[]) console.log(`    ${e.source.replace(/\s+/g,'_')} -->|${e.verb||''}| ${e.target.replace(/\s+/g,'_')}`);
+      console.log('```');
+    }
+  }
+});
+
 program.command('staleness [dir]').action((d='.') => {
   const dir = resolvePath(d);
   const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
