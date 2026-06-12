@@ -26,8 +26,12 @@ function parseSections(lines: string[]): SectionNode[] {
   const sections: SectionNode[] = [];
   let i = 0;
 
-  // Root section (content before first ##)
-  const rootBlocks = parseBlocks(lines, 0, lines.length);
+  // Root section (content before first heading — skip lines under ## to avoid double-counting in named sections)
+  let firstHeading = lines.length;
+  for (let j = 0; j < lines.length; j++) {
+    if (/^##\s/.test(lines[j])) { firstHeading = j; break; }
+  }
+  const rootBlocks = parseBlocks(lines, 0, firstHeading);
   if (rootBlocks.length > 0) {
     sections.push({
       kind: 'section',
