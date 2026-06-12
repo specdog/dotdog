@@ -115,6 +115,16 @@ cp -r extensions/vscode ~/.vscode/extensions/dotdog
 - **llms.txt:** [llms.txt](llms.txt) — structured for AI agent discovery
 - **AGENTS.md:** [AGENTS.md](AGENTS.md) — instructions for AI coding agents
 
+## Spec-Driven Development
+
+dotdog is built for SDD. Write your spec first. Validate it. Compile it. Let AI agents query it. The spec is the source of truth.
+
+```
+spec → validate → compile → serve → AI agent queries
+```
+
+No more specs that rot in a wiki. No more agents guessing from prose. One source. Zero ambiguity.
+
 ## License
 
 MIT
