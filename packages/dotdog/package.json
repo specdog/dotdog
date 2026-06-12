@@ -31,7 +31,6 @@
     "chalk": "^5.6.0"
   },
   "publishConfig": {
-    "provenance": true,
     "access": "public"
   }
 }
