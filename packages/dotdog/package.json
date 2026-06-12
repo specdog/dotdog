@@ -1,7 +1,7 @@
 {
   "name": "dotdog",
-  "version": "0.1.0",
-  "description": "The spec dog — validate, analyze, parse, and generate .dog spec genome files",
+  "version": "0.1.1",
+  "description": "The spec dog \u2014 validate, analyze, parse, and generate .dog spec genome files",
   "type": "module",
   "main": "dist/cli.js",
   "bin": {
@@ -10,11 +10,19 @@
   },
   "files": [
     "dist/",
-    "LICENSE",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "LICENSE"
   ],
-  "keywords": ["spec", "dogfood", "specification", "ai", "documentation", "dotdog", "dog"],
+  "keywords": [
+    "spec",
+    "dogfood",
+    "specification",
+    "ai",
+    "documentation",
+    "dotdog",
+    "dog"
+  ],
   "license": "MIT",
   "author": "specdog",
   "repository": "github:specdog/spec",
