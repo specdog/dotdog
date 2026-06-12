@@ -35,7 +35,8 @@
 
 ## Phase 2: Distribution
 
-- [ ] npm publish: `bun add dotdog` or `npm install -g dotdog`
+- [x] npm publish: `bun add dotdog` or `npm install -g dotdog`
+- [x] CI publish via GitHub Actions (JS-DevTools/npm-publish)
 - [ ] VS Code extension: syntax highlighting + validation
 - [ ] GitHub Action: `dotdog/validate` blocks PRs with broken specs
 

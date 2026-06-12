@@ -151,6 +151,11 @@ program.command('staleness [dir]').action((d='.') => {
       for (const m of tasks) {
         const done = m[1] === 'x';
         const text = m[2].toLowerCase();
+        // Only audit phases 1-3 — future phases are aspirational
+        const precedingText = plan.substring(Math.max(0, m.index! - 200), m.index);
+        const phaseMatch = precedingText.match(/Phase\s+(\d+)/);
+        const phase = phaseMatch ? parseInt(phaseMatch[1]) : 99;
+        if (phase > 3) continue;  // skip future phases
         // Check npm publish
         if (text.includes('npm publish') || text.includes('npm install')) {
           try {
