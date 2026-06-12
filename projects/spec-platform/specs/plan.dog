@@ -13,7 +13,7 @@
 - [x] dotdog analyze — 0 gaps
 - [x] dotdog list shows spec-platform project
 - [x] dotdog init scaffolds new projects
-- [x] dotdog compile — typed parser, .dag v1.2 with integrity hash + token savings
+- [x] dotdog compile — typed parser, .dag v1.2 with provable token savings
 - [x] MCP server live (`dotdog serve`)
 
 ## Phase 1: .dog DSL Grammar + Parser (done)
@@ -27,28 +27,31 @@
 
 ## Phase 1.5: npm Publish + CLI (done)
 
-- [x] npm publish: dotdog@0.2.5 on npm
-- [x] `dotdog compile` — .dog → .dag (v1.2: integrity sha256, token savings)
+- [x] npm publish: dotdog@0.3.1 on npm (latest)
+- [x] 11 commands: validate, analyze, generate, simulate, compile, visualize, serve, staleness, parse, init, list
+- [x] Hidden command: `dotdog woof` — ASCII Spec the dog
+- [x] `dotdog compile` — .dog → .dag (v1.2: provable token savings, no integrity hash)
 - [x] .dag formal specification (format-spec-dag.dog v1.2)
 - [x] `dotdog generate` — fills missing files from SPEC.dog
 - [x] `dotdog analyze` — deep analysis, entity audit, gap detection
 - [x] `dotdog simulate` — scenario runner (phase 1 stub)
-- [x] `dotdog visualize` — Mermaid graph from .dag
-- [x] `dotdog staleness` — detect spec/reality drift
+- [x] `dotdog visualize` — Mermaid graph from .dag, --save writes .md
+- [x] `dotdog staleness` — detect spec/reality drift (Phases 1-3 only)
 - [x] CI publish via OIDC Trusted Publishing (Node 24)
-- [x] Path resolution: tilde (~) support
+- [x] Path resolution: tilde (~) support, path traversal guard, traverse depth cap
 - [x] Auto-version from package.json
-- [x] GitHub Pages — specdog.github.io/dotdog (clean light theme, dog logo)
+- [x] npm hygiene: homepage, bugs, engines fields; trimmed keywords; correct README
+- [x] GitHub Pages — specdog.github.io/dotdog (clean light theme, dog SVG, no legs)
 - [x] llms.txt — llmstxt.org spec
 - [x] AGENTS.md — AI agent instructions
+- [x] VS Code extension: .dog syntax highlighting
+- [x] Spec the dog widget: face-only, bone in mouth, feed/pet/fetch (V/C/P keys)
 
 ## Phase 2: Distribution
 
-- [x] npm publish: `npm install -g dotdog`
-- [x] CI publish via GitHub Actions (OIDC Trusted Publishing)
-- [x] VS Code extension: syntax highlighting (extensions/vscode/)
 - [x] Branch protection: 1 review required, no force push
 - [x] Security: Dependabot alerts + auto-fixes enabled
+- [x] VS Code extension: syntax highlighting (extensions/vscode/)
 - [ ] GitHub Action: `dotdog/validate` blocks PRs with broken specs
 
 ## Phase 3: MCP Server Live (done)
@@ -102,7 +105,7 @@
 | Phase | Verification |
 |-------|-------------|
 | 0 | `dotdog validate` → 100%, `dotdog analyze` → 0 gaps |
-| 1 | `dotdog compile` → .dag v1.2 with sha256 + token savings |
+| 1 | `dotdog compile` → .dag v1.2 with token savings |
 | 2 | `npm install -g dotdog` → 11 commands working |
 | 3 | `dotdog serve` → AI agent queries spec via MCP |
 | 4 | `dotdog search "entity"` → returns Node, Edge, Task, Prediction, Vector |
