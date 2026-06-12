@@ -1,8 +1,8 @@
 # 🐕 dotdog
 
-> **Feed the dog. Ship with specs.** — Structured, AI-queryable software specifications for humans and AI agents.
+> **Feed the dog. Ship with specs.** — Structured, AI-queryable software specifications for humans and AI agents. Fetch your specs from prose.
 
-## Install
+## 🦴 Install
 
 ```bash
 npm install -g dotdog
@@ -20,24 +20,25 @@ $ dotdog validate
 $ dotdog analyze
   my-app — 7 files | 100% complete
     5 entities, 6 relationships
-  No gaps found.
+  No gaps found. Good dog.
 
 $ dotdog compile
   ✓ my-app.dag — 3 nodes, 3 edges
   12,400 → 1,860 tokens (85% savings)
+  sha256: abc123... verified
 
 $ dotdog serve
-  MCP server running — AI agents query your specs
+  MCP server running — AI agents fetch your specs
 ```
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
+| Command | |
+|---------|-----|
 | `dotdog validate` | Score spec completeness (0-100%) |
 | `dotdog analyze` | Deep analysis — gaps, entities, suggestions |
 | `dotdog parse` | Parse a .dog file into sections |
-| `dotdog compile` | Compile .dog to .dag with integrity hash + token savings |
+| `dotdog compile` | Compile .dog to .dag with integrity + token savings |
 | `dotdog generate` | Generate missing spec files from SPEC.dog |
 | `dotdog serve` | MCP server — AI agents query specs over stdio |
 | `dotdog staleness` | Detect drift between spec and reality |
@@ -46,7 +47,7 @@ $ dotdog serve
 | `dotdog init` | Scaffold a new spec genome project |
 | `dotdog list` | List all projects |
 
-## File Formats
+## 🐾 File Formats
 
 ### `.dog` — Human-Written Spec Genome
 
@@ -54,17 +55,17 @@ Markdown prose + YAML structured blocks. Define entities, relationships, events,
 
 ### `.dag` — Machine-Compiled Graph
 
-JSON graph with typed nodes, edges, integrity hash, and provable token savings. Built for AI agents — query via MCP with zero hallucination. Each `.dag` file proves exactly how much compute it saves vs reading raw specs.
+JSON graph with typed nodes, edges, integrity hash, and provable token savings. Built for AI agents — query via MCP with zero hallucination. Each `.dag` file proves exactly how much compute it saves vs reading raw specs. That's a good dog.
 
-## For AI Agents
+## 🤖 For AI Agents
 
 `dotdog serve` exposes your specs via MCP. Six tools:
 
-| Tool | Description |
-|------|-------------|
+| Tool | |
+|------|-----|
 | `getEntity` | Exact entity with properties, states, edges |
 | `traverse` | BFS subgraph from any starting node |
-| `search` | Find entities by name or type |
+| `search` | Find entities by name or type — fetch what you need |
 | `schema` | Property definitions only — zero prose |
 | `summary` | Node/edge/file counts + token savings |
 | `listProjects` | All project names |
