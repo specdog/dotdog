@@ -184,6 +184,51 @@ states: [active, stale]
 lifecycle: active → stale → active
 ```
 
+### Entity: Event
+
+A state-changing occurrence. Has a trigger, payload, preconditions, and postconditions.
+
+```yaml
+entity: Event
+type: event
+properties:
+  id:
+    type: string
+    required: true
+  name:
+    type: string
+    required: true
+  trigger:
+    type: string
+    required: true
+  payload:
+    type: json
+    required: false
+  preconditions:
+    type: string[]
+    required: false
+  postconditions:
+    type: string[]
+    required: false
+  probability:
+    type: number
+    required: false
+    constraints: 0.0-1.0
+states: [specified, modeled, verified]
+lifecycle: specified → modeled → verified
+```
+
+### Relationship: Compile → .dag
+
+```yaml
+relationship: Compile → .dag
+verb: produces
+cardinality: 1:1
+required: false
+cascade: nullify
+invariants: .dag is the compiled output of all .dog files
+```
+
 ---
 
 ### Relationship: Node → Node

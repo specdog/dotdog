@@ -4,6 +4,8 @@ import chalk from 'chalk';
 import { existsSync, readdirSync, readFileSync, mkdirSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { homedir } from 'os';
+import type { DocumentNode, EntityNode, RelationshipNode } from './grammar';
+import { parse } from './parser';
 
 function resolvePath(p: string): string {
   if (p.startsWith('~')) p = join(homedir(), p.slice(1));
