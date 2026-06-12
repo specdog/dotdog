@@ -96,6 +96,56 @@ Vector
 
 ---
 
+### Relationship: Node → Node
+
+```
+relationship: Node -> Node
+  verb: connects
+  cardinality: N:M
+  required: false
+  cascade: none
+  invariants: no self-loops. spec graph is a DAG (directed acyclic graph).
+  example: SPEC.dog.user_stories → implemented_by → Task[]
+```
+
+### Relationship: Task → Task
+
+```
+relationship: Task -> Task
+  verb: depends_on
+  cardinality: N:M
+  required: false
+  cascade: restrict
+  invariants: no cycles. must form a DAG.
+  example: T08 ($ button) → depends_on → T04 (SDK). T09 (flow 1) → depends_on → T08.
+```
+
+### Relationship: Prediction → Task
+
+```
+relationship: Prediction -> Task
+  verb: measures
+  cardinality: 1:N
+  required: false
+  cascade: nullify
+  invariants: prediction.trigger must be measurable from task completion
+  example: Prediction "ships July 15" → measures → Task.completion_probability
+```
+
+### Relationship: Vector → Node
+
+```
+relationship: Vector -> Node
+  verb: embeds
+  cardinality: 1:1
+  required: true
+  cascade: delete
+  invariants: one embedding per node section
+  example: Vector("## What the User Sees") → embeds → Node(SPEC.dog)
+```
+
+---
+
 ## Graph Traversal Queries
 
 The LLM queries the spec graph using these patterns:
