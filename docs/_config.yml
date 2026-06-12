@@ -1,5 +1,5 @@
 theme: jekyll-theme-minimal
 title: dotdog
-description: The spec dog — structured, AI-queryable software specifications
+description: CLI tool for structured software specs. Validate .dog, compile .dag, query via MCP.
 logo: /assets/dog.svg
 show_downloads: false

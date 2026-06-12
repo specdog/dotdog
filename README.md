@@ -20,7 +20,7 @@ Requires Node.js >= 20.
 ```bash
 dotdog init my-project     # scaffold a spec genome
 dotdog validate            # score completeness (0-100%)
-dotdog analyze             # deep analysis — gaps, suggestions, entity audit
+dotdog analyze             # deep analysis : gaps, suggestions, entity audit
 ```
 
 ## Commands
@@ -41,7 +41,7 @@ dotdog analyze             # deep analysis — gaps, suggestions, entity audit
 
 ## File Formats
 
-### `.dog` — Human-Written Spec Genome
+### `.dog` : Human-Written Spec Genome
 
 Markdown prose + YAML structured blocks. Free and open source. Define entities, relationships, events, predictions, and copy in a single format that both humans and parsers understand.
 
@@ -65,11 +65,11 @@ lifecycle: active → suspended
 ` ``
 ```
 
-### `.dag` — Machine-Compiled Graph
+### `.dag` : Machine-Compiled Graph
 
 JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a deterministic structure. 85% token savings vs raw `.dog` files for AI agents.
 
-## MCP Server — AI Agent Integration
+## MCP Server : AI Agent Integration
 
 `dotdog serve` exposes specs to any MCP-compatible AI agent over stdio. Six tools:
 
@@ -78,7 +78,7 @@ JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a
 | `getEntity` | Exact entity with properties, states, lifecycle, and connected edges |
 | `traverse` | BFS subgraph from any starting node to any depth |
 | `search` | Find entities by name or type |
-| `schema` | Property definitions only — zero prose, agent-optimized |
+| `schema` | Property definitions only : zero prose, agent-optimized |
 | `summary` | Node count, edge count, file count, compile time |
 | `listProjects` | Array of project names |
 
@@ -104,16 +104,16 @@ cp -r extensions/vscode ~/.vscode/extensions/dotdog
 
 ## Format Specifications
 
-- [`.dog` format spec](spec/format-spec.dog) — language definition, EBNF grammar, validation rules
-- [`.dag` format spec](spec/format-spec-dag.dog) — graph definition, MCP API, token efficiency
+- [`.dog` format spec](spec/format-spec.dog) : language definition, EBNF grammar, validation rules
+- [`.dag` format spec](spec/format-spec-dag.dog) : graph definition, MCP API, token efficiency
 
 ## Links
 
 - **GitHub:** [specdog/dotdog](https://github.com/specdog/dotdog)
 - **npm:** [dotdog](https://www.npmjs.com/package/dotdog)
 - **Docs:** [GitHub Pages](https://specdog.github.io/dotdog)
-- **llms.txt:** [llms.txt](llms.txt) — structured for AI agent discovery
-- **AGENTS.md:** [AGENTS.md](AGENTS.md) — instructions for AI coding agents
+- **llms.txt:** [llms.txt](llms.txt) : structured for AI agent discovery
+- **AGENTS.md:** [AGENTS.md](AGENTS.md) : instructions for AI coding agents
 
 ## Spec-Driven Development
 

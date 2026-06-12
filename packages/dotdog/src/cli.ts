@@ -48,7 +48,7 @@ import { serve } from './serve';
 
 const program = new Command();
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8'));
-program.name('spec').alias('dotdog').description('CLI for structured software specs — validate .dog, compile .dag, query via MCP').version(pkg.version);
+program.name('spec').alias('dotdog').description('CLI for structured software specs : validate .dog, compile .dag, query via MCP').version(pkg.version);
 
 program.command('validate [dir]').action((d='.') => {
   const dir = resolvePath(d);
@@ -63,7 +63,7 @@ program.command('validate [dir]').action((d='.') => {
       const files = existsSync(pd) ? readdirSync(pd).filter(f=>f.endsWith('.dog')) : [];
       const missing = ['SPEC.dog','constitution.dog','data-model.dog'].filter(f=>!files.includes(f));
       const optional = ['COPY.dog','plan.dog','DESIGN-SYSTEM.dog','INDEX.dog'].filter(f=>!files.includes(f));
-      console.log(chalk.bold(`\n  ${p} — ${files.length} .dog files, ${100-Math.round((missing.length*3+optional.length)/20*100)}% complete`));
+      console.log(chalk.bold(`\n  ${p} : ${files.length} .dog files, ${100-Math.round((missing.length*3+optional.length)/20*100)}% complete`));
       for (const f of files) console.log(chalk.gray(`    ${f}`));
       if (missing.length) console.log(chalk.red(`  Missing required: ${missing.join(', ')}`));
       if (optional.length) console.log(chalk.yellow(`  Missing optional: ${optional.join(', ')}`));
@@ -97,7 +97,7 @@ program.command('list').action(() => {
     for (const p of projects) {
       const sp = join(dd,p,'specs');
       const n = existsSync(sp) ? readdirSync(sp).filter(f=>f.endsWith('.dog')).length : 0;
-      console.log(`  ${chalk.cyan(p)} — ${n} .dog files`);
+      console.log(`  ${chalk.cyan(p)} : ${n} .dog files`);
     }
   }
 });
@@ -202,7 +202,7 @@ program.command('visualize [dir]').option('-s, --save').action((d='.', opts) => 
       out += '```\n';
       if (opts.save) {
         const outFile = join(dd,p,'..',`${p}.md`);
-        writeFileSync(outFile, `# ${p} — Spec Graph\n\n${out}`);
+        writeFileSync(outFile, `# ${p} : Spec Graph\n\n${out}`);
         console.log(chalk.green(`  ✓ ${outFile}`));
       }
       console.log(out);
@@ -210,9 +210,9 @@ program.command('visualize [dir]').option('-s, --save').action((d='.', opts) => 
   }
 });
 
-program.command('serve [dir]').description('MCP server — expose .dag graph to AI agents over stdio').action((d='.') => serve(resolvePath(d)));
+program.command('serve [dir]').description('MCP server : expose .dag graph to AI agents over stdio').action((d='.') => serve(resolvePath(d)));
 
-program.command('analyze [dir]').description('Analyze a spec project — score, gaps, suggestions').option('-p, --project <name>').action((d='.', opts) => {
+program.command('analyze [dir]').description('Analyze a spec project : score, gaps, suggestions').option('-p, --project <name>').action((d='.', opts) => {
   const dir = resolvePath(d);
   const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
   console.log(chalk.bold('\nSpec Analysis\n'));
@@ -253,7 +253,7 @@ program.command('analyze [dir]').description('Analyze a spec project — score, 
       console.log(`  ${files.length} files | ${score}% complete`);
       for (const a of analyses) {
         const detail = a.entities > 0 ? ` (${a.entities} entities, ${a.rels} rels)` : '';
-        console.log(chalk.gray(`    ${a.file} — ${a.sections} sections, ${(a.size/1024).toFixed(1)}KB${detail}`));
+        console.log(chalk.gray(`    ${a.file} : ${a.sections} sections, ${(a.size/1024).toFixed(1)}KB${detail}`));
       }
       const gaps: string[] = [];
       for (const f of missingReq) gaps.push(`🔴 ${f}: Missing required file`);
@@ -347,7 +347,7 @@ program.command('generate [dir]').description('Generate missing spec files from 
 
 program.command('simulate <scenario>').description('Run a simulation scenario (phase 1 stub)').option('-p, --project <name>', 'Project name', 'default').action((scenario, opts) => {
   console.log(chalk.bold(`\nSimulation: ${scenario} (project: ${opts.project})\n`));
-  console.log(chalk.gray('Simulation engine — reads SPEC.dog scenarios, walks through steps, checks pre/postconditions.'));
+  console.log(chalk.gray('Simulation engine : reads SPEC.dog scenarios, walks through steps, checks pre/postconditions.'));
   console.log(chalk.gray('Full engine coming in a future release.'));
 });
 
@@ -369,7 +369,7 @@ program.command('staleness [dir]').action((d='.') => {
       for (const m of tasks) {
         const done = m[1] === 'x';
         const text = m[2].toLowerCase();
-        // Only audit phases 1-3 — future phases are aspirational
+        // Only audit phases 1-3 : future phases are aspirational
         const precedingText = plan.substring(Math.max(0, m.index! - 200), m.index);
         const phaseMatch = precedingText.match(/Phase\s+(\d+)/);
         const phase = phaseMatch ? parseInt(phaseMatch[1]) : 99;

@@ -50,21 +50,21 @@ Describe your app in plain English. dotdog finds what you forgot and fills in th
 $ dotdog init my-app
 $ dotdog validate
 
-  my-app — 7 .dog files, 100% complete
+  my-app : 7 .dog files, 100% complete
 
 $ dotdog analyze
 
-  my-app — 7 files | 100% complete
-    SPEC.dog — 5 sections, 1.0KB
-    data-model.dog — 3 sections, 1.6KB (5 entities, 6 rels)
+  my-app : 7 files | 100% complete
+    SPEC.dog : 5 sections, 1.0KB
+    data-model.dog : 3 sections, 1.6KB (5 entities, 6 rels)
   No gaps found.
 
 $ dotdog compile
-  ✓ my-app.dag — 3 nodes, 3 edges
+  ✓ my-app.dag : 3 nodes, 3 edges
   12,400 → 1,860 tokens (85% savings)
 
 $ dotdog serve
-  MCP server running — AI agents query your specs with zero hallucination
+  MCP server running : AI agents query your specs with zero hallucination
 ```
 
 ## Commands
@@ -85,8 +85,8 @@ $ dotdog serve
 
 ## Format
 
-- `.dog` — Human-written spec (markdown + YAML entities). Free forever.
-- `.dag` — Machine-compiled graph (JSON). Token-efficient for AI agents.
+- `.dog` : Human-written spec (markdown + YAML entities). Free forever.
+- `.dag` : Machine-compiled graph (JSON). Token-efficient for AI agents.
 
 ## For AI Agents
 
@@ -97,7 +97,7 @@ $ dotdog serve
 | `getEntity` | Exact entity with properties, states, edges |
 | `traverse` | BFS subgraph from any node |
 | `search` | Find entities by name or type |
-| `schema` | Property definitions only — agent-optimized |
+| `schema` | Property definitions only : agent-optimized |
 | `summary` | Node/edge/file counts |
 | `listProjects` | All project names |
 

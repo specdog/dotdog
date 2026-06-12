@@ -16,9 +16,9 @@ This creates `specs/your-project/` with template .dog files. Nothing is overwrit
 
 Open `specs/your-project/SPEC.dog` and fill in:
 
-1. **Product** — what does this project do? One paragraph.
-2. **Stack** — what tech do you use?
-3. **User Stories** — 3-5 key things users can do.
+1. **Product** : what does this project do? One paragraph.
+2. **Stack** : what tech do you use?
+3. **User Stories** : 3-5 key things users can do.
 
 That's enough to get started. 5 minutes.
 
@@ -33,7 +33,7 @@ The dog will tell you what's missing. Fill gaps. Repeat. Score goes up.
 
 ## For teams
 
-- Commit .dog files alongside code. They're markdown — reviewers can read them.
+- Commit .dog files alongside code. They're markdown : reviewers can read them.
 - Run `dotdog validate` in CI. Block PRs with broken specs.
 - Start `dotdog serve` for AI agents to query your specs.
 - Compile .dag files for agent consumption.
