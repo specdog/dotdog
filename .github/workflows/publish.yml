@@ -7,14 +7,12 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1
       - run: cd packages/dotdog && bun install
       - run: cd packages/dotdog && bun build src/cli.ts --outdir dist --target node
-      - run: cd packages/dotdog && npm publish --provenance
-        env:
-          NODE_AUTH_TOKEN: \${{ secrets.NPM_TOKEN }}
+      - uses: JS-DevTools/npm-publish@v3
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          package: packages/dotdog
