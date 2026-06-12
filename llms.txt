@@ -1,0 +1,30 @@
+# dotdog — The Spec Dog
+
+A CLI tool and file format for structured, AI-queryable software specifications.
+
+## Install
+
+```bash
+npm install -g dotdog
+```
+
+## Commands
+
+- `dotdog validate` — Score your spec completeness
+- `dotdog parse` — Parse .dog files to AST
+- `dotdog compile` — Compile .dog to .dag graph
+- `dotdog generate` — Generate missing spec files
+- `dotdog serve` — MCP server for AI agents
+- `dotdog staleness` — Detect spec/reality drift
+- `dotdog visualize` — Mermaid graph from .dag
+
+## Format
+
+- `.dog` — Human-written spec (markdown + YAML entities). Open source.
+- `.dag` — Machine-compiled graph (JSON). Token-efficient for AI agents.
+
+## Key Links
+
+- GitHub: https://github.com/specdog/dotdog
+- npm: https://www.npmjs.com/package/dotdog
+- Format spec: https://github.com/specdog/dotdog/blob/main/spec/format-spec.dog
