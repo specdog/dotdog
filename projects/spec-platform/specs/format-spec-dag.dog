@@ -1,0 +1,110 @@
+# The .dag Format — Formal Specification v1.0
+
+The `.dag` file format is a compiled, machine-optimized representation of a spec genome. It is the output of the spec engine — a Directed Acyclic Graph encoded as a JSON document.
+
+A `.dag` file IS the graph. Nodes are entities. Edges are relationships. Properties are typed values. No prose. No markdown. Pure structure.
+
+## Grammar
+
+```
+dag-file ::= {
+  "version": "1.0",
+  "project": string,
+  "compiled_at": ISO8601,
+  "score": 0-100,
+  "nodes": [node, ...],
+  "edges": [edge, ...],
+  "predictions": [prediction, ...],
+  "vectors": [vector, ...]
+}
+
+node ::= {
+  "id": string,
+  "name": string,
+  "type": node-type,
+  "description": string,
+  "properties": { prop-name: property-def, ... },
+  "states": [string, ...],
+  "lifecycle": [string, ...],
+  "source_file": string,
+  "source_line": number
+}
+
+edge ::= {
+  "source": string,
+  "target": string,
+  "verb": verb-name,
+  "cardinality": "1:1" | "1:N" | "N:1" | "N:M",
+  "required": boolean,
+  "cascade": "none" | "delete" | "nullify" | "restrict",
+  "invariants": string
+}
+
+prediction ::= {
+  "id": string,
+  "statement": string,
+  "trigger": string | null,
+  "timeframe": string | null,
+  "confidence": 0.0-1.0,
+  "measurement": string,
+  "actual": "pending" | "correct" | "wrong" | "partially_correct",
+  "resolved_at": ISO8601 | null
+}
+
+vector ::= {
+  "node_id": string,
+  "content": string,
+  "embedding": [number, ...],
+  "model": "all-MiniLM-L6-v2" | "text-embedding-3-small"
+}
+```
+
+## Pipeline
+
+```
+.dog (human writes)        .dag (machine compiles)
+───────────────            ───────────────
+Markdown + YAML            Pure JSON
+Human-readable             Machine-parseable
+Prose for context          No prose — just graph
+Source of truth            Compiled artifact
+Stored in git              Stored in SQLite
+Free, open source          Paid, enterprise
+Dogfood format             Analytics format
+```
+
+## Relationship
+
+- `.dog` is the INPUT format. Humans write it. AI reads it at build time.
+- `.dag` is the OUTPUT format. The engine compiles `.dog` into `.dag`. AI traverses it at runtime.
+
+```
+SPEC.dog ──→ spec parse ──→ AST ──→ spec compile ──→ project.dag
+                                            ↓
+                                     SQLite / Postgres
+                                            ↓
+                                     AI traverses graph
+```
+
+## API
+
+```
+GET  /projects/:id/dag          → project.dag (full graph)
+GET  /projects/:id/dag/nodes    → all nodes
+GET  /projects/:id/dag/edges    → all edges
+GET  /projects/:id/dag/node/:id → single node + connected edges
+POST /projects/:id/compile      → recompile .dog → .dag
+```
+
+## AI Agent Instructions
+
+When an AI agent receives a `.dag` file:
+
+1. Parse as JSON
+2. Build a graph: nodes as vertices, edges as directed connections
+3. Traverse for queries: BFS for hop depth, DFS for paths
+4. Compute predictions: confidence × historical_accuracy = expected_outcome
+5. Flag nodes with no description as unembeddable
+6. Flag edges referencing unknown nodes as broken
+
+The `.dag` format is NOT meant for human editing. It is the compiled output of the spec engine.
