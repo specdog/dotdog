@@ -1,7 +1,7 @@
 {
   "name": "dotdog",
   "version": "0.2.5",
-  "description": "The spec dog \u2014 validate, analyze, parse, and generate .dog spec genome files",
+  "description": "The spec dog — structured, AI-queryable software specifications. Write .dog specs, compile to .dag graphs, query via MCP. Built for humans and AI agents.",
   "type": "module",
   "main": "dist/cli.js",
   "bin": {
@@ -16,11 +16,18 @@
   ],
   "keywords": [
     "spec",
-    "dogfood",
     "specification",
     "ai",
+    "agent",
+    "mcp",
     "documentation",
+    "cli",
+    "spec-driven-development",
+    "graph",
+    "markdown",
+    "yaml",
     "dotdog",
+    "dag",
     "dog"
   ],
   "license": "MIT",
