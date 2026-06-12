@@ -64,16 +64,18 @@ program.command('validate [dir]').action((d='.') => {
 program.command('init <project>').action((p) => {
   const d = join(process.cwd(),'specs',p);
   mkdirSync(d,{recursive:true});
+  const name = p.replace(/-/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
   const tmpl: Record<string,string> = {
-    'SPEC.dog': '# Project\n\n## Product\n\n',
-    'constitution.dog': '# Constitution\n\n1. **Rule.**\n',
-    'data-model.dog': '# Data Model\n\n## Entities\n\n',
-    'plan.dog': '# Plan\n\n## Phase 1\n\n- [ ] Task\n',
-    'COPY.dog': '# Copy\n\n| Element | Copy |\n|---|---|\n',
-    'INDEX.dog': '# INDEX\n\n| You | Start | Then |\n|---|---|---|\n',
+    'SPEC.dog': `# ${name}\n\n## Product\n\nWhat does it do? Who is it for?\n\n## What the User Sees\n\nSCREEN 1: Home — describe the main screen\n\n## User Stories\n\n| ID | Story | Pri |\n|----|-------|-----|\n| US-01 | | P0 |\n| US-02 | | P0 |\n| US-03 | | P1 |\n\n## Stack\n\n| Layer | Tech |\n|-------|------|\n| | |\n`,
+    'data-model.dog': '# Data Model\n\n## Core Entities\n\nDefine your entities here. Each gets a name, properties, states, and lifecycle.\n\nExample:\n\n### Entity: User\n\nA person who uses the app.\n\n```yaml\nentity: User\ntype: entity\nproperties:\n  id:\n    type: string\n    required: true\n  name:\n    type: string\n    required: true\n  email:\n    type: string\n    required: true\nstates: [active, suspended]\nlifecycle: active → suspended\n```\n',
+    'plan.dog': '# Plan\n\n## Phase 1: MVP\n\n- [ ] Fill in SPEC.dog with product description\n- [ ] Fill in data-model.dog with entities\n- [ ] Run `dotdog validate` to check completeness\n- [ ] Run `dotdog generate` to fill gaps\n\n## Phase 2: Build\n\n- [ ] Build core feature from user stories\n- [ ] Build remaining features\n',
+    'constitution.dog': '# Constitution\n\nRules that don\'t change.\n\n1. **Data integrity over performance.**\n2. **User experience over complexity.**\n3. **Ship early. Iterate.**\n',
+    'COPY.dog': '# Copy\n\n| Screen | Element | Text |\n|--------|---------|------|\n| | | |\n',
+    'INDEX.dog': '# INDEX\n\n| You are | Start here | Then |\n|---------|-----------|------|\n| Developer | SPEC.dog | data-model.dog → plan.dog |\n| AI agent | data-model.dog | SPEC.dog → COPY.dog |\n| Designer | SPEC.dog | COPY.dog |\n',
   };
   for (const [f,c] of Object.entries(tmpl)) { writeFileSync(join(d,f),c); console.log(chalk.green(`  ✓ ${f}`)); }
-  console.log(chalk.bold(`\nProject "${p}" initialized. Fill in SPEC.dog then run spec validate.`));
+  console.log(chalk.bold(`\n  ${name} initialized.`));
+  console.log(chalk.gray('  Next: fill in SPEC.dog, then run `dotdog validate`'));
 });
 
 program.command('list').action(() => {
