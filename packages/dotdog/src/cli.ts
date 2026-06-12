@@ -64,7 +64,8 @@ program.command('validate [dir]').action((d='.') => {
     const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
     for (const p of projects) {
       found = true;
-      const pd = join(dd,p,'specs');
+      const pd = join(dd,p);
+      if (!existsSync(join(pd,'SPEC.dog'))) continue;
       const files = existsSync(pd) ? readdirSync(pd).filter(f=>f.endsWith('.dog')) : [];
       const missing = ['SPEC.dog','constitution.dog','data-model.dog'].filter(f=>!files.includes(f));
       const optional = ['COPY.dog','plan.dog','DESIGN-SYSTEM.dog','INDEX.dog'].filter(f=>!files.includes(f));
@@ -100,7 +101,7 @@ program.command('list').action(() => {
     if (!projects.length) continue;
     console.log(chalk.bold(`\n${d}/`));
     for (const p of projects) {
-      const sp = join(dd,p,'specs');
+      const sp = join(dd,p);
       const n = existsSync(sp) ? readdirSync(sp).filter(f=>f.endsWith('.dog')).length : 0;
       console.log(`  ${chalk.cyan(p)} : ${n} .dog files`);
     }
@@ -122,7 +123,8 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
     if (!existsSync(dd)) continue;
     const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
     for (const p of projects) {
-      const pd = join(dd,p,'specs');
+      const pd = join(dd,p);
+      if (!existsSync(join(pd,'SPEC.dog'))) continue;
       if (!existsSync(pd)) continue;
       const files = readdirSync(pd).filter(f=>f.endsWith('.dog')).sort();
       if (!files.length) continue;
@@ -179,7 +181,7 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
       const savingsPct = sourceTokens > 0 ? Math.round((1 - dagTokens / sourceTokens) * 1000) / 10 : 0;
       const savingsTokens = sourceTokens - dagTokens;
       // Attach token report to output
-      const outPath = opts.output || join(pd,'..',`${p}.dag`);
+      const outPath = opts.output || join(pd,`${p}.dag`);
       const report = { ...dag, tokens: { source_total: sourceTokens, dag_total: dagTokens, savings_pct: savingsPct, savings_tokens: savingsTokens } };
       writeFileSync(outPath, JSON.stringify(report, null, 2));
       console.log(chalk.green(`  ✓ ${outPath}`));
@@ -227,7 +229,8 @@ program.command('analyze [dir]').description('Analyze a spec project : score, ga
     const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
     for (const p of projects) {
       if (opts.project && p !== opts.project) continue;
-      const pd = join(dd,p,'specs');
+      const pd = join(dd,p);
+      if (!existsSync(join(pd,'SPEC.dog'))) continue;
       if (!existsSync(pd)) continue;
       const files = readdirSync(pd).filter(f=>f.endsWith('.dog'));
       if (!files.length) continue;
@@ -289,7 +292,7 @@ program.command('generate [dir]').description('Generate missing spec files from 
     const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
     for (const p of projects) {
       if (opts.project && p !== opts.project) continue;
-      const pd = join(dd,p,'specs');
+      const pd = join(dd,p);
       const sp = join(pd,'SPEC.dog');
       if (existsSync(sp)) { specContent = readFileSync(sp,'utf-8'); specDir = pd; break; }
     }
@@ -364,7 +367,8 @@ program.command('staleness [dir]').action((d='.') => {
     if (!existsSync(dd)) continue;
     const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
     for (const p of projects) {
-      const pd = join(dd,p,'specs');
+      const pd = join(dd,p);
+      if (!existsSync(join(pd,'SPEC.dog'))) continue;
       if (!existsSync(pd)) continue;
       const planFile = join(pd,'plan.dog');
       if (!existsSync(planFile)) { console.log(chalk.yellow(`  ${p}: No plan.dog`)); continue; }
