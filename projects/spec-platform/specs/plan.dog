@@ -14,15 +14,24 @@
 - [x] spec init scaffolds new projects
 - [ ] MCP server tested with a real AI agent
 
-## Phase 1: MCP Server Live (next)
+## Phase 1: .dog DSL Grammar + Parser (next)
 
-- [ ] AI agent connects to MCP server and queries specs
-- [ ] Proven: agent asks "what's the PaymentReceipt type?" → gets exact struct from data-model.dog
-- [ ] Proven: agent asks "build the payment bubble" → gets COPY.dog strings + DESIGN-SYSTEM.dog tokens
-- [ ] Specs directory configurable via SPECS_DIR env var
-- [ ] Error handling for missing files, malformed specs
+- [ ] Formal grammar specification (`.dog` format spec — EBNF or similar)
+- [ ] Lexer: tokenize .dog files into structured tokens
+- [ ] Parser: tokens → AST (abstract syntax tree)
+- [ ] AST → ontology mapping (Node, Edge, Task, Prediction, Vector)
+- [ ] `spec parse` command: reads .dog file, outputs AST
+- [ ] Replace regex hacks in engine with proper parser output
 
-## Phase 2: Vector Embeddings
+## Phase 2: Distribution
+
+- [ ] npm publish: `bun add dotdog` or `npm install -g dotdog`
+- [ ] VS Code extension: syntax highlighting + validation
+- [ ] GitHub Action: `dotdog/validate` blocks PRs with broken specs
+
+## Phase 3: MCP Server Live
+
+## Phase 4: Vector Embeddings
 
 - [ ] Parse spec sections into chunks (parseSections already done)
 - [ ] Embed with all-MiniLM-L6-v2 (384 dims, local, $0)
@@ -31,7 +40,7 @@
 - [ ] Contradiction detection: flag semantically similar constraints with opposite enforcement
 - [ ] Staleness detection: flag sections not updated in 30+ days
 
-## Phase 3: Graph Traversal Engine
+## Phase 5: Graph Traversal Engine
 
 - [ ] Build in-memory graph from parsed entities + relationships (buildGraph done)
 - [ ] BFS hop depth audit (auditHopDepth done)
@@ -39,14 +48,14 @@
 - [ ] spec simulate: walk through a scenario, check pre/postconditions
 - [ ] Completion probability: compute from historical velocity + remaining tasks
 
-## Phase 4: Prediction Tracking
+## Phase 6: Prediction Tracking
 
 - [ ] Predictions stored in SQLite with triggers, timeframes, confidence
 - [ ] Prediction resolution: mark as correct/wrong/partially_correct when trigger fires
 - [ ] Hit rate dashboard: "You predicted 7 things. 4 correct, 2 wrong, 1 pending."
 - [ ] Model improvement: wrong predictions → recalibrate probability trees
 
-## Phase 5: Dashboard (Paid Tier)
+## Phase 7: Dashboard (Paid Tier)
 
 - [ ] React + Vite dashboard (Vercel free tier)
 - [ ] Project list with completeness scores
@@ -55,7 +64,7 @@
 - [ ] Team management (Clerk auth)
 - [ ] Cloud sync (Postgres on fly.io free tier)
 
-## Phase 6: Code Generation
+## Phase 8: Code Generation
 
 - [ ] Read spec genome → generate database schema (Prisma/SQL)
 - [ ] Read spec genome → generate API routes (Elysia/Express)
