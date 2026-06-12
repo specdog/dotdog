@@ -192,6 +192,194 @@ export interface ValidationWarning {
   line?: number;
 }
 
+// --- Ontology Vocabulary ---
+
+/** Controlled vocabulary of valid entity types (OMD-GraphRAG principle: 10-30 types) */
+export const ONTOLOGY_ENTITY_TYPES = [
+  'entity',
+  'relationship',
+  'event',
+  'capability',
+  'constraint',
+  'screen',
+  'flow',
+  'user_story',
+  'task',
+  'failure',
+  'edge_case',
+  'assumption',
+  'prediction',
+  'scenario',
+  'node',
+  'edge',
+  'vector',
+] as const;
+
+export type OntologyEntityType = (typeof ONTOLOGY_ENTITY_TYPES)[number];
+
+// --- Graph Traversal ---
+
+export interface SpecGraph {
+  nodes: Map<string, { name: string; description: string }>;
+  edges: Array<{ from: string; to: string; verb: string }>;
+  adjacency: Map<string, Set<string>>;
+}
+
+/** Build an in-memory graph from entities and relationships */
+export function buildGraph(
+  entities: SpecEntity[],
+  relationships: SpecRelationship[]
+): SpecGraph {
+  const nodes = new Map<string, { name: string; description: string }>();
+  const adjacency = new Map<string, Set<string>>();
+
+  for (const entity of entities) {
+    nodes.set(entity.name, {
+      name: entity.name,
+      description: entity.description || '',
+    });
+    adjacency.set(entity.name, new Set());
+  }
+
+  for (const rel of relationships) {
+    if (!adjacency.has(rel.from)) adjacency.set(rel.from, new Set());
+    if (!adjacency.has(rel.to)) adjacency.set(rel.to, new Set());
+    adjacency.get(rel.from)?.add(rel.to);
+    adjacency.get(rel.to)?.add(rel.from); // undirected for BFS
+  }
+
+  return { nodes, edges: relationships, adjacency };
+}
+
+/** BFS to find max hop depth from root entities */
+export function auditHopDepth(graph: SpecGraph): Map<string, number> {
+  const depths = new Map<string, number>();
+
+  // Find root nodes (entities with no incoming edges)
+  const hasIncoming = new Set<string>();
+  for (const edge of graph.edges) {
+    hasIncoming.add(edge.to);
+  }
+  const roots = [...graph.nodes.keys()].filter((n) => !hasIncoming.has(n));
+
+  for (const root of roots) {
+    const visited = new Set<string>();
+    const queue: Array<[string, number]> = [[root, 0]];
+
+    while (queue.length > 0) {
+      const [node, depth] = queue.shift()!;
+      if (visited.has(node)) continue;
+      visited.add(node);
+
+      const current = depths.get(node) ?? Infinity;
+      depths.set(node, Math.min(current, depth));
+
+      for (const neighbor of graph.adjacency.get(node) || []) {
+        if (!visited.has(neighbor) && depth < 10) {
+          queue.push([neighbor, depth + 1]);
+        }
+      }
+    }
+  }
+
+  return depths;
+}
+
+// --- Markdown Section Parser ---
+
+export interface SpecSection {
+  heading: string;
+  level: number; // 2 for ##, 3 for ###
+  content: string;
+  lineStart: number;
+  lineEnd: number;
+}
+
+/** Parse markdown into sections at ## and ### boundaries */
+export function parseSections(markdown: string): SpecSection[] {
+  const lines = markdown.split('\n');
+  const sections: SpecSection[] = [];
+
+  let currentHeading = '(root)';
+  let currentLevel = 1;
+  let currentContent: string[] = [];
+  let lineStart = 1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Check for ## or ### heading
+    const h2 = line.match(/^##\s+(.+)/);
+    const h3 = line.match(/^###\s+(.+)/);
+
+    if (h2 && !h3) {
+      if (currentContent.length > 0 || sections.length === 0) {
+        sections.push({
+          heading: currentHeading,
+          level: currentLevel,
+          content: currentContent.join('\n').trim(),
+          lineStart,
+          lineEnd: i,
+        });
+      }
+      currentHeading = h2[1];
+      currentLevel = 2;
+      currentContent = [];
+      lineStart = i + 1;
+    } else if (h3) {
+      if (currentContent.length > 0 || sections.length === 0) {
+        sections.push({
+          heading: currentHeading,
+          level: currentLevel,
+          content: currentContent.join('\n').trim(),
+          lineStart,
+          lineEnd: i,
+        });
+      }
+      currentHeading = h3[1];
+      currentLevel = 3;
+      currentContent = [];
+      lineStart = i + 1;
+    } else {
+      currentContent.push(line);
+    }
+  }
+
+  // Last section
+  if (currentContent.length > 0 || sections.length === 0) {
+    sections.push({
+      heading: currentHeading,
+      level: currentLevel,
+      content: currentContent.join('\n').trim(),
+      lineStart,
+      lineEnd: lines.length,
+    });
+  }
+
+  return sections;
+}
+
+/** Validate chunk sizes — warn if > 50K chars (AgentDocSpec limit) */
+export function validateChunkSizes(
+  sections: SpecSection[]
+): ValidationWarning[] {
+  const warnings: ValidationWarning[] = [];
+  const MAX_CHARS = 50_000;
+
+  for (const section of sections) {
+    if (section.content.length > MAX_CHARS) {
+      warnings.push({
+        file: '',
+        rule: 'chunk-size',
+        message: `Section "${section.heading}" is ${section.content.length.toLocaleString()} chars (limit: ${MAX_CHARS.toLocaleString()}). LLMs may truncate. Split into sub-sections.`,
+        line: section.lineStart,
+      });
+    }
+  }
+
+  return warnings;
+}
+
 // --- Simulation ---
 
 export interface SimulationResult {

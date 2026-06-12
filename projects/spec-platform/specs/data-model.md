@@ -10,6 +10,7 @@
 
 ```
 Node
+  description: A typed node in the spec knowledge graph representing any entity, task, prediction, or concept
   id: string (uuid)
   type: enum[project, entity, relationship, event, capability,
              constraint, screen, flow, user_story, task, failure,
@@ -28,6 +29,7 @@ Node
 
 ```
 Edge
+  description: A typed connection between two nodes in the spec graph. Directional (source → target) with cardinality, cascade behavior, and invariants
   id: string (uuid)
   source_id: string → Node.id
   target_id: string → Node.id
@@ -43,6 +45,7 @@ Edge
 
 ```
 Task
+  description: A unit of work in the spec platform. Has dependencies, assignment, effort estimates, and a computed completion probability
   id: string (T01, T02, ...)
   name: string
   description: string
@@ -63,6 +66,7 @@ Task
 
 ```
 Prediction
+  description: A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes to improve the model
   id: string
   statement: string (what we claim will happen)
   trigger: string (what event starts the clock?)
@@ -81,6 +85,7 @@ Prediction
 
 ```
 Vector
+  description: A semantic embedding of a spec section. Used for similarity search, contradiction detection, and staleness checks. Linked to the Node it embeds
   id: string
   node_id: string → Node.id
   content: string (the text that was embedded)
