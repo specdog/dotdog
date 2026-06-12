@@ -218,15 +218,60 @@ states: [specified, modeled, verified]
 lifecycle: specified → modeled → verified
 ```
 
-### Relationship: Compile → .dag
+### Entity: Compile
+
+The compilation process. Reads all .dog files, parses entities and relationships, outputs a .dag graph with integrity hash and token savings report.
 
 ```yaml
-relationship: Compile → .dag
+entity: Compile
+type: event
+properties:
+  source_files:
+    type: number
+    required: true
+  output_hash:
+    type: string
+    required: true
+  token_savings_pct:
+    type: number
+    required: false
+states: [running, completed, failed]
+lifecycle: running → completed
+```
+
+### Entity: DAG
+
+The compiled graph output. A deterministic JSON structure with typed nodes, edges, integrity metadata, and provable token savings. Queryable by AI agents via MCP.
+
+```yaml
+entity: DAG
+type: entity
+properties:
+  version:
+    type: string
+    required: true
+  sha256:
+    type: string
+    required: true
+  source_files:
+    type: number
+    required: true
+  token_savings_pct:
+    type: number
+    required: false
+states: [current, stale]
+lifecycle: current → stale
+```
+
+### Relationship: Compile → DAG
+
+```yaml
+relationship: Compile → DAG
 verb: produces
 cardinality: 1:1
 required: false
 cascade: nullify
-invariants: .dag is the compiled output of all .dog files
+invariants: DAG is the compiled output of all .dog files
 ```
 
 ---
