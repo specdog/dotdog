@@ -27,7 +27,7 @@ DASHBOARD
 │                                                         │
 │  Projects                                               │
 │  ┌────────────────────────────────────────────────────┐ │
-│  │ CryptChat                   12 specs  ● complete   │ │
+│  │ demo-project                   12 specs  ● complete   │ │
 │  │ last updated 2h ago         3 predictions pending  │ │
 │  └────────────────────────────────────────────────────┘ │
 │  ┌────────────────────────────────────────────────────┐ │
@@ -47,10 +47,10 @@ DASHBOARD
 │  User: "Build the payment bubble component"         │
 │                                                     │
 │  AI Agent → MCP Server:                             │
-│    → getSpec("cryptchat", "SPEC.dog")                │
-│    → getSpec("cryptchat", "COPY.dog")                │
-│    → getSpec("cryptchat", "DESIGN-SYSTEM.dog")       │
-│    → getSpec("cryptchat", "COMPOSE-MAP.dog")         │
+│    → getSpec("demo", "SPEC.dog")                │
+│    → getSpec("demo", "COPY.dog")                │
+│    → getSpec("demo", "DESIGN-SYSTEM.dog")       │
+│    → getSpec("demo", "COMPOSE-MAP.dog")         │
 │                                                     │
 │  AI Agent has:                                       │
 │    - Exact screen layout (ASCII art)                │
@@ -89,7 +89,7 @@ DASHBOARD
 ```
 ┌─ CLI ───────────────────────────────────────────────┐
 │                                                     │
-│  $ spec simulate cryptchat --scenario "payment"      │
+│  $ spec simulate demo --scenario "payment"      │
 │                                                     │
 │  Scenario: Sender pays $1.00 to alice.eth            │
 │                                                     │
@@ -193,8 +193,8 @@ DASHBOARD
 
 ## Success Criteria
 
-1. [ ] `spec validate` runs on CryptChat specs and produces a report
-2. [ ] MCP server returns `getSpec("cryptchat", "COPY.dog")` in under 50ms
+1. [ ] `spec validate` runs on demo-project specs and produces a report
+2. [ ] MCP server returns `getSpec("demo", "COPY.dog")` in under 50ms
 3. [ ] CLI installs with `npm install -g` on macOS, Linux, Windows
 4. [ ] Simulation runs a 6-step scenario and reports correct outcome
 5. [ ] Dashboard shows project list with completeness scores

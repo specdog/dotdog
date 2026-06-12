@@ -108,4 +108,4 @@ spec-platform/
 | 3 | `spec simulate payment` → walks through 6 steps, reports success/failure |
 | 4 | Prediction "shipping by July" resolved → hit rate updates |
 | 5 | Dashboard shows 3 projects, 87% avg completeness |
-| 6 | `spec generate cryptchat` → produces working React component |
+| 6 | `spec generate demo` → produces working React component |
