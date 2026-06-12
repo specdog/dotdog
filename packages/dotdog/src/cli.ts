@@ -11,10 +11,15 @@ import { parse } from './parser';
 function resolvePath(p: string): string {
   if (p.startsWith('~')) p = join(homedir(), p.slice(1));
   const resolved = p.startsWith('/') ? p : join(process.cwd(), p);
-  // Prevent traversal outside working directory for relative paths
+  // Prevent traversal outside working directory for relative paths.
+  // Allow descendants (cdw/child), same dir (cwd), and ancestors (parent of cwd).
   if (!p.startsWith('/') && !p.startsWith('~')) {
     const rel = resolve(process.cwd(), p);
-    if (!rel.startsWith(process.cwd() + '/') && rel !== process.cwd()) {
+    const cwd = process.cwd();
+    const isDescendant = rel.startsWith(cwd + '/');
+    const isSelf = rel === cwd;
+    const isAncestor = cwd.startsWith(rel + '/');
+    if (!isDescendant && !isSelf && !isAncestor) {
       throw new Error(`Path traversal blocked: ${p}`);
     }
     return rel;
