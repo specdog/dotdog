@@ -94,4 +94,41 @@ program.command('parse <file>').action((f) => {
   for (const sec of s) console.log(`  ${sec.heading.padEnd(30)} ${sec.content.length} chars`);
 });
 
+program.command('compile [dir]').option('-o, --output <file>').action((d='.', opts) => {
+  const dir = resolvePath(d);
+  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  let found = false;
+  for (const dd of dirs) {
+    if (!existsSync(dd)) continue;
+    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    for (const p of projects) {
+      const pd = join(dd,p,'specs');
+      if (!existsSync(pd)) continue;
+      const files = readdirSync(pd).filter(f=>f.endsWith('.dog'));
+      const dag: any = { version: '1.0', project: p, compiled_at: new Date().toISOString(), nodes: [], edges: [], count: files.length };
+      for (const f of files) {
+        const c = readFileSync(join(pd,f),'utf-8');
+        const secs = parseSections(c);
+        for (const s of secs) {
+          if (s.heading.includes('Entity:') || s.heading.includes('Relationship:')) {
+            const isRel = s.heading.includes('Relationship:');
+            if (isRel) {
+              const parts = s.heading.replace('Relationship:','').split('→').map(x=>x.trim());
+              dag.edges.push({ source: parts[0]||'?', target: parts[1]||'?', file: f, section: s.heading });
+            } else {
+              dag.nodes.push({ id: s.heading.replace('Entity:','').trim(), file: f, chars: s.content.length });
+            }
+          }
+        }
+      }
+      found = true;
+      const out = opts.output || join(pd,'..',`${p}.dag`);
+      writeFileSync(out, JSON.stringify(dag, null, 2));
+      console.log(chalk.green(`  ✓ ${out}`));
+      console.log(chalk.gray(`    ${dag.nodes.length} nodes, ${dag.edges.length} edges, ${dag.count} files`));
+    }
+  }
+  if (!found) console.log(chalk.yellow('No projects found.'));
+});
+
 program.parse();
