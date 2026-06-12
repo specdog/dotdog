@@ -1,10 +1,12 @@
-# The .dog Format — Formal Specification v1.0
+# The .dog Format — Formal Specification v1.1
 
-The `.dog` file format is a structured, AI-queryable specification language for software projects. It uses markdown for prose and YAML blocks for typed entities, relationships, and constraints.
+The `.dog` file format is a structured, AI-queryable specification language for software projects. It uses markdown for prose and YAML blocks for typed entities, relationships, events, and predictions.
 
-A `.dog` file defines one dimension of a project's spec genome. Together, multiple `.dog` files form a complete, traversable knowledge graph.
+A `.dog` file defines one dimension of a project's spec genome. Together, multiple `.dog` files form a complete, traversable knowledge graph. The companion `.dag` format (see `format-spec-dag.dog`) is the machine-compiled graph output.
 
 ## Grammar (EBNF)
+
+A valid parser must accept this grammar. A valid file is any `dog-file` that parses without error.
 
 ```
 dog-file        ::= block*
@@ -16,62 +18,116 @@ heading-block   ::= ("##" | "###") SPACE text NEWLINE
 
 entity-block    ::= "###" SPACE "Entity:" SPACE entity-name NEWLINE
                     prose*
-                    "```yaml" NEWLINE
+                    "```" ("yaml")? NEWLINE
                     entity-body
                     "```" NEWLINE
 
 relationship-block ::= "###" SPACE "Relationship:" SPACE source "→" target NEWLINE
                         prose*
-                        "```yaml" NEWLINE
-                        relationship-body
+                        "```" (("yaml")? NEWLINE relationship-body | NEWLINE relation-prose-body)
                         "```" NEWLINE
 
 entity-body     ::= "entity:" SPACE entity-name NEWLINE
                     "type:" SPACE type-name NEWLINE
-                    "description:" SPACE text NEWLINE
+                    ("description:" SPACE text NEWLINE)?
                     "properties:" NEWLINE
-                    property* NEWLINE
-                    "states:" SPACE "[" state ("," SPACE state)* "]" NEWLINE
-                    "lifecycle:" SPACE state ("→" SPACE state)* NEWLINE
+                    property+ NEWLINE
+                    ("states:" SPACE "[" state ("," SPACE state)* "]")? NEWLINE
+                    ("lifecycle:" SPACE state ("→" SPACE state)* NEWLINE)?
 
 property        ::= SPACE SPACE prop-name ":" NEWLINE
                     SPACE SPACE SPACE SPACE "type:" SPACE type-def NEWLINE
-                    SPACE SPACE SPACE SPACE "required:" SPACE ("true" | "false") NEWLINE
-                    (SPACE SPACE SPACE SPACE "constraints:" SPACE text NEWLINE)?
-                    (SPACE SPACE SPACE SPACE "default:" SPACE value NEWLINE)?
-                    (SPACE SPACE SPACE SPACE "example:" SPACE value NEWLINE)?
+                    ("required:" SPACE "true")? NEWLINE
+                    ("constraints:" SPACE text NEWLINE)?
+                    ("default:" SPACE value NEWLINE)?
+                    ("example:" SPACE value NEWLINE)?
+                    ("format:" SPACE text NEWLINE)?
 
 relationship-body ::= "relationship:" SPACE source "→" target NEWLINE
                       "verb:" SPACE verb-name NEWLINE
                       "cardinality:" SPACE cardinality NEWLINE
-                      "required:" SPACE ("true" | "false") NEWLINE
+                      ("required:" SPACE "true")? NEWLINE
                       "cascade:" SPACE cascade-action NEWLINE
-                      "invariants:" SPACE text NEWLINE
+                      ("invariants:" SPACE text NEWLINE)?
 
 type-def        ::= "string" | "number" | "boolean" | "json"
                   | "enum"           -- values specified in constraints
-                  | "string[]"       -- array type
-                  | "float[]"        -- array type
+                  | "string[]"       -- array of strings
+                  | "float[]"        -- array of floats
                   | "entity:" name   -- reference to another entity
                   | "entity:" name "[]"  -- array of entity references
 
 type-name       ::= "entity" | "relationship" | "event" | "prediction" | "node" | "vector"
 verb-name       ::= "contains" | "depends_on" | "references" | "implements"
-                  | "calls" | "owns" | "produces" | "consumes" | "extends" | "precedes"
+                  | "calls" | "owns" | "produces" | "consumes" | "extends" | "precedes" | "connects" | "belongs_to" | "measures" | "embeds"
 cardinality     ::= "1:1" | "1:N" | "N:1" | "N:M"
 cascade-action  ::= "none" | "delete" | "nullify" | "restrict"
 state           ::= identifier
 entity-name     ::= identifier
-identifier      ::= letter (letter | digit | "_")*
+source          ::= identifier
+target          ::= identifier
+identifier      ::= letter (letter | digit | "_")+
 text            ::= any characters except NEWLINE
 value           ::= text | number | "true" | "false" | "null"
+prose           ::= text (NEWLINE text)*
 SPACE           ::= " "
 NEWLINE          ::= "\n"
 ```
 
+## Validation Rules
+
+A conforming `.dog` file must pass all of these checks. A parser MUST reject or warn on violations.
+
+### MUST (critical — file is invalid)
+
+| Rule | Check |
+|------|-------|
+| R1 | File is valid UTF-8 |
+| R2 | At least one `##` heading or entity block |
+| R3 | Every `### Entity:` has a matching ` ``` ` block |
+| R4 | Every entity YAML block has `entity:` and `type:` keys |
+| R5 | Entity type is one of: entity, relationship, event, prediction, node, vector |
+| R6 | Every relationship references valid entity names that exist in the same file or project |
+
+### SHOULD (warning — file is incomplete)
+
+| Rule | Check |
+|------|-------|
+| R7 | Every entity has a `description:` (required for embedding and semantic search) |
+| R8 | Every entity has at least 2 properties |
+| R9 | Every entity has `states:` defined |
+| R10 | Entities with states have a `lifecycle:` |
+| R11 | At least one relationship connects entities |
+
+### MAY (info — file could be stronger)
+
+| Rule | Check |
+|------|-------|
+| R12 | Relationship cardinality matches actual usage |
+| R13 | Events defined for state transitions |
+| R14 | Predictions defined for project outcomes |
+
+## Edge Cases
+
+Implementors MUST handle these:
+
+| Case | Behavior |
+|------|----------|
+| Empty file | Valid. No entities. Parse as document with zero sections. |
+| File with only prose | Valid. Parse sections at `##` boundaries. No entities. |
+| `### Entity:` with no YAML block | Parse as entity with zero properties. Warn. |
+| YAML block with no `entity:` key | Entity has no name. Error. |
+| `### Entity:  ` (trailing spaces) | Trim. Entity name is trimmed value. |
+| `### Entity: Two Words` | Entity name is "Two Words". Multi-word names are valid. |
+| `→` vs `->` in relationships | Only `→` (Unicode U+2192) is valid in headings. YAML body uses `->`. |
+| Duplicate entity names | Last definition wins. Warn. |
+| Missing required fields in properties | `required: true` but no value. Parser accepts; validator warns. |
+| Nested YAML indentation errors | Best-effort parse. Warn on ambiguous indentation. |
+| UTF-8 BOM | Strip before parsing. |
+
 ## Entity Schema
 
-Every entity block must contain a YAML code fence with this structure:
+Every entity block contains a YAML code fence:
 
 ```yaml
 entity: Payment
@@ -84,7 +140,7 @@ properties:
   amount:
     type: number
     required: true
-    constraints: min 0, 2 decimal places
+    constraints: min 0
   status:
     type: enum
     required: true
@@ -97,18 +153,14 @@ properties:
     type: string
     required: true
     constraints: references Split.id
-  stripe_payment_id:
-    type: string
-    required: false
 states: [pending, processing, completed, failed]
 lifecycle: pending → processing → completed
-          pending → processing → failed
 ```
 
 ### Property Type Reference
 
-| Type | Example | Notes |
-|------|---------|-------|
+| Type | YAML | Notes |
+|------|------|-------|
 | string | `type: string` | Plain text |
 | number | `type: number` | Integer or float |
 | boolean | `type: boolean` | true or false |
@@ -130,17 +182,30 @@ cascade: restrict
 invariants: payment.split_id must reference an existing Split
 ```
 
-## AI Agent Instructions
+## Conformance
 
-When an AI agent reads a `.dog` file:
+An implementation is conforming if it:
+1. Accepts all valid `.dog` files per the grammar
+2. Rejects or warns on all MUST violations
+3. Flags SHOULD violations as warnings
+4. Handles all documented edge cases
+5. Produces an AST with at minimum: sections, entities (name, type, properties, states, lifecycle), relationships (source, target, verb, cardinality)
 
-1. Parse sections at `##` boundaries for context
-2. Extract entity blocks from `### Entity:` headings with YAML bodies
-3. Extract relationship blocks from `### Relationship:` headings
-4. Build an in-memory graph: entities as nodes, relationships as edges
-5. Traverse the graph to answer queries
-6. Flag entities without descriptions as unembeddable
+## Reference Implementation
 
-Every entity with a description is embeddable for semantic search.
-Every relationship is traversable for graph queries.
-The `.dog` format is both human-readable and machine-parseable.
+The reference parser is `dotdog` (npm: `dotdog`, repo: `github.com/specdog/dotdog`). It is the authoritative implementation. All edge case behavior should match it.
+
+## Companion Format: .dag
+
+The `.dag` format is the compiled graph output. See `format-spec-dag.dog` for the full specification. Pipeline:
+
+```
+.dog files → dotdog compile → .dag graph
+```
+
+## History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2026-06-12 | Initial formal spec |
+| 1.1 | 2026-06-12 | Validation rules, edge cases, conformance, verb expansion |
