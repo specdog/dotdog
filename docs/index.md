@@ -112,4 +112,4 @@ $ dotdog serve
 
 ---
 
-dotdog@0.3.0 · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE)
+dotdog@0.3.1 · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE)
