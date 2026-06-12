@@ -3,6 +3,12 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { existsSync, readdirSync, readFileSync, mkdirSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
+import { homedir } from 'os';
+
+function resolvePath(p: string): string {
+  if (p.startsWith('~')) p = join(homedir(), p.slice(1));
+  return p.startsWith('/') ? p : join(process.cwd(), p);
+}
 
 // --- Inline engine functions (no deps) ---
 export { parse, parseToJSON } from './parser';
