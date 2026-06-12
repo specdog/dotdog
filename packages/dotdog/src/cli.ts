@@ -109,18 +109,35 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
       const pd = join(dd,p,'specs');
       if (!existsSync(pd)) continue;
       const files = readdirSync(pd).filter(f=>f.endsWith('.dog'));
-      const dag: any = { version: '1.0', project: p, compiled_at: new Date().toISOString(), nodes: [], edges: [], count: files.length };
+      const dag: any = { version: '1.1', project: p, compiled_at: new Date().toISOString(), nodes: [], edges: [], files: files.length };
       for (const f of files) {
-        const c = readFileSync(join(pd,f),'utf-8');
-        const secs = parseSections(c);
-        for (const s of secs) {
-          if (s.heading.includes('Entity:') || s.heading.includes('Relationship:')) {
-            const isRel = s.heading.includes('Relationship:');
-            if (isRel) {
-              const parts = s.heading.replace('Relationship:','').split('→').map(x=>x.trim());
-              dag.edges.push({ source: parts[0]||'?', target: parts[1]||'?', file: f, section: s.heading });
-            } else {
-              dag.nodes.push({ id: s.heading.replace('Entity:','').trim(), file: f, chars: s.content.length });
+        const content = readFileSync(join(pd,f),'utf-8');
+        const ast = parse(content);
+        for (const section of ast.sections) {
+          for (const block of section.blocks) {
+            if (block.kind === 'entity') {
+              dag.nodes.push({
+                id: block.name,
+                type: block.type,
+                description: block.description || '',
+                file: f,
+                properties: block.properties,
+                states: block.states || [],
+                lifecycle: block.lifecycle || [],
+                chars: section.content?.length || 0
+              });
+            }
+            if (block.kind === 'relationship') {
+              dag.edges.push({
+                source: block.source,
+                target: block.target,
+                verb: block.verb,
+                cardinality: block.cardinality,
+                required: block.required,
+                cascade: block.cascade,
+                file: f,
+                section: section.heading
+              });
             }
           }
         }
@@ -129,7 +146,7 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
       const out = opts.output || join(pd,'..',`${p}.dag`);
       writeFileSync(out, JSON.stringify(dag, null, 2));
       console.log(chalk.green(`  ✓ ${out}`));
-      console.log(chalk.gray(`    ${dag.nodes.length} nodes, ${dag.edges.length} edges, ${dag.count} files`));
+      console.log(chalk.gray(`    ${dag.nodes.length} nodes, ${dag.edges.length} edges, ${dag.files} files`));
     }
   }
   if (!found) console.log(chalk.yellow('No projects found.'));
