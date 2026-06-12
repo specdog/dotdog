@@ -183,10 +183,12 @@ function extractEntities(ast: { sections: SectionNode[] }): ExtractedEntity[] {
 
 function extractNouns(story: string): string[] {
   const nouns: string[] = [];
-  // Capitalized words are likely entities
   const capitalized = story.match(/\b[A-Z][a-z]+\b/g) || [];
+  const HUMAN_ROLES = ['Friends', 'Friend', 'User', 'Admin', 'Owner', 'Manager', 'Customer', 'Client', 'Member', 'Person', 'People', 'Sender', 'Receiver', 'Recipient'];
+  const VERB_STARTS = ['Create', 'Send', 'See', 'Add', 'Delete', 'Update', 'Remove', 'Get', 'View', 'Edit', 'Make', 'Build'];
+  
   for (const word of capitalized) {
-    if (!['Create', 'Send', 'See', 'Add', 'Delete', 'Update'].includes(word)) {
+    if (!VERB_STARTS.includes(word) && !HUMAN_ROLES.includes(word)) {
       nouns.push(word);
     }
   }
@@ -198,31 +200,51 @@ function inferProperties(entityName: string, story: string): Array<{ name: strin
     { name: 'id', type: 'string', required: true },
     { name: 'created_at', type: 'string', required: true },
   ];
-
   const lower = story.toLowerCase();
-  if (lower.includes('amount') || lower.includes('$') || lower.includes('price')) {
-    props.push({ name: 'amount', type: 'number', required: true });
-  }
-  if (lower.includes('contact') || lower.includes('friend') || lower.includes('user')) {
-    props.push({ name: 'user_id', type: 'string', required: true });
-  }
-  if (lower.includes('pay') || lower.includes('paid')) {
+  const name = entityName.toLowerCase();
+
+  // Split entity
+  if (name === 'split') {
+    if (lower.includes('amount') || lower.includes('$')) props.push({ name: 'amount', type: 'number', required: true });
+    if (lower.includes('contact') || lower.includes('friend')) props.push({ name: 'contact_ids', type: 'string[]', required: true });
     props.push({ name: 'status', type: 'enum', required: true });
-  }
-  if (lower.includes('split') || lower.includes('share')) {
     props.push({ name: 'split_type', type: 'enum', required: true });
+    return props;
   }
+
+  // Payment entity
+  if (name === 'payment') {
+    props.push({ name: 'amount', type: 'number', required: true });
+    props.push({ name: 'status', type: 'enum', required: true });
+    props.push({ name: 'payer_id', type: 'string', required: true });
+    props.push({ name: 'split_id', type: 'string', required: true });
+    if (lower.includes('stripe')) props.push({ name: 'stripe_payment_id', type: 'string', required: false });
+    return props;
+  }
+
+  // Contact entity
+  if (name === 'contact') {
+    props.push({ name: 'name', type: 'string', required: true });
+    if (lower.includes('email')) props.push({ name: 'email', type: 'string', required: false });
+    if (lower.includes('phone')) props.push({ name: 'phone', type: 'string', required: false });
+    return props;
+  }
+
+  // Generic fallback
+  if (lower.includes('amount') || lower.includes('$')) props.push({ name: 'amount', type: 'number', required: true });
+  if (lower.includes('contact') || lower.includes('friend')) props.push({ name: 'contact_id', type: 'string', required: true });
+  if (lower.includes('pay') || lower.includes('paid')) props.push({ name: 'status', type: 'enum', required: true });
+  if (lower.includes('email')) props.push({ name: 'email', type: 'string', required: false });
 
   return props;
 }
 
 function inferStates(entityName: string): string[] {
-  if (entityName.toLowerCase().includes('payment')) {
-    return ['pending', 'completed', 'failed'];
-  }
-  if (entityName.toLowerCase().includes('split')) {
-    return ['draft', 'sent', 'settled'];
-  }
+  const name = entityName.toLowerCase();
+  if (name === 'payment') return ['pending', 'processing', 'completed', 'failed'];
+  if (name === 'split') return ['draft', 'sent', 'partially_paid', 'settled'];
+  if (name === 'contact') return ['active', 'blocked'];
+  if (name === 'user') return ['active', 'suspended', 'deleted'];
   return ['active', 'archived'];
 }
 
