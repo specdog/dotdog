@@ -133,4 +133,46 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
   if (!found) console.log(chalk.yellow('No projects found.'));
 });
 
+program.command('staleness [dir]').action((d='.') => {
+  const dir = resolvePath(d);
+  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  console.log(chalk.bold('Staleness Audit\n'));
+  for (const dd of dirs) {
+    if (!existsSync(dd)) continue;
+    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    for (const p of projects) {
+      const pd = join(dd,p,'specs');
+      if (!existsSync(pd)) continue;
+      const planFile = join(pd,'plan.dog');
+      if (!existsSync(planFile)) { console.log(chalk.yellow(`  ${p}: No plan.dog`)); continue; }
+      const plan = readFileSync(planFile,'utf-8');
+      const tasks = [...plan.matchAll(/^\s*- \[([ x])\]\s+(.+)/gm)];
+      let issues = 0;
+      for (const m of tasks) {
+        const done = m[1] === 'x';
+        const text = m[2].toLowerCase();
+        // Check npm publish
+        if (text.includes('npm publish') || text.includes('npm install')) {
+          try {
+            const pkg = JSON.parse(readFileSync(join(resolvePath('.'),'packages/dotdog/package.json'),'utf-8'));
+            if (pkg.version && !done) { console.log(chalk.yellow(`  ⚠ Should be [x]: ${m[2].trim()}`)); issues++; }
+          } catch {}
+        }
+        // Check compile
+        if (text.includes('compile')) {
+          if (!done) { console.log(chalk.yellow(`  ⚠ Should be [x]: ${m[2].trim()}`)); issues++; }
+        }
+        // Check generate
+        if (text.includes('generate') && !done) {
+          if (existsSync(join(dir,'packages/dotdog/src/cli.ts')) || existsSync(join(dir,'packages/spec-cli/src/generate.ts'))) {
+            console.log(chalk.yellow(`  ⚠ Should be [x]: ${m[2].trim()}`)); issues++;
+          }
+        }
+      }
+      if (issues === 0) console.log(chalk.green(`  ${p}: spec matches reality`));
+      else console.log(chalk.bold(`  ${issues} stale items. Update plan.dog.`));
+    }
+  }
+});
+
 program.parse();
