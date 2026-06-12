@@ -8,7 +8,15 @@ import * as readline from 'readline';
 
 function resolvePath(p: string): string {
   if (p.startsWith('~')) p = join(homedir(), p.slice(1));
-  return p.startsWith('/') ? p : join(process.cwd(), p);
+  const resolved = p.startsWith('/') ? p : join(process.cwd(), p);
+  if (!p.startsWith('/') && !p.startsWith('~')) {
+    const rel = resolve(process.cwd(), p);
+    if (!rel.startsWith(process.cwd() + '/') && rel !== process.cwd()) {
+      throw new Error(`Path traversal blocked: ${p}`);
+    }
+    return rel;
+  }
+  return resolved;
 }
 
 export function serve(dir: string = '.'): void {
@@ -95,7 +103,7 @@ export function serve(dir: string = '.'): void {
       if (name === 'traverse') {
         const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const depth = args.depth || 1;
+        const depth = Math.min(Math.max(1, args.depth || 1), 20);
         const visited = new Set<string>();
         const subgraph: { nodes: any[], edges: any[] } = { nodes: [], edges: [] };
         const queue = [{ id: args.from, depth: 0 }];
