@@ -133,7 +133,7 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
   if (!found) console.log(chalk.yellow('No projects found.'));
 });
 
-program.command('visualize [dir]').action((d='.') => {
+program.command('visualize [dir]').option('-s, --save').action((d='.', opts) => {
   const dir = resolvePath(d);
   const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
   for (const dd of dirs) {
@@ -143,11 +143,16 @@ program.command('visualize [dir]').action((d='.') => {
       const dagFile = join(dd,p,`${p}.dag`);
       if (!existsSync(dagFile)) continue;
       const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
-      console.log('```mermaid');
-      console.log('graph LR');
-      for (const n of dag.nodes||[]) console.log(`    ${n.id.replace(/\s+/g,'_')}[${n.id}]`);
-      for (const e of dag.edges||[]) console.log(`    ${e.source.replace(/\s+/g,'_')} -->|${e.verb||''}| ${e.target.replace(/\s+/g,'_')}`);
-      console.log('```');
+      let out = '```mermaid\ngraph LR\n';
+      for (const n of dag.nodes||[]) out += `    ${n.id.replace(/\s+/g,'_')}[${n.id}]\n`;
+      for (const e of dag.edges||[]) out += `    ${e.source.replace(/\s+/g,'_')} -->|${e.verb||''}| ${e.target.replace(/\s+/g,'_')}\n`;
+      out += '```\n';
+      if (opts.save) {
+        const outFile = join(dd,p,'..',`${p}.md`);
+        writeFileSync(outFile, `# ${p} — Spec Graph\n\n${out}`);
+        console.log(chalk.green(`  ✓ ${outFile}`));
+      }
+      console.log(out);
     }
   }
 });
