@@ -1,0 +1,94 @@
+{
+  "scopeName": "text.dog",
+  "patterns": [
+    {
+      "name": "markup.heading.1.dog",
+      "match": "^#\\s+.*$"
+    },
+    {
+      "name": "markup.heading.2.dog",
+      "match": "^##\\s+.*$"
+    },
+    {
+      "name": "markup.heading.3.dog",
+      "match": "^###\\s+.*$",
+      "patterns": [
+        {
+          "name": "entity.name.type.dog",
+          "match": "###\\s+Entity:"
+        },
+        {
+          "name": "storage.type.relation.dog",
+          "match": "###\\s+Relationship:"
+        },
+        {
+          "name": "keyword.other.event.dog",
+          "match": "###\\s+Event:"
+        }
+      ]
+    },
+    {
+      "name": "markup.bold.dog",
+      "match": "\\*\\*[^*]+\\*\\*"
+    },
+    {
+      "name": "markup.italic.dog",
+      "match": "\\*[^*]+\\*"
+    },
+    {
+      "name": "markup.underline.link.dog",
+      "match": "\\[([^\\]]+)\\]\\(([^)]+)\\)"
+    },
+    {
+      "name": "markup.raw.code.dog",
+      "begin": "```",
+      "end": "```",
+      "patterns": [
+        {
+          "name": "string.quoted.single.yaml",
+          "match": "'[^']*'"
+        },
+        {
+          "match": "\"[^\"]*\"",
+          "name": "string.quoted.double.yaml"
+        },
+        {
+          "name": "keyword.other.type.dog",
+          "match": "\\b(string|number|boolean|json|enum|string\\[\\]|float\\[\\]|entity:\\w+\\[?\\]?)\\b"
+        },
+        {
+          "name": "constant.language.boolean.dog",
+          "match": "\\b(true|false|null)\\b"
+        },
+        {
+          "name": "keyword.control.required.dog",
+          "match": "\\brequired:\\s*(true|false)\\b"
+        },
+        {
+          "name": "variable.parameter.dog",
+          "match": "\\b(id|name|type|description|properties|states|lifecycle|entity|relationship|verb|cardinality|cascade|invariants|trigger|payload|preconditions|postconditions|confidence|measurement|constraints|default|example|format|values|source|target)\\b"
+        },
+        {
+          "name": "entity.name.type.dog",
+          "match": "\\b(entity|relationship|event|prediction|node|vector)\\b"
+        }
+      ]
+    },
+    {
+      "name": "comment.line.dog",
+      "match": "//.*$"
+    },
+    {
+      "name": "keyword.control.dog",
+      "match": "\\[ \\]|\\[x\\]|\\[X\\]"
+    },
+    {
+      "match": "\\b(P0|P1|P2|P3)\\b",
+      "name": "constant.numeric.priority.dog"
+    },
+    {
+      "match": "\\b(MUST|SHOULD|MAY)\\b",
+      "name": "keyword.control.validation.dog"
+    }
+  ]
+}
