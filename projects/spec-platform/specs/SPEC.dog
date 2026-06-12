@@ -47,10 +47,10 @@ DASHBOARD
 │  User: "Build the payment bubble component"         │
 │                                                     │
 │  AI Agent → MCP Server:                             │
-│    → getSpec("cryptchat", "SPEC.md")                │
-│    → getSpec("cryptchat", "COPY.md")                │
-│    → getSpec("cryptchat", "DESIGN-SYSTEM.md")       │
-│    → getSpec("cryptchat", "COMPOSE-MAP.md")         │
+│    → getSpec("cryptchat", "SPEC.dog")                │
+│    → getSpec("cryptchat", "COPY.dog")                │
+│    → getSpec("cryptchat", "DESIGN-SYSTEM.dog")       │
+│    → getSpec("cryptchat", "COMPOSE-MAP.dog")         │
 │                                                     │
 │  AI Agent has:                                       │
 │    - Exact screen layout (ASCII art)                │
@@ -70,14 +70,14 @@ DASHBOARD
 │                                                     │
 │  $ spec validate                                     │
 │                                                     │
-│  ✓ constitution.md — 5 principles, 0 violations     │
-│  ✓ data-model.md — 12 entities, 8 events            │
-│  ✓ SPEC.md — 7 screens, all states covered          │
-│  ✓ COPY.md — 48 strings, 0 placeholders             │
-│  ⚠ COPY.md — missing error state for "Send Money"   │
-│  ⚠ data-model.md — PaymentReceipt.tx_hash nullable? │
-│  ✗ SPEC.md — Screen 4 references "alice.eth" but    │
-│     COPY.md uses "{displayName}" — inconsistency    │
+│  ✓ constitution.dog — 5 principles, 0 violations     │
+│  ✓ data-model.dog — 12 entities, 8 events            │
+│  ✓ SPEC.dog — 7 screens, all states covered          │
+│  ✓ COPY.dog — 48 strings, 0 placeholders             │
+│  ⚠ COPY.dog — missing error state for "Send Money"   │
+│  ⚠ data-model.dog — PaymentReceipt.tx_hash nullable? │
+│  ✗ SPEC.dog — Screen 4 references "alice.eth" but    │
+│     COPY.dog uses "{displayName}" — inconsistency    │
 │                                                     │
 │  3 warnings, 1 error. Fix before proceeding.        │
 │                                                     │
@@ -132,7 +132,7 @@ DASHBOARD
 | US-02 | Validate a project for completeness and consistency | P0 | All constraints checked, cross-references verified, report generated |
 | US-03 | AI agent queries spec via MCP server | P0 | MCP tool `getSpec` returns exact file content with metadata |
 | US-04 | AI agent searches across specs via MCP | P0 | MCP tool `searchSpecs` returns matches across all project files |
-| US-05 | Simulate a scenario from SPEC.md | P1 | All steps executed, pre/postconditions checked, outcome reported |
+| US-05 | Simulate a scenario from SPEC.dog | P1 | All steps executed, pre/postconditions checked, outcome reported |
 | US-06 | Track predictions against reality | P1 | Prediction created, actual outcome recorded, hit rate calculated |
 | US-07 | Generate code scaffold from spec genome | P1 | Spec files → database schema, API routes, component stubs |
 | US-08 | Team dashboard with project overview | P2 | Multiple projects, completeness scores, active predictions |
@@ -194,8 +194,8 @@ DASHBOARD
 ## Success Criteria
 
 1. [ ] `spec validate` runs on CryptChat specs and produces a report
-2. [ ] MCP server returns `getSpec("cryptchat", "COPY.md")` in under 50ms
+2. [ ] MCP server returns `getSpec("cryptchat", "COPY.dog")` in under 50ms
 3. [ ] CLI installs with `npm install -g` on macOS, Linux, Windows
 4. [ ] Simulation runs a 6-step scenario and reports correct outcome
 5. [ ] Dashboard shows project list with completeness scores
-6. [ ] Codegen produces a working React component from DESIGN-SYSTEM.md
+6. [ ] Codegen produces a working React component from DESIGN-SYSTEM.dog

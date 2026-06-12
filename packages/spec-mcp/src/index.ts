@@ -24,7 +24,7 @@ function listSpecs(project: string): string[] {
   const dir = join(SPECS_DIR, project, 'specs');
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
-    .filter(f => f.endsWith('.md'))
+    .filter(f => f.endsWith('.dog'))
     .map(f => f);
 }
 
@@ -60,23 +60,23 @@ function searchSpecs(project: string, query: string): Array<{ file: string; line
 }
 
 function getPRD(project: string): string | null {
-  return getSpec(project, 'SPEC.md');
+  return getSpec(project, 'SPEC.dog');
 }
 
 function getDataModel(project: string): string | null {
-  return getSpec(project, 'data-model.md');
+  return getSpec(project, 'data-model.dog');
 }
 
 function getCopy(project: string): string | null {
-  return getSpec(project, 'COPY.md');
+  return getSpec(project, 'COPY.dog');
 }
 
 function getDesignSystem(project: string): string | null {
-  return getSpec(project, 'DESIGN-SYSTEM.md');
+  return getSpec(project, 'DESIGN-SYSTEM.dog');
 }
 
 function getConstitution(project: string): string | null {
-  return getSpec(project, 'constitution.md');
+  return getSpec(project, 'constitution.dog');
 }
 
 // --- Server ---

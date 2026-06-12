@@ -4,11 +4,11 @@
 
 ## Phase 0: Dogfood Complete (now)
 
-- [x] SPEC.md — product spec with screens, flows, stories
-- [x] constitution.md — 7 principles, tech constraints, governance
-- [x] data-model.md — 5 entities (Node, Edge, Task, Prediction, Vector) with descriptions
-- [x] COPY.md — every CLI string, every state
-- [x] DESIGN-SYSTEM.md — tokens → primitives → components → patterns → screens
+- [x] SPEC.dog — product spec with screens, flows, stories
+- [x] constitution.dog — 7 principles, tech constraints, governance
+- [x] data-model.dog — 5 entities (Node, Edge, Task, Prediction, Vector) with descriptions
+- [x] COPY.dog — every CLI string, every state
+- [x] DESIGN-SYSTEM.dog — tokens → primitives → components → patterns → screens
 - [x] spec validate runs on own specs (target: 100%)
 - [x] spec list shows spec-platform project
 - [x] spec init scaffolds new projects
@@ -17,8 +17,8 @@
 ## Phase 1: MCP Server Live (next)
 
 - [ ] AI agent connects to MCP server and queries specs
-- [ ] Proven: agent asks "what's the PaymentReceipt type?" → gets exact struct from data-model.md
-- [ ] Proven: agent asks "build the payment bubble" → gets COPY.md strings + DESIGN-SYSTEM.md tokens
+- [ ] Proven: agent asks "what's the PaymentReceipt type?" → gets exact struct from data-model.dog
+- [ ] Proven: agent asks "build the payment bubble" → gets COPY.dog strings + DESIGN-SYSTEM.dog tokens
 - [ ] Specs directory configurable via SPECS_DIR env var
 - [ ] Error handling for missing files, malformed specs
 
@@ -60,8 +60,8 @@
 - [ ] Read spec genome → generate database schema (Prisma/SQL)
 - [ ] Read spec genome → generate API routes (Elysia/Express)
 - [ ] Read spec genome → generate component stubs (React with typed props)
-- [ ] Read COPY.md → generate i18n files
-- [ ] Read DESIGN-SYSTEM.md → generate CSS variables + Tailwind config
+- [ ] Read COPY.dog → generate i18n files
+- [ ] Read DESIGN-SYSTEM.dog → generate CSS variables + Tailwind config
 
 ## Repo Layout
 
@@ -73,8 +73,8 @@ spec-platform/
 │   ├── spec-cli/src/        → validate.ts, init.ts, list.ts, simulate.ts (Phase 3)
 │   └── dashboard/           → React app (Phase 5)
 ├── projects/spec-platform/specs/
-│   ├── SPEC.md, constitution.md, data-model.md
-│   ├── COPY.md, DESIGN-SYSTEM.md, plan.md (this file), INDEX.md
+│   ├── SPEC.dog, constitution.dog, data-model.dog
+│   ├── COPY.dog, DESIGN-SYSTEM.dog, plan.dog (this file), INDEX.dog
 └── templates/               → spec genome templates
 ```
 
