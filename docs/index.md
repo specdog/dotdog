@@ -12,8 +12,14 @@
     <ellipse cx="60" cy="70" rx="7" ry="5" fill="#1a1a2e"/>
     <path d="M52 78 Q60 86 68 78" fill="none" stroke="#1a1a2e" stroke-width="2" stroke-linecap="round"/>
     <ellipse id="tongue" cx="60" cy="84" rx="5" ry="6" fill="#ef4444" opacity="0" style="transition:opacity .2s"/>
-    <!-- bone -->
-    <g id="bone" opacity="0"><rect x="16" y="16" width="28" height="8" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/><circle cx="16" cy="20" r="5" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/><circle cx="44" cy="20" r="5" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/></g>
+    <!-- bone in mouth -->
+    <g id="bone" opacity="0">
+      <rect x="42" y="78" width="26" height="7" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+      <circle cx="42" cy="81.5" r="6" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+      <circle cx="42" cy="81.5" r="3" fill="#d97706"/>
+      <circle cx="68" cy="81.5" r="6" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+      <circle cx="68" cy="81.5" r="3" fill="#d97706"/>
+    </g>
   </svg>
   <div id="dog-status" style="font-size:.75em;color:#9ca3af;min-height:18px;margin:4px 0">🐕 Spec</div>
   <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
