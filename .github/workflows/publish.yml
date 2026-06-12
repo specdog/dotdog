@@ -7,12 +7,15 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1
       - run: cd packages/dotdog && bun install
       - run: cd packages/dotdog && bun build src/cli.ts --outdir dist --target node
-      - uses: JS-DevTools/npm-publish@v3
+      - uses: actions/setup-node@v4
         with:
-          token: ${{ secrets.NPM_TOKEN }}
-          package: packages/dotdog
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - run: cd packages/dotdog && npm publish --access public
