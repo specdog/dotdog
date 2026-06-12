@@ -34,6 +34,8 @@ function parseSections(markdown: string): Array<{heading:string,level:number,con
 }
 
 // --- CLI Commands ---
+import { serve } from './serve';
+
 const program = new Command();
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8'));
 program.name('spec').alias('dotdog').description('The spec dog — validate, analyze, generate .dog files').version(pkg.version);
@@ -156,6 +158,8 @@ program.command('visualize [dir]').option('-s, --save').action((d='.', opts) => 
     }
   }
 });
+
+program.command('serve [dir]').description('MCP server — expose .dag graph to AI agents over stdio').action((d='.') => serve(d));
 
 program.command('staleness [dir]').action((d='.') => {
   const dir = resolvePath(d);
