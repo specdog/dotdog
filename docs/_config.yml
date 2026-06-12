@@ -1,3 +1,5 @@
 theme: jekyll-theme-minimal
 title: dotdog
 description: The spec dog — structured, AI-queryable software specifications
+logo: /assets/dog.svg
+show_downloads: false
