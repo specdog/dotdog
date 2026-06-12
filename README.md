@@ -1,46 +1,76 @@
-# spec
+# spec-platform
 
-Central specification repository for the spec-driven development methodology.
+Monorepo for the Spec Platform — a knowledge graph system where specs ARE the database and LLMs ARE the query engine.
 
-## What this is
+## The Flywheel
 
-A **spec genome** — multiple files, each capturing one dimension of a software project. The app is treated as a person: it has a face (UI), a body (data model), a voice (copy), rules (constitution), and a plan. Together they form a complete model that a human can understand in 5 minutes and an AI agent can execute.
+```
+spec → validate → app → data → better spec → better app → ...
+```
 
-Based on the CryptChat specs/ directory — proven at ETHGlobal NYC 2026 (2 developers, 36 hours, shipped working product).
+The spec describes the platform. The platform validates the spec. The validation report improves the spec. Each cycle adds granularity.
 
-## Philosophy
+## Structure
 
-> The spec is the source of truth. Code implements the spec. If code and spec disagree, fix the code. If spec is wrong, update spec first, then code.
+```
+spec-platform/
+├── packages/
+│   ├── spec-engine/     # Core types and ontology (shared by everything)
+│   ├── spec-mcp/        # MCP Server — AI agents query specs via stdio
+│   └── spec-cli/        # CLI — spec validate, init, simulate, list
+├── projects/            # Spec genomes (dogfooding)
+│   └── spec-platform/
+│       └── specs/
+│           ├── SPEC.md          # Product spec — screens, flows, stories
+│           ├── constitution.md  # Immutable rules
+│           └── data-model.md    # Graph ontology — nodes, edges, tasks, predictions, vectors
+├── templates/           # Spec genome templates for new projects
+└── package.json         # Bun workspace root
+```
 
-Traditional specs answer "what should we build?" Spec genomes answer every question about the project — what it does, what it looks like, what it says, what can break, what we know, what we don't know, and who builds what.
+## Quick Start
 
-An AI agent reading a spec genome can:
-- Understand the full system without asking "but what about...?"
-- Simulate scenarios and predict outcomes
-- Assign work to the right subagent
-- Build the feature with zero ambiguity
+```bash
+bun install
+cd projects/spec-platform/specs
 
-## Getting Started
+# Validate our own spec (dogfood)
+bun ../../../packages/spec-cli/src/index.ts validate ../..
 
-Read [INDEX.md](INDEX.md) for reading paths, then [spec-template.md](spec-template.md) for the master template. Copy the templates you need into your project's `specs/` directory.
+# List projects
+bun ../../../packages/spec-cli/src/index.ts list
+```
 
-## Templates
+## $0 Stack
 
-| Template | Question it answers |
-|----------|-------------------|
-| `spec-template.md` | Which files to create and why |
-| `SPEC-template.md` | What does the app do? |
-| `constitution-template.md` | What are the immutable rules? |
-| `data-model-template.md` | What are the exact types? |
-| `plan-template.md` | What's the execution plan? |
-| `COPY-template.md` | What does the user see? |
-| `DESIGN-SYSTEM-template.md` | What are the tokens and components? |
-| `tasks/AGENTS-template.md` | Which AI agent does what? |
+| Component | Technology | Cost |
+|-----------|-----------|------|
+| Runtime | Bun | $0 |
+| Database | bun:sqlite (embedded) | $0 |
+| Types | TypeScript (strict) | $0 |
+| CLI | Commander.js + chalk | $0 |
+| MCP Server | @modelcontextprotocol/sdk (stdio) | $0 |
+| Embeddings | all-MiniLM-L6-v2 (local) | $0 |
+| Hosting | None needed (local-first) | $0 |
 
-## Reference Implementation
+## The Spec Graph
 
-[CryptChat specs/](https://github.com/logohere/cryptchat/tree/main/specs) — 20+ spec files driving a real ETHGlobal hackathon project.
+The spec is not a document. It's a knowledge graph.
 
-## Roadmap
+- **Nodes**: entities, tasks, predictions, screens, constraints, user stories
+- **Edges**: contains, depends_on, implements, references, calls, precedes
+- **Vectors**: every section embedded for semantic search, contradiction detection, staleness checks
+- **Predictions**: forecasts with triggers, timeframes, confidence, and actual outcome tracking
 
-See [plan-digital-twin.md](plan-digital-twin.md) — evolving these specs into a predictive digital twin with live data, simulation engine, and AI-native validation.
+LLMs traverse the graph at query time. They don't read prose and guess — they get exact typed values.
+
+## Score
+
+```
+spec validate → 43% complete
+
+  ✓ SPEC.md
+  ✓ constitution.md
+  ✓ data-model.md
+  ⚠ COPY.md, DESIGN-SYSTEM.md, plan.md, INDEX.md
+```

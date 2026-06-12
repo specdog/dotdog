@@ -1,0 +1,261 @@
+# Spec Platform — Data Model
+
+> The spec IS a knowledge graph. The LLM IS the query engine. Every entity is a node. Every relationship is an edge. Tables encode structured data. The LLM traverses the graph at query time.
+
+---
+
+## Core Ontology
+
+### Entity: Node (every thing in the spec)
+
+```
+Node
+  id: string (uuid)
+  type: enum[project, entity, relationship, event, capability,
+             constraint, screen, flow, user_story, task, failure,
+             edge_case, assumption, prediction, scenario,
+             material, component, file]
+  name: string
+  properties: JSON (typed key-value pairs)
+  states: string[] (valid states)
+  current_state: string
+  version: number
+  created_at: ISO timestamp
+  updated_at: ISO timestamp
+```
+
+### Entity: Edge (every connection between nodes)
+
+```
+Edge
+  id: string (uuid)
+  source_id: string → Node.id
+  target_id: string → Node.id
+  type: enum[contains, depends_on, references, implements,
+             calls, owns, produces, consumes, extends, precedes]
+  cardinality: enum[1:1, 1:N, N:1, N:M]
+  required: boolean
+  cascade: enum[none, delete, nullify, restrict]
+  invariants: string[] (rules that must hold)
+```
+
+### Entity: Task (every piece of work)
+
+```
+Task
+  id: string (T01, T02, ...)
+  name: string
+  description: string
+  status: enum[specified, building, built, verified, shipped]
+  priority: enum[P0, P1, P2, P3]
+  estimated_hours: number
+  actual_hours: number
+  depends_on: string[] → Task.id[]
+  assigned_to: string (agent or human)
+  files: string[] (paths affected)
+  completion_probability: 0.0-1.0  (computed, not entered)
+  velocity: number (tasks/week, computed from history)
+  created_at: ISO timestamp
+  completed_at: ISO timestamp
+```
+
+### Entity: Prediction (every forecast)
+
+```
+Prediction
+  id: string
+  statement: string (what we claim will happen)
+  trigger: string (what event starts the clock?)
+  trigger_fired_at: ISO timestamp (when did the trigger happen?)
+  timeframe: string (when should this be true by?)
+  confidence: 0.0-1.0 (at time of prediction)
+  measurement: string (how to verify)
+  actual_outcome: enum[pending, correct, wrong, partially_correct]
+  actual_value: string (what actually happened)
+  notes: string (what did we learn?)
+  created_at: ISO timestamp
+  resolved_at: ISO timestamp
+```
+
+### Entity: Vector (every semantic embedding)
+
+```
+Vector
+  id: string
+  node_id: string → Node.id
+  content: string (the text that was embedded)
+  embedding: float[] (vector of 384 or 1536 dimensions)
+  model: enum[all-MiniLM-L6-v2, text-embedding-3-small]
+  created_at: ISO timestamp
+```
+
+---
+
+## Graph Traversal Queries
+
+The LLM queries the spec graph using these patterns:
+
+### 1. Direct lookup
+```
+Q: "What is the PaymentReceipt type?"
+→ MATCH (n:Node {name: "PaymentReceipt", type: "entity"})
+→ RETURN n.properties
+```
+
+### 2. Relationship traversal
+```
+Q: "What entities depend on User?"
+→ MATCH (n:Node)-[e:Edge {type: "depends_on"}]->(u:Node {name: "User"})
+→ RETURN n.name, e.cardinality
+```
+
+### 3. State query
+```
+Q: "What tasks are in progress?"
+→ MATCH (n:Node {type: "task"})
+→ WHERE n.current_state IN ["specified", "building"]
+→ RETURN n.name, n.current_state, n.assigned_to
+```
+
+### 4. Critical path
+```
+Q: "What's the optimal next task?"
+→ MATCH (t:Node {type: "task", status: "specified"})
+→ WHERE all dependencies are "verified"
+→ ORDER BY t.priority ASC, t.estimated_hours ASC
+→ RETURN t.name, t.estimated_hours
+```
+
+### 5. Semantic search
+```
+Q: "Find specs related to payment processing"
+→ EMBED query "payment processing"
+→ SIMILARITY search across all Vector nodes
+→ MATCH related Node by node_id
+→ RETURN n.name, n.type, similarity_score
+```
+
+### 6. Contradiction detection
+```
+Q: "Are there conflicting constraints?"
+→ EMBED all Constraint nodes
+→ CLUSTER by semantic similarity
+→ FLAG pairs with similarity > 0.85 but opposite enforcement
+→ RETURN constraint_a, constraint_b, similarity
+```
+
+### 7. Staleness detection
+```
+Q: "Which specs haven't been updated recently?"
+→ MATCH (n:Node)
+→ WHERE n.updated_at < NOW() - INTERVAL '30 days'
+→ SORT BY n.updated_at ASC
+→ RETURN n.name, n.type, n.updated_at
+```
+
+### 8. Completion probability
+```
+Q: "Will this project ship by July 15?"
+→ COMPUTE historical_velocity = avg(tasks_completed / week)
+→ MATCH remaining tasks with dependencies
+→ COMPUTE critical_path_length = longest dependency chain
+→ probability = f(historical_velocity, critical_path_length, calendar_days_remaining)
+→ RETURN probability, critical_path, confidence_interval
+```
+
+---
+
+## LLM Interaction Model
+
+### How the LLM reads the spec
+
+The spec is NOT read as a single document. The LLM traverses it like a graph:
+
+```
+Step 1: LLM receives user query
+  User: "I need to build the payment bubble component"
+
+Step 2: LLM queries the spec graph
+  → getEntity("PaymentBubble")              // exact type
+  → getEdges(source: "PaymentBubble")        // what does it connect to?
+  → getNode("COPY.md", section: "Payment")     // every UI string
+  → getNode("DESIGN-SYSTEM.md", section: "PaymentBubble") // tokens, primitives
+  → getNode("COMPOSE-MAP.md")                    // design → code mapping
+
+Step 3: LLM has the full subgraph
+  PaymentBubble → {strings, tokens, compose_mapping, states, constraints}
+
+Step 4: LLM generates code with zero ambiguity
+  - Exact strings from COPY.md
+  - Exact colors from DESIGN-SYSTEM.md
+  - Exact component name from COMPOSE-MAP.md
+  - Every state handled (loading, empty, error, success)
+  - Every edge case covered (long names, zero amounts, max values)
+```
+
+### Why this beats traditional docs
+
+| Traditional docs | Spec graph |
+|---|---|
+| LLM reads prose, guesses intent | LLM queries typed entities, gets exact values |
+| "Make it look like the design" | Exact tokens: green=#1F4D2B, radius=6px |
+| "Handle errors" | Exact error states: "Insufficient USDC", "No recipient" |
+| LLM hallucinates strings | Every string from COPY.md, verified |
+| No dependency tracking | Graph traversal finds everything connected to PaymentBubble |
+| Static, no predictions | Predictions track completion probability in real-time |
+
+---
+
+## Vector Pipeline
+
+### Ingestion
+
+```
+spec file (.md)
+  → parse into sections (by ## headings)
+  → extract tables (entity definitions, user stories, constraints)
+  → extract prose (descriptions, scenarios, assumptions)
+  → embed each section with all-MiniLM-L6-v2 (384 dims, local, free)
+  → store vector + node reference in SQLite
+```
+
+### Query
+
+```
+user query / LLM traversal
+  → embed query text
+  → cosine similarity against all vectors
+  → return top-K nodes with similarity scores
+  → LLM traverses from most relevant nodes via edges
+```
+
+### Update
+
+```
+spec file changed (git diff)
+  → detect changed sections
+  → re-embed only changed sections
+  → update vectors in SQLite
+  → invalidate cached graph traversals
+```
+
+---
+
+## Wired Relations (spec-platform dogfooding)
+
+```
+projects/spec-platform/
+├── specs/
+│   ├── SPEC.md           → defines user stories, screens, flows
+│   ├── constitution.md   → defines constraints, governance
+│   └── data-model.md     → this file — defines the ontology
+│
+│  Relationships:
+│    SPEC.md.user_stories → implemented_by → Task[]
+│    SPEC.md.screens → renders → COPY.md.strings
+│    SPEC.md.screens → styled_by → DESIGN-SYSTEM.md.tokens
+│    Task[] → depends_on → Task[]
+│    Task[] → produces → File[]
+│    Prediction[] → measures → Task.completion_probability
+│    Vector[] → embeds → Node[]
+```
