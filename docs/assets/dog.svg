@@ -1,19 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
-  <circle cx="60" cy="60" r="55" fill="#f0c040" stroke="#c09020" stroke-width="3"/>
+  <!-- body -->
+  <circle cx="60" cy="65" r="38" fill="#f59e0b" opacity="0.15"/>
   <!-- ears -->
-  <ellipse cx="28" cy="28" rx="14" ry="18" fill="#c09020" transform="rotate(-15 28 28)"/>
-  <ellipse cx="92" cy="28" rx="14" ry="18" fill="#c09020" transform="rotate(15 92 28)"/>
+  <ellipse cx="28" cy="28" rx="13" ry="17" fill="#d97706" transform="rotate(-15 28 28)"/>
+  <ellipse cx="92" cy="28" rx="13" ry="17" fill="#d97706" transform="rotate(15 92 28)"/>
   <!-- face -->
-  <circle cx="60" cy="65" r="35" fill="#f0c040"/>
+  <circle cx="60" cy="63" r="32" fill="#f59e0b"/>
   <!-- eyes -->
-  <circle cx="46" cy="58" r="5" fill="#0f0f0f"/>
-  <circle cx="74" cy="58" r="5" fill="#0f0f0f"/>
-  <circle cx="48" cy="56" r="2" fill="#fff"/>
-  <circle cx="76" cy="56" r="2" fill="#fff"/>
+  <circle cx="46" cy="56" r="5" fill="#1a1a2e"/>
+  <circle cx="74" cy="56" r="5" fill="#1a1a2e"/>
+  <circle cx="48" cy="54" r="2" fill="#fff"/>
+  <circle cx="76" cy="54" r="2" fill="#fff"/>
   <!-- nose -->
-  <ellipse cx="60" cy="72" rx="7" ry="5" fill="#0f0f0f"/>
+  <ellipse cx="60" cy="70" rx="7" ry="5" fill="#1a1a2e"/>
   <!-- mouth -->
-  <path d="M52 80 Q60 90 68 80" fill="none" stroke="#0f0f0f" stroke-width="2" stroke-linecap="round"/>
-  <!-- tongue -->
-  <ellipse cx="60" cy="86" rx="5" ry="6" fill="#e06060"/>
+  <path d="M52 78 Q60 86 68 78" fill="none" stroke="#1a1a2e" stroke-width="2" stroke-linecap="round"/>
 </svg>
