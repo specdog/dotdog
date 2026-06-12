@@ -14,14 +14,14 @@
 - [x] spec init scaffolds new projects
 - [ ] MCP server tested with a real AI agent
 
-## Phase 1: .dog DSL Grammar + Parser (next)
+## Phase 1: .dog DSL Grammar + Parser (done ✓)
 
-- [ ] Formal grammar specification (`.dog` format spec — EBNF or similar)
-- [ ] Lexer: tokenize .dog files into structured tokens
-- [ ] Parser: tokens → AST (abstract syntax tree)
-- [ ] AST → ontology mapping (Node, Edge, Task, Prediction, Vector)
-- [ ] `spec parse` command: reads .dog file, outputs AST
-- [ ] Replace regex hacks in engine with proper parser output
+- [x] Formal grammar specification (grammar.ts — EBNF + typed AST)
+- [x] Lexer: section splitter, block detection, YAML tokenizer
+- [x] Parser: parse() function, text → AST
+- [x] AST types: DocumentNode, SectionNode, EntityNode, RelationshipNode, etc.
+- [x] `spec parse` command: reads .dog file, outputs AST (summary + JSON)
+- [x] Replaces regex hacks in engine with proper parser output (partial — validator still uses regex)
 
 ## Phase 2: Distribution
 
