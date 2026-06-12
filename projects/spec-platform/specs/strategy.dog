@@ -1,0 +1,116 @@
+# The Spec Genome Thesis — Formal Plan v1.0
+
+## Problem
+
+AI coding agents hallucinate. Not from bad models — from bad context.
+
+```
+Anthropic:  "Keep CLAUDE.md under 200 lines or Claude ignores half"
+MDPI 2026:  LLM code generation accuracy: 49%
+arXiv 2026: "Knowledge graphs are the missing data layer for LLM agents"
+```
+
+Every agent reads prose. None reads structure. The result: wrong strings, wrong types, wrong states. Developers fix more than they generate.
+
+## Solution
+
+A specification format that humans write and AI agents parse — not as text, but as a typed knowledge graph.
+
+```
+.dog  →  human writes spec in markdown + YAML blocks
+  ↓
+parser → extracts typed entities, relationships, states, lifecycles
+  ↓
+.dag  → machine-compiled graph, 85% fewer tokens than raw prose
+  ↓
+MCP   → AI agent queries getEntity, traverse, schema — zero hallucination
+```
+
+## Research Basis
+
+| Source | Finding | Relevance |
+|--------|---------|-----------|
+| arxiv 2605.26874 (2026) | Knowledge graphs are essential for LLM agents; graphs handle traversal deterministically | Validates .dag as the agent layer |
+| arxiv 2606.09410 (2026) | Structured formats don't hurt reasoning; model capacity is the bottleneck | Validates typed schemas in .dog |
+| Anthropic Agent Skills (2025) | Agents read prose files; under 200 lines or ignored | Validates need for structured alternative |
+| MDPI 15(2):119 (2026) | LLM code generation accuracy: 49% | Quantifies the problem |
+
+## Product
+
+| Layer | Format | Audience | Revenue |
+|-------|--------|----------|---------|
+| .dog | Markdown + YAML | Humans write specs | Free, open source |
+| .dag | JSON graph | AI agents query | Free format, paid tools |
+| dotdog CLI | npm package | Developers | Free |
+| spec serve | MCP server | AI agents | Free |
+| dotdog Dashboard | SaaS | Teams, enterprises | Paid |
+
+## Differentiation
+
+| Feature | CLAUDE.md | Cursor .cursorrules | .dog/.dag |
+|---------|-----------|--------------------|-----------|
+| Typed entities | No | No | Yes |
+| Graph relationships | No | No | Yes |
+| State machines | No | No | Yes |
+| Compiled to agent layer | No | No | Yes (.dag) |
+| MCP server | No | No | Yes |
+| Validation | No | No | Yes |
+| Staleness detection | No | No | Yes |
+
+## Roadmap
+
+### Phase 0: Foundation (done ✓)
+- [x] .dog format spec v1.1
+- [x] .dag format spec v1.1
+- [x] Parser + validator + analyzer
+- [x] spec compile (dog → dag)
+- [x] npm publish (dotdog@0.2.0)
+- [x] CI/CD (tag push → publish)
+- [x] MCP server (spec serve)
+- [x] Staleness detection
+- [x] GitHub repo public (specdog/dotdog)
+
+### Phase 1: Distribution (next)
+- [ ] VS Code extension (syntax highlighting + validation)
+- [ ] GitHub Action (block PRs with broken specs)
+- [ ] PR to GitHub linguist (native .dog rendering)
+- [ ] Launch post (HN, Reddit, dev.to)
+
+### Phase 2: Intelligence
+- [ ] spec enhance (LLM fills gaps in specs)
+- [ ] spec predict (forecasting from historical data)
+- [ ] spec write (generates code from specs)
+- [ ] MCP tool integration (Claude, Cursor, Copilot)
+
+### Phase 3: Revenue
+- [ ] dotdog.dev website
+- [ ] Team dashboard (completeness scores, predictions)
+- [ ] Enterprise tier (SSO, self-hosted, SLAs)
+- [ ] specdog Certified partner program
+
+## Success Metrics
+
+| Metric | Current | Target (6 months) |
+|--------|---------|-------------------|
+| npm downloads/week | 0 | 1000 |
+| GitHub stars | 0 | 500 |
+| VS Code installs | 0 | 5000 |
+| Projects using .dog | 1 (specdog) | 50 |
+| AI agent integrations | 0 | 3 (Claude, Cursor, Copilot) |
+
+## Revenue Model
+
+```
+Free forever:        .dog format, dotdog CLI, spec serve MCP
+Paid:                dotdog Dashboard (team analytics, predictions)
+Enterprise:          Self-hosted, SSO, audit logs, SLA
+Services:            specdog Certified — agencies build specs for clients
+```
+
+## Competitive Moat
+
+1. **Format standard** — once .dog files exist in repos, switching costs
+2. **Network effects** — more projects adopt → more agents support → more adopt
+3. **Graph compilation** — .dag is unique; no competitor does this
+4. **Open source core** — MIT license prevents proprietary capture
+5. **Enterprise services** — dashboard is where the money is, not the format
