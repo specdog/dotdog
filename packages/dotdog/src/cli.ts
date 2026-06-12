@@ -4,7 +4,7 @@ import chalk from 'chalk';
 import { existsSync, readdirSync, readFileSync, mkdirSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { homedir } from 'os';
-import type { DocumentNode, EntityNode, RelationshipNode } from './grammar';
+import type { DocumentNode, SectionNode, BlockNode, EntityNode, RelationshipNode, ProseNode, TableNode, PropertyDef } from './grammar';
 import { parse } from './parser';
 
 function resolvePath(p: string): string {
@@ -38,7 +38,7 @@ import { serve } from './serve';
 
 const program = new Command();
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8'));
-program.name('spec').alias('dotdog').description('The spec dog — validate, analyze, generate .dog files').version(pkg.version);
+program.name('spec').alias('dotdog').description('The spec dog — validate, analyze, generate, simulate .dog files').version(pkg.version);
 
 program.command('validate [dir]').action((d='.') => {
   const dirs = [join(d,'projects'),join(d,'specs')];
@@ -179,6 +179,145 @@ program.command('visualize [dir]').option('-s, --save').action((d='.', opts) => 
 });
 
 program.command('serve [dir]').description('MCP server — expose .dag graph to AI agents over stdio').action((d='.') => serve(d));
+
+program.command('analyze [dir]').description('Analyze a spec project — score, gaps, suggestions').option('-p, --project <name>').action((d='.', opts) => {
+  const dir = resolvePath(d);
+  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  console.log(chalk.bold('\nSpec Analysis\n'));
+  let found = false;
+  for (const dd of dirs) {
+    if (!existsSync(dd)) continue;
+    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    for (const p of projects) {
+      if (opts.project && p !== opts.project) continue;
+      const pd = join(dd,p,'specs');
+      if (!existsSync(pd)) continue;
+      const files = readdirSync(pd).filter(f=>f.endsWith('.dog'));
+      if (!files.length) continue;
+      found = true;
+      console.log(chalk.bold(`\n  ${p}`));
+      console.log('  ' + '─'.repeat(50));
+      const allEntities: EntityNode[] = [];
+      const allRelationships: RelationshipNode[] = [];
+      const analyses: Array<{file:string, sections:number, size:number, entities:number, rels:number}> = [];
+      for (const f of files) {
+        const content = readFileSync(join(pd,f),'utf-8');
+        const ast = parse(content);
+        const entities = ast.sections.flatMap(s => s.blocks.filter(b => b.kind === 'entity') as EntityNode[]);
+        const rels = ast.sections.flatMap(s => s.blocks.filter(b => b.kind === 'relationship') as RelationshipNode[]);
+        allEntities.push(...entities);
+        allRelationships.push(...rels);
+        analyses.push({file:f, sections:ast.sections.length, size:content.length, entities:entities.length, rels:rels.length});
+      }
+      const missingReq = ['SPEC.dog','constitution.dog','data-model.dog'].filter(f => !files.includes(f));
+      const missingOpt = ['COPY.dog','plan.dog','DESIGN-SYSTEM.dog','INDEX.dog'].filter(f => !files.includes(f));
+      let score = 100 - missingReq.length * 15 - missingOpt.length * 5;
+      const noDesc = allEntities.filter(e => !e.description || e.description.length < 10).length;
+      score = Math.max(0, score - noDesc * 3);
+      const noProps = allEntities.filter(e => Object.keys(e.properties).length === 0).length;
+      score = Math.max(0, score - noProps * 5);
+      const noStates = allEntities.filter(e => e.states.length === 0).length;
+      score = Math.max(0, score - noStates * 3);
+      console.log(`  ${files.length} files | ${score}% complete`);
+      for (const a of analyses) {
+        const detail = a.entities > 0 ? ` (${a.entities} entities, ${a.rels} rels)` : '';
+        console.log(chalk.gray(`    ${a.file} — ${a.sections} sections, ${(a.size/1024).toFixed(1)}KB${detail}`));
+      }
+      const gaps: string[] = [];
+      for (const f of missingReq) gaps.push(`🔴 ${f}: Missing required file`);
+      for (const f of missingOpt) gaps.push(`🟡 ${f}: Missing optional file`);
+      const entityNames = new Set(allEntities.map(e => e.name));
+      for (const e of allEntities) {
+        if (!e.description || e.description.length < 10) gaps.push(`🟡 ${e.name}: No description`);
+        if (Object.keys(e.properties).length === 0) gaps.push(`🟡 ${e.name}: No properties defined`);
+        if (e.states.length === 0) gaps.push(`🔵 ${e.name}: No states defined`);
+      }
+      for (const r of allRelationships) {
+        if (r.source && !entityNames.has(r.source)) gaps.push(`🟡 Relationship: unknown source "${r.source}"`);
+        if (r.target && !entityNames.has(r.target)) gaps.push(`🟡 Relationship: unknown target "${r.target}"`);
+      }
+      if (gaps.length > 0) { console.log(chalk.bold(`\n  Gaps (${gaps.length})`)); for (const g of gaps) console.log(`  ${g}`); }
+      else console.log(chalk.green('\n  No gaps found.'));
+    }
+  }
+  if (!found) console.log(chalk.yellow('No spec projects found. Run: dotdog init <project>'));
+});
+
+program.command('generate [dir]').description('Generate missing spec files from SPEC.dog').option('-p, --project <name>').action((d='.', opts) => {
+  const dir = resolvePath(d);
+  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  let specContent = '', specDir = '';
+  for (const dd of dirs) {
+    if (!existsSync(dd)) continue;
+    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    for (const p of projects) {
+      if (opts.project && p !== opts.project) continue;
+      const pd = join(dd,p,'specs');
+      const sp = join(pd,'SPEC.dog');
+      if (existsSync(sp)) { specContent = readFileSync(sp,'utf-8'); specDir = pd; break; }
+    }
+    if (specContent) break;
+  }
+  if (!specContent) { console.log(chalk.red('No SPEC.dog found. Create one first.')); return; }
+  console.log(chalk.bold('\nSpec Generator\n'));
+  console.log(chalk.gray(`  Source: ${specDir}/SPEC.dog\n`));
+  const ast = parse(specContent);
+  // Extract entities from structured blocks
+  const entities = ast.sections.flatMap(s => s.blocks.filter(b => b.kind === 'entity') as EntityNode[]);
+  // Extract UI strings from prose in screen sections
+  const uiStrings: Array<{screen:string, element:string, text:string}> = [];
+  for (const section of ast.sections) {
+    const h = section.heading.toLowerCase();
+    if (h.includes('what the user sees') || h.includes('screen')) {
+      const text = section.blocks.filter(b => b.kind === 'prose').map(b => (b as ProseNode).content).join('\n');
+      for (const m of text.match(/\[([^\]]+)\]/g)||[]) uiStrings.push({screen:section.heading, element:'button', text:m});
+      for (const m of text.match(/"([^"]+)"/g)||[]) uiStrings.push({screen:section.heading, element:'label', text:m});
+    }
+  }
+  // Generate data-model.dog
+  if (!existsSync(join(specDir,'data-model.dog')) && entities.length > 0) {
+    let dm = '# Data Model\n\n## Core Entities\n\n';
+    for (const e of entities) {
+      dm += `### Entity: ${e.name}\n\n${e.description || 'No description.'}\n\n`;
+      dm += '```yaml\n';
+      dm += `entity: ${e.name}\n`;
+      dm += `type: entity\n`;
+      dm += 'properties:\n';
+      for (const [k,v] of Object.entries(e.properties)) {
+        dm += `  ${k}:\n`;
+        dm += `    type: ${(v as PropertyDef).type}\n`;
+        if ((v as PropertyDef).required) dm += `    required: true\n`;
+      }
+      if (e.states.length > 0) dm += `states: [${e.states.join(', ')}]\n`;
+      dm += '```\n\n';
+    }
+    writeFileSync(join(specDir,'data-model.dog'), dm);
+    console.log(chalk.green(`  ✓ data-model.dog (${entities.length} entities)`));
+  }
+  // Generate COPY.dog
+  if (!existsSync(join(specDir,'COPY.dog')) && uiStrings.length > 0) {
+    let copy = '# App Copy\n\n| Screen | Element | Copy |\n|--------|---------|------|\n';
+    for (const s of uiStrings) copy += `| ${s.screen} | ${s.element} | ${s.text} |\n`;
+    writeFileSync(join(specDir,'COPY.dog'), copy);
+    console.log(chalk.green(`  ✓ COPY.dog (${uiStrings.length} strings)`));
+  }
+  // Generate INDEX.dog
+  if (!existsSync(join(specDir,'INDEX.dog'))) {
+    let idx = '# INDEX\n\n| You are... | Start here | Then... |\n|------------|-----------|---------|\n';
+    idx += '| Developer | SPEC.dog | data-model.dog → plan.dog |\n';
+    idx += '| AI agent | data-model.dog | COPY.dog → SPEC.dog |\n';
+    idx += '| Designer | SPEC.dog | COPY.dog |\n';
+    writeFileSync(join(specDir,'INDEX.dog'), idx);
+    console.log(chalk.green('  ✓ INDEX.dog'));
+  }
+  console.log(chalk.bold('\nRun dotdog validate to verify.\n'));
+});
+
+program.command('simulate <scenario>').description('Run a simulation scenario (phase 1 stub)').option('-p, --project <name>', 'Project name', 'default').action((scenario, opts) => {
+  console.log(chalk.bold(`\nSimulation: ${scenario} (project: ${opts.project})\n`));
+  console.log(chalk.gray('Simulation engine — reads SPEC.dog scenarios, walks through steps, checks pre/postconditions.'));
+  console.log(chalk.gray('Full engine coming in a future release.'));
+});
 
 program.command('staleness [dir]').action((d='.') => {
   const dir = resolvePath(d);
