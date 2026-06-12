@@ -1,0 +1,91 @@
+# Spec Platform — Plan
+
+> Execution phases. Each phase ships independently.
+
+## Phase 0: Dogfood Complete (now)
+
+- [x] SPEC.md — product spec with screens, flows, stories
+- [x] constitution.md — 7 principles, tech constraints, governance
+- [x] data-model.md — 5 entities (Node, Edge, Task, Prediction, Vector) with descriptions
+- [x] COPY.md — every CLI string, every state
+- [x] DESIGN-SYSTEM.md — tokens → primitives → components → patterns → screens
+- [x] spec validate runs on own specs (target: 100%)
+- [x] spec list shows spec-platform project
+- [x] spec init scaffolds new projects
+- [ ] MCP server tested with a real AI agent
+
+## Phase 1: MCP Server Live (next)
+
+- [ ] AI agent connects to MCP server and queries specs
+- [ ] Proven: agent asks "what's the PaymentReceipt type?" → gets exact struct from data-model.md
+- [ ] Proven: agent asks "build the payment bubble" → gets COPY.md strings + DESIGN-SYSTEM.md tokens
+- [ ] Specs directory configurable via SPECS_DIR env var
+- [ ] Error handling for missing files, malformed specs
+
+## Phase 2: Vector Embeddings
+
+- [ ] Parse spec sections into chunks (parseSections already done)
+- [ ] Embed with all-MiniLM-L6-v2 (384 dims, local, $0)
+- [ ] Store embeddings in SQLite via bun:sqlite
+- [ ] Semantic search: `spec search "payment"` returns relevant sections
+- [ ] Contradiction detection: flag semantically similar constraints with opposite enforcement
+- [ ] Staleness detection: flag sections not updated in 30+ days
+
+## Phase 3: Graph Traversal Engine
+
+- [ ] Build in-memory graph from parsed entities + relationships (buildGraph done)
+- [ ] BFS hop depth audit (auditHopDepth done)
+- [ ] Query API: traversals, state queries, critical path
+- [ ] spec simulate: walk through a scenario, check pre/postconditions
+- [ ] Completion probability: compute from historical velocity + remaining tasks
+
+## Phase 4: Prediction Tracking
+
+- [ ] Predictions stored in SQLite with triggers, timeframes, confidence
+- [ ] Prediction resolution: mark as correct/wrong/partially_correct when trigger fires
+- [ ] Hit rate dashboard: "You predicted 7 things. 4 correct, 2 wrong, 1 pending."
+- [ ] Model improvement: wrong predictions → recalibrate probability trees
+
+## Phase 5: Dashboard (Paid Tier)
+
+- [ ] React + Vite dashboard (Vercel free tier)
+- [ ] Project list with completeness scores
+- [ ] Spec editor with live validation
+- [ ] Prediction tracker with hit rate charts
+- [ ] Team management (Clerk auth)
+- [ ] Cloud sync (Postgres on fly.io free tier)
+
+## Phase 6: Code Generation
+
+- [ ] Read spec genome → generate database schema (Prisma/SQL)
+- [ ] Read spec genome → generate API routes (Elysia/Express)
+- [ ] Read spec genome → generate component stubs (React with typed props)
+- [ ] Read COPY.md → generate i18n files
+- [ ] Read DESIGN-SYSTEM.md → generate CSS variables + Tailwind config
+
+## Repo Layout
+
+```
+spec-platform/
+├── packages/
+│   ├── spec-engine/src/     → types/index.ts, parser.ts (Phase 2)
+│   ├── spec-mcp/src/        → index.ts (Phase 1)
+│   ├── spec-cli/src/        → validate.ts, init.ts, list.ts, simulate.ts (Phase 3)
+│   └── dashboard/           → React app (Phase 5)
+├── projects/spec-platform/specs/
+│   ├── SPEC.md, constitution.md, data-model.md
+│   ├── COPY.md, DESIGN-SYSTEM.md, plan.md (this file), INDEX.md
+└── templates/               → spec genome templates
+```
+
+## Verification
+
+| Phase | Verification |
+|-------|-------------|
+| 0 | `spec validate` → 100% |
+| 1 | AI agent queries spec via MCP → correct response |
+| 2 | `spec search "entity"` → returns Node, Edge, Task, Prediction, Vector |
+| 3 | `spec simulate payment` → walks through 6 steps, reports success/failure |
+| 4 | Prediction "shipping by July" resolved → hit rate updates |
+| 5 | Dashboard shows 3 projects, 87% avg completeness |
+| 6 | `spec generate cryptchat` → produces working React component |
