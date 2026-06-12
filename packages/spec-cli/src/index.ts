@@ -10,6 +10,8 @@ import { analyze } from './analyze';
 
 import { parseCommand } from './parse';
 
+import { generate } from './generate';
+
 const program = new Command();
 
 program
@@ -40,6 +42,12 @@ program
   .option('--json', 'Output full JSON AST')
   .option('--summary', 'Output summary only')
   .action((file, opts) => parseCommand(file, opts));
+
+program
+  .command('generate [dir]')
+  .description('Generate missing spec files from SPEC.dog')
+  .option('-p, --project <name>', 'Project name')
+  .action((dir = '.', opts) => generate(dir, opts.project));
 
 program
   .command('init <project>')
