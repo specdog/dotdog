@@ -4,7 +4,7 @@
 
 The spec is the source of truth. Code implements the spec. If code and spec disagree, fix the code. If spec is wrong, update spec first, then code.
 
-## Dogfood
+## Feed the dog
 
 Every change starts with `spec validate`. If the score drops, fix it before committing.
 
