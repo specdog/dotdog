@@ -388,4 +388,12 @@ program.command('staleness [dir]').action((d='.') => {
   }
 });
 
+program.command('woof').action(() => {
+  console.log('  / \\__');
+  console.log(' (    @\\___');
+  console.log('  /       O');
+  console.log(' /   (_____/');
+  console.log('/_____/   U');
+});
+
 program.parse();

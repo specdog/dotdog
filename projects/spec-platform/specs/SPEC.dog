@@ -199,3 +199,36 @@ DASHBOARD
 4. [ ] Simulation runs a 6-step scenario and reports correct outcome
 5. [ ] Dashboard shows project list with completeness scores
 6. [ ] Codegen produces a working React component from DESIGN-SYSTEM.dog
+
+---
+
+## Branding
+
+### Mascot
+
+**Spec** — the spec dog. Lives on the website and in the CLI. Developers feed Spec by running `dotdog validate`. A fed Spec means clean specs.
+
+### Visual
+
+- SVG dog logo (amber, round face, floppy ears)
+- Clean light theme on all surfaces
+- Dog emoji 🐕 used sparingly in docs
+- Hidden command: `dotdog woof` prints a small ASCII dog
+
+### Interactive Widget
+
+A virtual Spec lives on the website. Three interactions:
+
+| Action | Dog | dotdog metaphor |
+|--------|-----|-----------------|
+| 🦴 Feed | Spec eats, gets happy | `dotdog validate` — specs are fresh |
+| ✋ Pet | Spec wags tail | Morale boost |
+| 🎾 Fetch | Spec retrieves | `dotdog compile` — fetch the .dag |
+
+Hunger decays over time = specs go stale. Keyboard shortcuts: `V` (validate), `C` (compile), `P` (pet).
+
+### Voice
+
+- Tagline: "Feed the dog. Ship with specs."
+- Tone: professional, friendly, subtle.
+- "Dog fed" = validation passed. "Hungry dog" = specs are stale.
