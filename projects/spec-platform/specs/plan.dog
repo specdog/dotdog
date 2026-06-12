@@ -2,110 +2,111 @@
 
 > Execution phases. Each phase ships independently.
 
-## Phase 0: Dogfood Complete (now)
+## Phase 0: Dogfood Complete (done)
 
 - [x] SPEC.dog — product spec with screens, flows, stories
 - [x] constitution.dog — 7 principles, tech constraints, governance
-- [x] data-model.dog — 5 entities (Node, Edge, Task, Prediction, Vector) with descriptions
+- [x] data-model.dog — 15 entities (Node, Edge, Task, Prediction, Vector, Event, Compile, DAG) with descriptions
 - [x] COPY.dog — every CLI string, every state
 - [x] DESIGN-SYSTEM.dog — tokens → primitives → components → patterns → screens
-- [x] spec validate runs on own specs (target: 100%)
-- [x] spec list shows spec-platform project
-- [x] spec init scaffolds new projects
-- [ ] MCP server tested with a real AI agent
+- [x] dotdog validate runs on own specs (100%)
+- [x] dotdog analyze — 0 gaps
+- [x] dotdog list shows spec-platform project
+- [x] dotdog init scaffolds new projects
+- [x] dotdog compile — typed parser, .dag v1.2 with integrity hash + token savings
+- [x] MCP server live (`dotdog serve`)
 
-## Phase 1: .dog DSL Grammar + Parser (done ✓)
+## Phase 1: .dog DSL Grammar + Parser (done)
 
 - [x] Formal grammar specification (grammar.ts — EBNF + typed AST)
 - [x] Lexer: section splitter, block detection, YAML tokenizer
 - [x] Parser: parse() function, text → AST
 - [x] AST types: DocumentNode, SectionNode, EntityNode, RelationshipNode, etc.
-- [x] `spec parse` command: reads .dog file, outputs AST (summary + JSON)
-- [x] Replace regex hacks in engine with proper parser output (partial — validator still uses regex)
+- [x] `dotdog parse` command: reads .dog file, outputs AST
+- [x] Compile uses typed parser (no more regex hacks)
 
-## Phase 1.5: npm Publish + Compile (done ✓)
+## Phase 1.5: npm Publish + CLI (done)
 
-- [x] npm publish: dotdog@0.1.5 on npm
-- [x] `spec compile` command: .dog → .dag graph
-- [x] .dag formal specification (format-spec-dag.dog)
-- [x] `spec generate` command: fills missing files from SPEC.dog
-- [x] npm provenance + CI publish via GitHub Actions
+- [x] npm publish: dotdog@0.2.5 on npm
+- [x] `dotdog compile` — .dog → .dag (v1.2: integrity sha256, token savings)
+- [x] .dag formal specification (format-spec-dag.dog v1.2)
+- [x] `dotdog generate` — fills missing files from SPEC.dog
+- [x] `dotdog analyze` — deep analysis, entity audit, gap detection
+- [x] `dotdog simulate` — scenario runner (phase 1 stub)
+- [x] `dotdog visualize` — Mermaid graph from .dag
+- [x] `dotdog staleness` — detect spec/reality drift
+- [x] CI publish via OIDC Trusted Publishing (Node 24)
 - [x] Path resolution: tilde (~) support
 - [x] Auto-version from package.json
+- [x] GitHub Pages — specdog.github.io/dotdog (clean light theme, dog logo)
+- [x] llms.txt — llmstxt.org spec
+- [x] AGENTS.md — AI agent instructions
 
 ## Phase 2: Distribution
 
-- [x] npm publish: `bun add dotdog` or `npm install -g dotdog`
-- [x] CI publish via GitHub Actions (JS-DevTools/npm-publish)
-- [ ] VS Code extension: syntax highlighting + validation
+- [x] npm publish: `npm install -g dotdog`
+- [x] CI publish via GitHub Actions (OIDC Trusted Publishing)
+- [x] VS Code extension: syntax highlighting (extensions/vscode/)
+- [x] Branch protection: 1 review required, no force push
+- [x] Security: Dependabot alerts + auto-fixes enabled
 - [ ] GitHub Action: `dotdog/validate` blocks PRs with broken specs
 
-## Phase 3: MCP Server Live
+## Phase 3: MCP Server Live (done)
+
+- [x] `dotdog serve` — MCP server over stdio
+- [x] 6 tools: getEntity, traverse, search, schema, summary, listProjects
 
 ## Phase 4: Vector Embeddings
 
-- [ ] Parse spec sections into chunks (parseSections already done)
+- [ ] Parse spec sections into chunks
 - [ ] Embed with all-MiniLM-L6-v2 (384 dims, local, $0)
-- [ ] Store embeddings in SQLite via bun:sqlite
-- [ ] Semantic search: `spec search "payment"` returns relevant sections
-- [ ] Contradiction detection: flag semantically similar constraints with opposite enforcement
-- [ ] Staleness detection: flag sections not updated in 30+ days
+- [ ] Store embeddings in SQLite
+- [ ] Semantic search: `dotdog search "payment"` returns relevant sections
+- [ ] Contradiction detection
+- [ ] Staleness detection
 
 ## Phase 5: Graph Traversal Engine
 
-- [ ] Build in-memory graph from parsed entities + relationships (buildGraph done)
-- [ ] BFS hop depth audit (auditHopDepth done)
+- [ ] Build in-memory graph from parsed entities + relationships
+- [ ] BFS hop depth audit
 - [ ] Query API: traversals, state queries, critical path
-- [ ] spec simulate: walk through a scenario, check pre/postconditions
+- [ ] `dotdog simulate` — full engine: walk through scenario, check pre/postconditions
 - [ ] Completion probability: compute from historical velocity + remaining tasks
 
 ## Phase 6: Prediction Tracking
 
 - [ ] Predictions stored in SQLite with triggers, timeframes, confidence
-- [ ] Prediction resolution: mark as correct/wrong/partially_correct when trigger fires
-- [ ] Hit rate dashboard: "You predicted 7 things. 4 correct, 2 wrong, 1 pending."
-- [ ] Model improvement: wrong predictions → recalibrate probability trees
+- [ ] Prediction resolution: mark as correct/wrong/partially_correct
+- [ ] Hit rate dashboard
+- [ ] Model improvement: wrong predictions → recalibrate
 
 ## Phase 7: Dashboard (Paid Tier)
 
-- [ ] React + Vite dashboard (Vercel free tier)
+- [ ] React + Vite dashboard
 - [ ] Project list with completeness scores
 - [ ] Spec editor with live validation
 - [ ] Prediction tracker with hit rate charts
-- [ ] Team management (Clerk auth)
-- [ ] Cloud sync (Postgres on fly.io free tier)
+- [ ] Team management
+- [ ] Cloud sync
 
 ## Phase 8: Code Generation
 
 - [ ] Read spec genome → generate database schema (Prisma/SQL)
-- [ ] Read spec genome → generate API routes (Elysia/Express)
+- [ ] Read spec genome → generate API routes
 - [ ] Read spec genome → generate component stubs (React with typed props)
 - [ ] Read COPY.dog → generate i18n files
 - [ ] Read DESIGN-SYSTEM.dog → generate CSS variables + Tailwind config
-
-## Repo Layout
-
-```
-spec-platform/
-├── packages/
-│   ├── spec-engine/src/     → types/index.ts, parser.ts (Phase 2)
-│   ├── spec-mcp/src/        → index.ts (Phase 1)
-│   ├── spec-cli/src/        → validate.ts, init.ts, list.ts, simulate.ts (Phase 3)
-│   └── dashboard/           → React app (Phase 5)
-├── projects/spec-platform/specs/
-│   ├── SPEC.dog, constitution.dog, data-model.dog
-│   ├── COPY.dog, DESIGN-SYSTEM.dog, plan.dog (this file), INDEX.dog
-└── templates/               → spec genome templates
-```
 
 ## Verification
 
 | Phase | Verification |
 |-------|-------------|
-| 0 | `spec validate` → 100% |
-| 1 | AI agent queries spec via MCP → correct response |
-| 2 | `spec search "entity"` → returns Node, Edge, Task, Prediction, Vector |
-| 3 | `spec simulate payment` → walks through 6 steps, reports success/failure |
-| 4 | Prediction "shipping by July" resolved → hit rate updates |
-| 5 | Dashboard shows 3 projects, 87% avg completeness |
-| 6 | `spec generate demo` → produces working React component |
+| 0 | `dotdog validate` → 100%, `dotdog analyze` → 0 gaps |
+| 1 | `dotdog compile` → .dag v1.2 with sha256 + token savings |
+| 2 | `npm install -g dotdog` → 11 commands working |
+| 3 | `dotdog serve` → AI agent queries spec via MCP |
+| 4 | `dotdog search "entity"` → returns Node, Edge, Task, Prediction, Vector |
+| 5 | `dotdog simulate payment` → walks through steps, reports success/failure |
+| 6 | Prediction "shipping by July" resolved → hit rate updates |
+| 7 | Dashboard shows 3 projects, 87% avg completeness |
+| 8 | `dotdog generate demo` → produces working React component |
