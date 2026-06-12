@@ -6,92 +6,182 @@
 
 ## Core Ontology
 
-### Entity: Node (every thing in the spec)
+### Entity: Node
 
-```
-Node
-  description: A typed node in the spec knowledge graph representing any entity, task, prediction, or concept
-  id: string (uuid)
-  type: enum[project, entity, relationship, event, capability,
-             constraint, screen, flow, user_story, task, failure,
-             edge_case, assumption, prediction, scenario,
-             material, component, file]
-  name: string
-  properties: JSON (typed key-value pairs)
-  states: string[] (valid states)
-  current_state: string
-  version: number
-  created_at: ISO timestamp
-  updated_at: ISO timestamp
-```
+A typed node in the spec knowledge graph. Every entity, task, prediction, and concept is a Node.
 
-### Entity: Edge (every connection between nodes)
-
-```
-Edge
-  description: A typed connection between two nodes in the spec graph. Directional (source → target) with cardinality, cascade behavior, and invariants
-  id: string (uuid)
-  source_id: string → Node.id
-  target_id: string → Node.id
-  type: enum[contains, depends_on, references, implements,
-             calls, owns, produces, consumes, extends, precedes]
-  cardinality: enum[1:1, 1:N, N:1, N:M]
-  required: boolean
-  cascade: enum[none, delete, nullify, restrict]
-  invariants: string[] (rules that must hold)
+```yaml
+entity: Node
+type: entity
+properties:
+  id:
+    type: string
+    format: uuid
+    required: true
+  type:
+    type: enum
+    values: [project, entity, relationship, event, capability, constraint, screen, flow, user_story, task, failure, edge_case, assumption, prediction, scenario, material, component, file]
+    required: true
+  name:
+    type: string
+    required: true
+  description:
+    type: string
+    required: false
+  properties:
+    type: json
+    required: false
+states: [created, updated, archived]
+lifecycle: created → updated → archived
 ```
 
-### Entity: Task (every piece of work)
+### Entity: Edge
 
-```
-Task
-  description: A unit of work in the spec platform. Has dependencies, assignment, effort estimates, and a computed completion probability
-  id: string (T01, T02, ...)
-  name: string
-  description: string
-  status: enum[specified, building, built, verified, shipped]
-  priority: enum[P0, P1, P2, P3]
-  estimated_hours: number
-  actual_hours: number
-  depends_on: string[] → Task.id[]
-  assigned_to: string (agent or human)
-  files: string[] (paths affected)
-  completion_probability: 0.0-1.0  (computed, not entered)
-  velocity: number (tasks/week, computed from history)
-  created_at: ISO timestamp
-  completed_at: ISO timestamp
+A typed connection between two Nodes. Directional (source → target) with cardinality, cascade behavior, and invariants.
+
+```yaml
+entity: Edge
+type: relationship
+properties:
+  id:
+    type: string
+    format: uuid
+    required: true
+  source_id:
+    type: string
+    required: true
+    constraints: references Node.id
+  target_id:
+    type: string
+    required: true
+    constraints: references Node.id
+  verb:
+    type: enum
+    values: [contains, depends_on, references, implements, calls, owns, produces, consumes, extends, precedes]
+    required: true
+  cardinality:
+    type: enum
+    values: [1:1, 1:N, N:1, N:M]
+    required: true
+  required:
+    type: boolean
+    required: false
+  cascade:
+    type: enum
+    values: [none, delete, nullify, restrict]
+    required: false
+  invariants:
+    type: string[]
+    required: false
+states: [active, deprecated]
+lifecycle: active → deprecated
 ```
 
-### Entity: Prediction (every forecast)
+### Entity: Task
 
-```
-Prediction
-  description: A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes to improve the model
-  id: string
-  statement: string (what we claim will happen)
-  trigger: string (what event starts the clock?)
-  trigger_fired_at: ISO timestamp (when did the trigger happen?)
-  timeframe: string (when should this be true by?)
-  confidence: 0.0-1.0 (at time of prediction)
-  measurement: string (how to verify)
-  actual_outcome: enum[pending, correct, wrong, partially_correct]
-  actual_value: string (what actually happened)
-  notes: string (what did we learn?)
-  created_at: ISO timestamp
-  resolved_at: ISO timestamp
+A unit of work. Has dependencies, assignment, effort estimates, and a computed completion probability.
+
+```yaml
+entity: Task
+type: entity
+properties:
+  id:
+    type: string
+    format: T##
+    required: true
+  name:
+    type: string
+    required: true
+  status:
+    type: enum
+    values: [specified, building, built, verified, shipped]
+    required: true
+  priority:
+    type: enum
+    values: [P0, P1, P2, P3]
+    required: true
+  estimated_hours:
+    type: number
+    required: false
+  actual_hours:
+    type: number
+    required: false
+  depends_on:
+    type: string[]
+    required: false
+  assigned_to:
+    type: string
+    required: false
+  completion_probability:
+    type: number
+    required: false
+    constraints: 0.0-1.0, computed from velocity
+states: [specified, building, built, verified, shipped]
+lifecycle: specified → building → built → verified → shipped
 ```
 
-### Entity: Vector (every semantic embedding)
+### Entity: Prediction
 
+A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes.
+
+```yaml
+entity: Prediction
+type: prediction
+properties:
+  id:
+    type: string
+    required: true
+  statement:
+    type: string
+    required: true
+  trigger:
+    type: string
+    required: false
+  timeframe:
+    type: string
+    required: false
+  confidence:
+    type: number
+    required: true
+    constraints: 0.0-1.0
+  measurement:
+    type: string
+    required: false
+  actual_outcome:
+    type: enum
+    values: [pending, correct, wrong, partially_correct]
+    required: false
+states: [pending, resolved]
+lifecycle: pending → resolved
 ```
-Vector
-  description: A semantic embedding of a spec section. Used for similarity search, contradiction detection, and staleness checks. Linked to the Node it embeds
-  id: string
-  node_id: string → Node.id
-  content: string (the text that was embedded)
-  embedding: float[] (vector of 384 or 1536 dimensions)
-  model: enum[all-MiniLM-L6-v2, text-embedding-3-small]
-  created_at: ISO timestamp
+
+### Entity: Vector
+
+A semantic embedding of a spec section. Used for similarity search, contradiction detection, and staleness checks.
+
+```yaml
+entity: Vector
+type: vector
+properties:
+  id:
+    type: string
+    required: true
+  node_id:
+    type: string
+    required: true
+    constraints: references Node.id
+  content:
+    type: string
+    required: true
+  embedding:
+    type: float[]
+    required: true
+  model:
+    type: enum
+    values: [all-MiniLM-L6-v2, text-embedding-3-small]
+    required: true
+states: [active, stale]
+lifecycle: active → stale → active
 ```
 
 ---
