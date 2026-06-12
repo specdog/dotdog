@@ -28,6 +28,12 @@ spec-platform/
 └── package.json         # Bun workspace root
 ```
 
+## Install
+
+```bash
+npm install -g dotdog
+```
+
 ## Quick Start
 
 ```bash
