@@ -113,9 +113,9 @@ LAYER 4: SCREENS (full CLI output layouts)
 ### Check Line
 
 ```
-  ✓ SPEC.md                exists
-  ⚠ COPY.md                missing
-  ✗ constitution.md        missing — required
+  ✓ SPEC.dog                exists
+  ⚠ COPY.dog                missing
+  ✗ constitution.dog        missing — required
 ```
 
 - **Anatomy:** Indented Line with status icon, padded filename, message
@@ -145,19 +145,19 @@ LAYER 4: SCREENS (full CLI output layouts)
 ### Init Success
 
 ```
-  ✓ INDEX.md
-  ✓ SPEC.md
-  ✓ constitution.md
-  ✓ data-model.md
-  ✓ plan.md
-  ✓ COPY.md
-  ✓ tasks.md
-  ✓ tasks/AGENTS.md
+  ✓ INDEX.dog
+  ✓ SPEC.dog
+  ✓ constitution.dog
+  ✓ data-model.dog
+  ✓ plan.dog
+  ✓ COPY.dog
+  ✓ tasks.dog
+  ✓ tasks/AGENTS.dog
 
 Project "demo" initialized.
 
   /Users/.../specs/demo/specs/
-  Next: fill in SPEC.md, then run 'spec validate'
+  Next: fill in SPEC.dog, then run 'spec validate'
 ```
 
 - **Anatomy:** File list + header + path + hint
@@ -184,9 +184,9 @@ All required files present.
 ```
 projects/
   spec-platform — 4 spec files
-    constitution.md
-    data-model.md
-    SPEC.md
+    constitution.dog
+    data-model.dog
+    SPEC.dog
 ```
 
 ## Layer 4: Screens
@@ -199,17 +199,17 @@ Spec Platform — Validator
 
   spec-platform
   ────────────────────────────────────────
-  ✓ SPEC.md                exists
-  ✓ constitution.md        exists
-  ✓ data-model.md          exists
-  ⚠ COPY.md                missing
-  ⚠ DESIGN-SYSTEM.md       missing
-  ⚠ plan.md                missing
-  ⚠ INDEX.md               missing
-  ✓ constitution.md        4 sections (3 top-level). Good for LLM chunking.
-  ✓ constitution.md        7 principles defined
-  ✓ data-model.md          5 entity definitions (5 unique)
-  ✓ SPEC.md                12 sections (7 top-level). Good for LLM chunking.
+  ✓ SPEC.dog                exists
+  ✓ constitution.dog        exists
+  ✓ data-model.dog          exists
+  ⚠ COPY.dog                missing
+  ⚠ DESIGN-SYSTEM.dog       missing
+  ⚠ plan.dog                missing
+  ⚠ INDEX.dog               missing
+  ✓ constitution.dog        4 sections (3 top-level). Good for LLM chunking.
+  ✓ constitution.dog        7 principles defined
+  ✓ data-model.dog          5 entity definitions (5 unique)
+  ✓ SPEC.dog                12 sections (7 top-level). Good for LLM chunking.
 
   Score: 69% | 9 pass | 4 warn | 0 fail
 

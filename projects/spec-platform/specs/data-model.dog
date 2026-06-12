@@ -183,17 +183,17 @@ Step 1: LLM receives user query
 Step 2: LLM queries the spec graph
   → getEntity("PaymentBubble")              // exact type
   → getEdges(source: "PaymentBubble")        // what does it connect to?
-  → getNode("COPY.md", section: "Payment")     // every UI string
-  → getNode("DESIGN-SYSTEM.md", section: "PaymentBubble") // tokens, primitives
-  → getNode("COMPOSE-MAP.md")                    // design → code mapping
+  → getNode("COPY.dog", section: "Payment")     // every UI string
+  → getNode("DESIGN-SYSTEM.dog", section: "PaymentBubble") // tokens, primitives
+  → getNode("COMPOSE-MAP.dog")                    // design → code mapping
 
 Step 3: LLM has the full subgraph
   PaymentBubble → {strings, tokens, compose_mapping, states, constraints}
 
 Step 4: LLM generates code with zero ambiguity
-  - Exact strings from COPY.md
-  - Exact colors from DESIGN-SYSTEM.md
-  - Exact component name from COMPOSE-MAP.md
+  - Exact strings from COPY.dog
+  - Exact colors from DESIGN-SYSTEM.dog
+  - Exact component name from COMPOSE-MAP.dog
   - Every state handled (loading, empty, error, success)
   - Every edge case covered (long names, zero amounts, max values)
 ```
@@ -205,7 +205,7 @@ Step 4: LLM generates code with zero ambiguity
 | LLM reads prose, guesses intent | LLM queries typed entities, gets exact values |
 | "Make it look like the design" | Exact tokens: green=#1F4D2B, radius=6px |
 | "Handle errors" | Exact error states: "Insufficient USDC", "No recipient" |
-| LLM hallucinates strings | Every string from COPY.md, verified |
+| LLM hallucinates strings | Every string from COPY.dog, verified |
 | No dependency tracking | Graph traversal finds everything connected to PaymentBubble |
 | Static, no predictions | Predictions track completion probability in real-time |
 
@@ -216,7 +216,7 @@ Step 4: LLM generates code with zero ambiguity
 ### Ingestion
 
 ```
-spec file (.md)
+spec file (.dog)
   → parse into sections (by ## headings)
   → extract tables (entity definitions, user stories, constraints)
   → extract prose (descriptions, scenarios, assumptions)
@@ -251,14 +251,14 @@ spec file changed (git diff)
 ```
 projects/spec-platform/
 ├── specs/
-│   ├── SPEC.md           → defines user stories, screens, flows
-│   ├── constitution.md   → defines constraints, governance
-│   └── data-model.md     → this file — defines the ontology
+│   ├── SPEC.dog           → defines user stories, screens, flows
+│   ├── constitution.dog   → defines constraints, governance
+│   └── data-model.dog     → this file — defines the ontology
 │
 │  Relationships:
-│    SPEC.md.user_stories → implemented_by → Task[]
-│    SPEC.md.screens → renders → COPY.md.strings
-│    SPEC.md.screens → styled_by → DESIGN-SYSTEM.md.tokens
+│    SPEC.dog.user_stories → implemented_by → Task[]
+│    SPEC.dog.screens → renders → COPY.dog.strings
+│    SPEC.dog.screens → styled_by → DESIGN-SYSTEM.dog.tokens
 │    Task[] → depends_on → Task[]
 │    Task[] → produces → File[]
 │    Prediction[] → measures → Task.completion_probability

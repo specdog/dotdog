@@ -20,7 +20,7 @@ export function list(): void {
     console.log(chalk.bold(`\n${dir}/`));
     for (const project of projects) {
       const specDir = join(root, project, 'specs');
-      const files = existsSync(specDir) ? readdirSync(specDir).filter(f => f.endsWith('.md')) : [];
+      const files = existsSync(specDir) ? readdirSync(specDir).filter(f => f.endsWith('.dog')) : [];
       console.log(`  ${chalk.cyan(project)} — ${files.length} spec files`);
       for (const file of files) {
         console.log(chalk.gray(`    ${file}`));

@@ -48,7 +48,7 @@
 | Already exists | project exists | `Project "{name}" already exists.` |
 | Done header | after creation | `Project "{name}" initialized.` |
 | Path | after creation | `{path}/` |
-| Next step | after creation | `Next: fill in SPEC.md, then run 'spec validate'` |
+| Next step | after creation | `Next: fill in SPEC.dog, then run 'spec validate'` |
 
 ## CLI — spec simulate
 
@@ -56,7 +56,7 @@
 |---------|---------|------|
 | Header | always | `Simulation: {scenario} (project: {project})` |
 | Placeholder | not implemented | `Simulation engine coming in 0.2.0.` |
-| Placeholder hint | after message | `Reads SPEC.md scenarios, walks through steps, checks pre/postconditions.` |
+| Placeholder hint | after message | `Reads SPEC.dog scenarios, walks through steps, checks pre/postconditions.` |
 
 ## CLI — Global
 
@@ -77,11 +77,11 @@
 | Specs dir | on startup | `Specs directory: {path}` |
 | Projects | on startup | `Projects: {list}` or `none` |
 | Not found | getSpec fails | `File not found: {project}/{file}` |
-| Not found | getPRD fails | `SPEC.md not found for project: {project}` |
-| Not found | getDataModel fails | `data-model.md not found for project: {project}` |
-| Not found | getCopy fails | `COPY.md not found for project: {project}` |
-| Not found | getDesignSystem fails | `DESIGN-SYSTEM.md not found for project: {project}` |
-| Not found | getConstitution fails | `constitution.md not found for project: {project}` |
+| Not found | getPRD fails | `SPEC.dog not found for project: {project}` |
+| Not found | getDataModel fails | `data-model.dog not found for project: {project}` |
+| Not found | getCopy fails | `COPY.dog not found for project: {project}` |
+| Not found | getDesignSystem fails | `DESIGN-SYSTEM.dog not found for project: {project}` |
+| Not found | getConstitution fails | `constitution.dog not found for project: {project}` |
 
 ## MCP Tool Descriptions
 
@@ -91,7 +91,7 @@
 | listSpecs | List all spec files in a project |
 | getSpec | Get the full content of a spec file |
 | searchSpecs | Search across all spec files in a project |
-| getPRD | Get the product requirements document (SPEC.md) for a project |
+| getPRD | Get the product requirements document (SPEC.dog) for a project |
 | getDataModel | Get the data model spec for a project |
 | getCopy | Get every UI string for a project |
 | getDesignSystem | Get the design system spec for a project |
