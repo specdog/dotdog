@@ -1,57 +1,51 @@
-# The .dag Format — Formal Specification v1.1
+# The .dag Format — Formal Specification v1.2
 
-The `.dag` file format is a compiled, machine-optimized representation of a spec genome. It is the output of the spec engine — a Directed Acyclic Graph encoded as a JSON document. No prose. No markdown. Pure structure. Designed for AI agents to traverse with zero token waste.
+The `.dag` file format is a compiled, machine-optimized representation of a spec genome. It is the output of `dotdog compile` — a Directed Acyclic Graph encoded as a JSON document. No prose. No markdown. Pure structure. Designed for AI agents to traverse with zero token waste. Each .dag proves its own integrity and efficiency.
 
 ## Grammar (JSON Schema)
 
 ```
 dag-file ::= {
-  "version": "1.1",
+  "version": "1.2",
   "project": string,
   "compiled_at": ISO8601,
-  "files": number,
+  "compiler": string,           // dotdog version that produced this
+  "integrity": integrity,
+  "tokens": token_report,
   "nodes": [node, ...],
-  "edges": [edge, ...],
-  "predictions": [prediction, ...],
-  "vectors": [vector, ...]
+  "edges": [edge, ...]
+}
+
+integrity ::= {
+  "sha256": string,             // hash of all source .dog files concatenated
+  "source_files": number,
+  "source_bytes": number
+}
+
+token_report ::= {
+  "source_total": number,       // estimated tokens in source .dog files
+  "dag_total": number,          // estimated tokens in this .dag
+  "savings_pct": number,        // percentage saved (e.g. 90.6)
+  "savings_tokens": number      // absolute tokens saved
 }
 
 node ::= {
   "id": string,
-  "file": string,          // source .dog file
-  "chars": number,         // content length (for cost estimation)
-  "properties": { string: { "type": string, "required": boolean, "constraints"?: string }, ... },
+  "type": string,               // entity, event, prediction, etc.
+  "description": string,        // for embedding and semantic search
+  "file": string,               // source .dog file
+  "properties": number,         // count of defined properties
   "states": [string, ...],
-  "lifecycle": [string, ...],
-  "description": string    // for embedding
+  "chars": number               // content length
 }
 
 edge ::= {
   "source": string,
   "target": string,
-  "verb": string,
+  "verb": string,               // produces, contains, depends_on, etc.
   "cardinality": "1:1" | "1:N" | "N:1" | "N:M",
   "required": boolean,
-  "cascade": "none" | "delete" | "nullify" | "restrict",
-  "file": string,
-  "section": string
-}
-
-prediction ::= {
-  "id": string,
-  "statement": string,
-  "trigger": string | null,
-  "timeframe": string | null,
-  "confidence": 0.0-1.0,
-  "measurement": string,
-  "actual": "pending" | "correct" | "wrong" | "partially_correct"
-}
-
-vector ::= {
-  "node_id": string,
-  "content": string,
-  "embedding": [number, ...],
-  "model": "all-MiniLM-L6-v2" | "text-embedding-3-small"
+  "file": string
 }
 ```
 
@@ -62,81 +56,91 @@ vector ::= {
 | Rule | Check |
 |------|-------|
 | R1 | Valid JSON, parseable without error |
-| R2 | `version` field present and begins with "1." |
+| R2 | `version` field present and equals "1.2" |
 | R3 | `project` field is non-empty string |
-| R4 | Every edge `source` references an existing node `id` |
-| R5 | Every edge `target` references an existing node `id` |
-| R6 | Graph is acyclic — no circular dependencies |
+| R4 | `integrity.sha256` is a 64-char hex string |
+| R5 | Every edge `source` references an existing node `id` |
+| R6 | Every edge `target` references an existing node `id` |
+| R7 | Graph is acyclic — no circular dependencies |
 
 ### SHOULD (warning — graph is incomplete)
 
 | Rule | Check |
 |------|-------|
-| R7 | Every node has a non-empty `description` |
-| R8 | Every node has at least one property defined |
-| R9 | Every node has `states` and `lifecycle` |
+| R8 | Every node has a non-empty `description` |
+| R9 | `tokens.savings_pct` is > 0 (graph is smaller than source) |
 | R10 | At least one edge connects nodes |
 
-## Edge Cases
+## Integrity Model
 
-| Case | Behavior |
-|------|----------|
-| Empty graph (no nodes) | Valid. Project has no entities defined. |
-| Orphan node (no edges) | Valid. Node has no relationships yet. |
-| Missing optional fields | Valid. `predictions`, `vectors` can be empty arrays. |
-| Very large graph (1000+ nodes) | Consumer should paginate. No enforced limit. |
-| Duplicate node IDs | Last definition wins. Consumer warns. |
+The `integrity` block proves the .dag was compiled from specific source files:
+
+1. SHA256 hash of all .dog file contents (newline-separated) in sorted filename order
+2. Source file count and total bytes
+
+An AI agent receiving a .dag can:
+- Verify the hash against source files to detect tampering
+- Trust the token savings claim because the source byte count is recorded
+- Compare against a previously compiled .dag to detect drift
 
 ## Token Efficiency
 
-The `.dag` format is optimized for AI agents. Compared to reading `.dog` files:
+The `tokens` block provides provable compute savings. Token estimation uses 4 chars/token (standard for English prose).
 
 ```
-.dog (read 10 files):    ~8000 tokens (prose, markdown, YAML)
-.dag (read graph):       ~1200 tokens (JSON, no prose)
-                         ──────
-                         85% token savings per query
+Example: spec-platform
+  source_total:   10,995 tokens (43,980 bytes / 4)
+  dag_total:       1,038 tokens
+  savings_pct:      90.6%
+  savings_tokens:  9,957 tokens saved per agent query
+
+At $0.15/1K tokens (GPT-4o): ~$1.49 saved per session
 ```
 
 The compile step pays the parsing cost once. Every agent query saves.
 
 ## MCP API
 
-The `spec serve` MCP server exposes the graph to AI agents over stdio:
+`dotdog serve` exposes the graph to AI agents over stdio:
 
 | Tool | Input | Output |
 |------|-------|--------|
 | listProjects | — | Array of project names |
-| listNodes | project | Array of nodes |
 | getEntity | project, name | Single node with properties, states |
-| getEdges | project, node | All edges to/from a node |
-| getGraph | project | Full .dag JSON |
+| traverse | project, from, depth | BFS subgraph (nodes + edges) |
+| search | project, q, type | Entities matching name or type filter |
+| schema | project, entity | Property schema only — zero prose |
+| summary | project | Node/edge/file counts, token savings |
 
 Agent workflow:
 ```
 1. listProjects → ["spec-platform"]
-2. getEntity("spec-platform", "Payment") → {id, properties, states, lifecycle}
-3. getEdges("spec-platform", "Payment") → [{source, target, verb, cardinality}]
+2. getEntity("spec-platform", "Payment") → {id, type, properties, states}
+3. traverse("spec-platform", "Payment", 2) → subgraph of connected entities
 4. Agent has exact types, states, and connections. Zero hallucination.
 ```
 
 ## Pipeline
 
 ```
-.dog files → spec parse → AST → spec compile → .dag → spec serve (MCP) → AI agent
+.dog files → dotdog parse → AST → dotdog compile → .dag (v1.2) → dotdog serve (MCP) → AI agent
+                               ↓
+                         integrity hash + token report
 ```
 
 ## Conformance
 
 An implementation is conforming if it:
 1. Produces valid JSON matching the grammar
-2. Validates all MUST rules
-3. Handles all documented edge cases
-4. Exposes the MCP API verbatim or equivalent
+2. Includes `integrity` with valid sha256 hash
+3. Includes `tokens` with source and dag token counts
+4. Validates all MUST rules
+5. Exposes the MCP API
 
 ## History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-06-12 | Initial spec |
-| 1.1 | 2026-06-12 | Validation rules, edge cases, MCP API, token efficiency section |
+| 1.1 | 2026-06-12 | Validation rules, edge cases, MCP API, token efficiency |
+| 1.2 | 2026-06-12 | Integrity hash (sha256), provable token savings report, compiler field, typed nodes |
