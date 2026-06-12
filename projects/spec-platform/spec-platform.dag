@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "project": "spec-platform",
-  "compiled_at": "2026-06-12T11:53:02.570Z",
+  "compiled_at": "2026-06-12T11:56:46.207Z",
   "nodes": [
     {
       "id": "Node",
@@ -26,10 +26,21 @@
     {
       "id": "Vector",
       "file": "data-model.dog",
-      "chars": 551
+      "chars": 546
+    },
+    {
+      "id": "Event",
+      "file": "data-model.dog",
+      "chars": 588
     }
   ],
   "edges": [
+    {
+      "source": "Compile",
+      "target": ".dag",
+      "file": "data-model.dog",
+      "section": "Relationship: Compile → .dag"
+    },
     {
       "source": "Node",
       "target": "Node",

@@ -21,7 +21,17 @@
 - [x] Parser: parse() function, text → AST
 - [x] AST types: DocumentNode, SectionNode, EntityNode, RelationshipNode, etc.
 - [x] `spec parse` command: reads .dog file, outputs AST (summary + JSON)
-- [x] Replaces regex hacks in engine with proper parser output (partial — validator still uses regex)
+- [x] Replace regex hacks in engine with proper parser output (partial — validator still uses regex)
+
+## Phase 1.5: npm Publish + Compile (done ✓)
+
+- [x] npm publish: dotdog@0.1.5 on npm
+- [x] `spec compile` command: .dog → .dag graph
+- [x] .dag formal specification (format-spec-dag.dog)
+- [x] `spec generate` command: fills missing files from SPEC.dog
+- [x] npm provenance + CI publish via GitHub Actions
+- [x] Path resolution: tilde (~) support
+- [x] Auto-version from package.json
 
 ## Phase 2: Distribution
 
