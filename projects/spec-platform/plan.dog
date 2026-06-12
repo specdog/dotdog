@@ -30,8 +30,8 @@
 - [x] npm publish: dotdog@0.3.1 on npm (latest)
 - [x] 11 commands: validate, analyze, generate, simulate, compile, visualize, serve, staleness, parse, init, list
 - [x] Hidden command: `dotdog woof` — ASCII Spec the dog
-- [x] `dotdog compile` — .dog → .dag (v1.2: provable token savings, no integrity hash)
-- [x] .dag formal specification (format-spec-dag.dog v1.2)
+- [x] `dotdog compile` — .dog → .dag (v1.3: full property schemas, lifecycle, categories, token method)
+- [x] .dag formal specification (format-spec-dag.dog v1.3)
 - [x] `dotdog generate` — fills missing files from SPEC.dog
 - [x] `dotdog analyze` — deep analysis, entity audit, gap detection
 - [x] `dotdog simulate` — scenario runner (phase 1 stub)
@@ -112,7 +112,7 @@
 | Phase | Verification |
 |-------|-------------|
 | 0 | `dotdog validate` → 100%, `dotdog analyze` → 0 gaps |
-| 1 | `dotdog compile` → .dag v1.2 with token savings |
+| 1 | `dotdog compile` → .dag v1.3 with full schemas |
 | 2 | `npm install -g dotdog` → 11 commands working |
 | 3 | `dotdog serve` → AI agent queries spec via MCP |
 | 4 | `dotdog search "entity"` → returns Node, Edge, Task, Prediction, Vector |

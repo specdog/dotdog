@@ -149,15 +149,27 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
         const ast = parse(sources[f]);
         for (const section of ast.sections) {
           for (const block of section.blocks) {
-            if (block.kind === 'entity') {
+            if (block.kind === 'entity' || block.kind === 'event' || block.kind === 'prediction') {
+              // Build full property schema
+              const propSchema: Record<string, any> = {};
+              for (const [key, val] of Object.entries(block.properties)) {
+                const def: any = { type: val.type || 'string' };
+                if (val.required) def.required = true;
+                if (val.values) def.values = val.values;
+                if (val.format) def.format = val.format;
+                if (val.default !== undefined) def.default = val.default;
+                if (val.constraints) def.constraints = val.constraints;
+                propSchema[key] = def;
+              }
               nodes.push({
                 id: block.name,
                 type: block.type,
+                category: block.kind,  // entity, event, or prediction
                 description: block.description || '',
                 file: f,
-                properties: Object.keys(block.properties).length,
+                properties: propSchema,
                 states: block.states || [],
-                chars: section.content?.length || 0
+                lifecycle: (block as any).lifecycle || [],
               });
             }
             if (block.kind === 'relationship') {
@@ -165,6 +177,7 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
                 source: block.source,
                 target: block.target,
                 verb: block.verb,
+                description: block.description || '',
                 cardinality: block.cardinality,
                 required: block.required,
                 file: f
@@ -174,15 +187,15 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
         }
       }
       // Build enhanced .dag
-      const dag = { version: '1.2', project: p, compiled_at: new Date().toISOString(), compiler: `dotdog@${pkg.version}`, integrity, nodes, edges };
-      // Calculate token savings
+      const dag = { version: '1.3', project: p, compiled_at: new Date().toISOString(), compiler: `dotdog@${pkg.version}`, integrity, nodes, edges };
+      // Calculate token savings (approximate: ~4 chars per token for English prose)
       const dagJson = JSON.stringify(dag);
       const dagTokens = Math.round(Buffer.byteLength(dagJson,'utf-8') / 4);
       const savingsPct = sourceTokens > 0 ? Math.round((1 - dagTokens / sourceTokens) * 1000) / 10 : 0;
       const savingsTokens = sourceTokens - dagTokens;
       // Attach token report to output
       const outPath = opts.output || join(pd,`${p}.dag`);
-      const report = { ...dag, tokens: { source_total: sourceTokens, dag_total: dagTokens, savings_pct: savingsPct, savings_tokens: savingsTokens } };
+      const report = { ...dag, tokens: { method: 'chars/4', source_total: sourceTokens, dag_total: dagTokens, savings_pct: savingsPct, savings_tokens: savingsTokens } };
       writeFileSync(outPath, JSON.stringify(report, null, 2));
       console.log(chalk.green(`  ✓ ${outPath}`));
       console.log(chalk.gray(`    ${nodes.length} nodes, ${edges.length} edges, ${files.length} files`));
