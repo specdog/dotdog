@@ -111,6 +111,6 @@ Services:            specdog Certified — agencies build specs for clients
 
 1. **Format standard** — once .dog files exist in repos, switching costs
 2. **Network effects** — more projects adopt → more agents support → more adopt
-3. **Graph compilation** — .dag is unique; no competitor does this
-4. **Open source core** — MIT license prevents proprietary capture
+3. **Graph compilation** — .dag pipeline is currently unique
+4. **Open source core** — MIT license encourages adoption
 5. **Enterprise services** — dashboard is where the money is, not the format
