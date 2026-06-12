@@ -3,27 +3,19 @@
 > **Feed the dog. Ship with specs.** Write .dog specs. Dog checks them. AI agents fetch them.
 
 <div id="dog-widget" style="text-align:center;margin-bottom:16px;user-select:none">
-  <svg id="dog-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" style="width:140px;height:112px">
-    <line x1="20" y1="145" x2="180" y2="145" stroke="#e5e7eb" stroke-width="2"/>
-    <rect id="leg-bl" x="52" y="110" width="10" height="30" rx="4" fill="#d97706"/>
-    <rect id="leg-br" x="92" y="110" width="10" height="30" rx="4" fill="#d97706"/>
-    <rect id="leg-fl" x="112" y="110" width="10" height="30" rx="4" fill="#d97706"/>
-    <rect id="leg-fr" x="138" y="110" width="10" height="30" rx="4" fill="#d97706"/>
-    <ellipse cx="110" cy="95" rx="45" ry="25" fill="#f59e0b"/>
-    <path id="tail" d="M65 90 Q50 75 55 65" fill="none" stroke="#d97706" stroke-width="4" stroke-linecap="round"/>
-    <ellipse cx="78" cy="38" rx="10" ry="14" fill="#d97706" transform="rotate(-10 78 38)"/>
-    <ellipse cx="142" cy="38" rx="10" ry="14" fill="#d97706" transform="rotate(10 142 38)"/>
-    <circle class="dog-face" cx="110" cy="65" r="28" fill="#f59e0b"/>
-    <circle cx="100" cy="60" r="4" fill="#1a1a2e"/><circle cx="122" cy="60" r="4" fill="#1a1a2e"/>
-    <circle cx="101" cy="59" r="1.5" fill="#fff"/><circle cx="123" cy="59" r="1.5" fill="#fff"/>
-    <ellipse cx="111" cy="70" rx="5" ry="4" fill="#1a1a2e"/>
-    <path d="M104 76 Q111 82 118 76" fill="none" stroke="#1a1a2e" stroke-width="2" stroke-linecap="round"/>
-    <ellipse id="tongue" cx="111" cy="82" rx="4" ry="5" fill="#ef4444" opacity="0"/>
-    <g id="bone" opacity="0"><rect x="24" y="138" width="20" height="6" rx="3" fill="#fef3c7"/><circle cx="24" cy="141" r="4" fill="#fef3c7"/><circle cx="44" cy="141" r="4" fill="#fef3c7"/></g>
-    <circle id="ball" cx="170" cy="135" r="7" fill="#ef4444" opacity="0"/>
+  <svg id="dog-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" style="width:100px;height:100px">
+    <ellipse cx="28" cy="28" rx="13" ry="17" fill="#d97706" transform="rotate(-15 28 28)"/>
+    <ellipse cx="92" cy="28" rx="13" ry="17" fill="#d97706" transform="rotate(15 92 28)"/>
+    <circle class="dog-face" cx="60" cy="63" r="32" fill="#f59e0b"/>
+    <circle cx="46" cy="56" r="5" fill="#1a1a2e"/><circle cx="74" cy="56" r="5" fill="#1a1a2e"/>
+    <circle cx="48" cy="54" r="2" fill="#fff"/><circle cx="76" cy="54" r="2" fill="#fff"/>
+    <ellipse cx="60" cy="70" rx="7" ry="5" fill="#1a1a2e"/>
+    <path d="M52 78 Q60 86 68 78" fill="none" stroke="#1a1a2e" stroke-width="2" stroke-linecap="round"/>
+    <ellipse id="tongue" cx="60" cy="84" rx="5" ry="6" fill="#ef4444" opacity="0" style="transition:opacity .2s"/>
+    <!-- bone -->
+    <g id="bone" opacity="0"><rect x="16" y="16" width="28" height="8" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/><circle cx="16" cy="20" r="5" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/><circle cx="44" cy="20" r="5" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/></g>
   </svg>
-  <div style="width:140px;height:4px;background:#e5e7eb;border-radius:2px;margin:4px auto"><div id="hunger-fill" style="height:100%;background:#f59e0b;border-radius:2px;width:100%"></div></div>
-  <div id="dog-status" style="font-size:.75em;color:#9ca3af;min-height:18px">🐕 Spec is happy. Dog fed.</div>
+  <div id="dog-status" style="font-size:.75em;color:#9ca3af;min-height:18px;margin:4px 0">🐕 Spec</div>
   <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
     <button onclick="feed()" style="padding:4px 12px;border-radius:14px;border:1px solid #e5e7eb;background:#fff;color:#4b5563;font-size:.78em;cursor:pointer;font-family:inherit">🦴 Feed</button>
     <button onclick="pet()" style="padding:4px 12px;border-radius:14px;border:1px solid #e5e7eb;background:#fff;color:#4b5563;font-size:.78em;cursor:pointer;font-family:inherit">✋ Pet</button>
@@ -31,16 +23,13 @@
   </div>
 </div>
 <script>
-let hunger=100;
-const svg=document.getElementById('dog-svg'),f=document.getElementById('hunger-fill'),st=document.getElementById('dog-status');
-const tail=document.getElementById('tail'),bone=document.getElementById('bone'),ball=document.getElementById('ball'),tongue=document.getElementById('tongue');
-function upd(){f.style.width=hunger+'%';if(hunger>60)st.innerHTML='🐕 Spec is happy. Dog fed.';else if(hunger>25)st.innerHTML='🐕 Spec is hungry... feed the dog?';else st.innerHTML='😢 Spec is starving! Run dotdog validate!';}
-function feed(){hunger=Math.min(100,hunger+30);bone.setAttribute('opacity','1');st.innerHTML='🦴 Nom! Spec is fed. Ship with specs!';setTimeout(()=>bone.setAttribute('opacity','0'),1500);upd();}
-function pet(){hunger=Math.min(100,hunger+10);tongue.setAttribute('opacity','1');tail.setAttribute('d','M65 90 Q45 75 50 60');st.innerHTML='✋ Good Spec. *wags tail*';setTimeout(()=>{tail.setAttribute('d','M65 90 Q50 75 55 65');tongue.setAttribute('opacity','0');},800);upd();}
-function fetchBall(){if(hunger<20){st.innerHTML='😢 Spec is too hungry. Feed first!';return;}hunger=Math.max(0,hunger-15);ball.setAttribute('opacity','1');ball.setAttribute('cx','170');let x=170;const a=setInterval(()=>{x-=8;ball.setAttribute('cx',x);if(x<=20){clearInterval(a);ball.setAttribute('opacity','0');}},30);st.innerHTML='🎾 Fetch! dotdog compile...';upd();}
-svg.addEventListener('click',feed);setInterval(()=>{hunger=Math.max(0,hunger-2);upd()},8000);
+const svg=document.getElementById('dog-svg'),st=document.getElementById('dog-status');
+const bone=document.getElementById('bone'),tongue=document.getElementById('tongue');
+function feed(){bone.setAttribute('opacity','1');st.innerHTML='🦴 Dog fed. Ship with specs!';setTimeout(()=>bone.setAttribute('opacity','0'),1500);}
+function pet(){tongue.setAttribute('opacity','1');svg.style.transform='rotate(-5deg)';st.innerHTML='✋ Good dog.';setTimeout(()=>{svg.style.transform='';tongue.setAttribute('opacity','0');},800);}
+function fetchBall(){svg.style.transform='translateX(20px)';st.innerHTML='🎾 Fetch!';setTimeout(()=>svg.style.transform='',400);}
+svg.addEventListener('click',feed);
 document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;if(e.key==='v')feed();if(e.key==='c')fetchBall();if(e.key==='p')pet();});
-upd();
 </script>
 
 ## 🦴 Install
