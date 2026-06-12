@@ -156,7 +156,7 @@ LAYER 4: SCREENS (full CLI output layouts)
 
 Project "demo" initialized.
 
-  /Users/.../specs/demo/specs/
+  projects/my-project/specs/
   Next: fill in SPEC.dog, then run 'spec validate'
 ```
 
