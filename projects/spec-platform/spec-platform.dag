@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "project": "spec-platform",
+  "compiled_at": "2026-06-12T11:50:18.888Z",
+  "nodes": [
+    {
+      "id": "Node",
+      "file": "data-model.dog",
+      "chars": 658
+    },
+    {
+      "id": "Edge",
+      "file": "data-model.dog",
+      "chars": 895
+    },
+    {
+      "id": "Task",
+      "file": "data-model.dog",
+      "chars": 877
+    },
+    {
+      "id": "Prediction",
+      "file": "data-model.dog",
+      "chars": 677
+    },
+    {
+      "id": "Vector",
+      "file": "data-model.dog",
+      "chars": 551
+    }
+  ],
+  "edges": [
+    {
+      "source": "Node",
+      "target": "Node",
+      "file": "data-model.dog",
+      "section": "Relationship: Node → Node"
+    },
+    {
+      "source": "Task",
+      "target": "Task",
+      "file": "data-model.dog",
+      "section": "Relationship: Task → Task"
+    },
+    {
+      "source": "Prediction",
+      "target": "Task",
+      "file": "data-model.dog",
+      "section": "Relationship: Prediction → Task"
+    },
+    {
+      "source": "Vector",
+      "target": "Node",
+      "file": "data-model.dog",
+      "section": "Relationship: Vector → Node"
+    }
+  ],
+  "count": 10
+}
