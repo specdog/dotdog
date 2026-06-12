@@ -1,12 +1,12 @@
 {
   "version": "1.2",
   "project": "spec-platform",
-  "compiled_at": "2026-06-12T17:59:08.781Z",
+  "compiled_at": "2026-06-12T18:08:21.102Z",
   "compiler": "dotdog@0.2.5",
   "integrity": {
-    "sha256": "47c0f30bfa48593234873d44719293b4080b9c9ecf0ff6b4b8b67f44aafc92da",
+    "sha256": "1e6a172f6be22013afd90fedb1a0ded70e4e53554e85de5f51cb7f1ff8352aaf",
     "source_files": 7,
-    "source_bytes": 44920
+    "source_bytes": 44859
   },
   "nodes": [
     {
@@ -284,9 +284,9 @@
     }
   ],
   "tokens": {
-    "source_total": 11230,
+    "source_total": 11215,
     "dag_total": 1325,
     "savings_pct": 88.2,
-    "savings_tokens": 9905
+    "savings_tokens": 9890
   }
 }
