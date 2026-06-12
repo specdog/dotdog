@@ -52,6 +52,7 @@
 - [x] Fixed: init directory layout — removed double-nesting, .dog files live in project dir (#100)
 - [x] Simplified: scanners read .dog files directly from project dir (no inner `specs/`)
 - [x] Project detection: only dirs with SPEC.dog are treated as projects
+- [x] Fixed: section parsing — `###` headings correctly split, entity headers included (#101 follow-up)
 
 ## Phase 2: Distribution
 

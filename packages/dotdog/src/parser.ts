@@ -57,7 +57,7 @@ function parseSections(lines: string[]): SectionNode[] {
 
       // Find end of section (next heading of same or higher level)
       const end = findSectionEnd(lines, i, level);
-      const blocks = parseBlocks(lines, i, end);
+      const blocks = parseBlocks(lines, sectionStart, end);
       
       sections.push({
         kind: 'section',
@@ -79,8 +79,7 @@ function parseSections(lines: string[]): SectionNode[] {
 function findSectionEnd(lines: string[], start: number, currentLevel: number): number {
   for (let i = start; i < lines.length; i++) {
     const line = lines[i];
-    if (/^##\s/.test(line)) return i;  // Any ## ends current section
-    if (currentLevel === 2 && /^###\s/.test(line)) return i; // ### ends ## section
+    if (/^##\s/.test(line) || /^###\s/.test(line)) return i;  // Any heading ends current section
   }
   return lines.length;
 }
