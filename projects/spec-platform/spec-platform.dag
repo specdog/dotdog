@@ -1,70 +1,637 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "project": "spec-platform",
-  "compiled_at": "2026-06-12T12:46:37.311Z",
+  "compiled_at": "2026-06-12T17:06:27.206Z",
   "nodes": [
     {
       "id": "Node",
+      "type": "entity",
+      "description": "A typed node in the spec knowledge graph. Every entity, task, prediction, and concept is a Node.",
       "file": "data-model.dog",
-      "chars": 658
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "type": {
+          "type": "enum",
+          "required": true
+        },
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "description": {
+          "type": "string",
+          "required": true
+        },
+        "properties": {
+          "type": "json",
+          "required": true
+        }
+      },
+      "states": [
+        "created",
+        "updated",
+        "archived"
+      ],
+      "lifecycle": [
+        "created",
+        "updated",
+        "archived"
+      ],
+      "chars": 0
     },
     {
       "id": "Edge",
+      "type": "relationship",
+      "description": "A typed connection between two Nodes. Directional (source → target) with cardinality, cascade behavior, and invariants.",
       "file": "data-model.dog",
-      "chars": 895
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "source_id": {
+          "type": "string",
+          "required": true,
+          "constraints": "references Node.id"
+        },
+        "target_id": {
+          "type": "string",
+          "required": true,
+          "constraints": "references Node.id"
+        },
+        "verb": {
+          "type": "enum",
+          "required": true
+        },
+        "cardinality": {
+          "type": "enum",
+          "required": true
+        },
+        "required": {
+          "type": "boolean",
+          "required": true
+        },
+        "cascade": {
+          "type": "enum",
+          "required": true
+        },
+        "invariants": {
+          "type": "string[]",
+          "required": true
+        }
+      },
+      "states": [
+        "active",
+        "deprecated"
+      ],
+      "lifecycle": [
+        "active",
+        "deprecated"
+      ],
+      "chars": 0
     },
     {
       "id": "Task",
+      "type": "entity",
+      "description": "A unit of work. Has dependencies, assignment, effort estimates, and a computed completion probability.",
       "file": "data-model.dog",
-      "chars": 877
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "status": {
+          "type": "enum",
+          "required": true
+        },
+        "priority": {
+          "type": "enum",
+          "required": true
+        },
+        "estimated_hours": {
+          "type": "number",
+          "required": true
+        },
+        "actual_hours": {
+          "type": "number",
+          "required": true
+        },
+        "depends_on": {
+          "type": "string[]",
+          "required": true
+        },
+        "assigned_to": {
+          "type": "string",
+          "required": true
+        },
+        "completion_probability": {
+          "type": "number",
+          "required": true,
+          "constraints": "0.0-1.0, computed from velocity"
+        }
+      },
+      "states": [
+        "specified",
+        "building",
+        "built",
+        "verified",
+        "shipped"
+      ],
+      "lifecycle": [
+        "specified",
+        "building",
+        "built",
+        "verified",
+        "shipped"
+      ],
+      "chars": 0
     },
     {
       "id": "Prediction",
+      "type": "prediction",
+      "description": "A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes.",
       "file": "data-model.dog",
-      "chars": 677
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "statement": {
+          "type": "string",
+          "required": true
+        },
+        "trigger": {
+          "type": "string",
+          "required": true
+        },
+        "timeframe": {
+          "type": "string",
+          "required": true
+        },
+        "confidence": {
+          "type": "number",
+          "required": true,
+          "constraints": "0.0-1.0"
+        },
+        "measurement": {
+          "type": "string",
+          "required": true
+        },
+        "actual_outcome": {
+          "type": "enum",
+          "required": true
+        }
+      },
+      "states": [
+        "pending",
+        "resolved"
+      ],
+      "lifecycle": [
+        "pending",
+        "resolved"
+      ],
+      "chars": 0
     },
     {
       "id": "Vector",
+      "type": "vector",
+      "description": "A semantic embedding of a spec section. Used for similarity search, contradiction detection, and staleness checks.",
       "file": "data-model.dog",
-      "chars": 546
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "node_id": {
+          "type": "string",
+          "required": true,
+          "constraints": "references Node.id"
+        },
+        "content": {
+          "type": "string",
+          "required": true
+        },
+        "embedding": {
+          "type": "float[]",
+          "required": true
+        },
+        "model": {
+          "type": "enum",
+          "required": true
+        }
+      },
+      "states": [
+        "active",
+        "stale"
+      ],
+      "lifecycle": [
+        "active",
+        "stale",
+        "active"
+      ],
+      "chars": 0
     },
     {
       "id": "Event",
+      "type": "event",
+      "description": "A state-changing occurrence. Has a trigger, payload, preconditions, and postconditions.",
       "file": "data-model.dog",
-      "chars": 588
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "trigger": {
+          "type": "string",
+          "required": true
+        },
+        "payload": {
+          "type": "json",
+          "required": true
+        },
+        "preconditions": {
+          "type": "string[]",
+          "required": true
+        },
+        "postconditions": {
+          "type": "string[]",
+          "required": true
+        },
+        "probability": {
+          "type": "number",
+          "required": true,
+          "constraints": "0.0-1.0"
+        }
+      },
+      "states": [
+        "specified",
+        "modeled",
+        "verified"
+      ],
+      "lifecycle": [
+        "specified",
+        "modeled",
+        "verified"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Edge",
+      "type": "relationship",
+      "description": "A typed connection between two Nodes. Directional (source → target) with cardinality, cascade behavior, and invariants.",
+      "file": "data-model.dog",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "source_id": {
+          "type": "string",
+          "required": true,
+          "constraints": "references Node.id"
+        },
+        "target_id": {
+          "type": "string",
+          "required": true,
+          "constraints": "references Node.id"
+        },
+        "verb": {
+          "type": "enum",
+          "required": true
+        },
+        "cardinality": {
+          "type": "enum",
+          "required": true
+        },
+        "required": {
+          "type": "boolean",
+          "required": true
+        },
+        "cascade": {
+          "type": "enum",
+          "required": true
+        },
+        "invariants": {
+          "type": "string[]",
+          "required": true
+        }
+      },
+      "states": [
+        "active",
+        "deprecated"
+      ],
+      "lifecycle": [
+        "active",
+        "deprecated"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Task",
+      "type": "entity",
+      "description": "A unit of work. Has dependencies, assignment, effort estimates, and a computed completion probability.",
+      "file": "data-model.dog",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "status": {
+          "type": "enum",
+          "required": true
+        },
+        "priority": {
+          "type": "enum",
+          "required": true
+        },
+        "estimated_hours": {
+          "type": "number",
+          "required": true
+        },
+        "actual_hours": {
+          "type": "number",
+          "required": true
+        },
+        "depends_on": {
+          "type": "string[]",
+          "required": true
+        },
+        "assigned_to": {
+          "type": "string",
+          "required": true
+        },
+        "completion_probability": {
+          "type": "number",
+          "required": true,
+          "constraints": "0.0-1.0, computed from velocity"
+        }
+      },
+      "states": [
+        "specified",
+        "building",
+        "built",
+        "verified",
+        "shipped"
+      ],
+      "lifecycle": [
+        "specified",
+        "building",
+        "built",
+        "verified",
+        "shipped"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Prediction",
+      "type": "prediction",
+      "description": "A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes.",
+      "file": "data-model.dog",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "statement": {
+          "type": "string",
+          "required": true
+        },
+        "trigger": {
+          "type": "string",
+          "required": true
+        },
+        "timeframe": {
+          "type": "string",
+          "required": true
+        },
+        "confidence": {
+          "type": "number",
+          "required": true,
+          "constraints": "0.0-1.0"
+        },
+        "measurement": {
+          "type": "string",
+          "required": true
+        },
+        "actual_outcome": {
+          "type": "enum",
+          "required": true
+        }
+      },
+      "states": [
+        "pending",
+        "resolved"
+      ],
+      "lifecycle": [
+        "pending",
+        "resolved"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Vector",
+      "type": "vector",
+      "description": "A semantic embedding of a spec section. Used for similarity search, contradiction detection, and staleness checks.",
+      "file": "data-model.dog",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "node_id": {
+          "type": "string",
+          "required": true,
+          "constraints": "references Node.id"
+        },
+        "content": {
+          "type": "string",
+          "required": true
+        },
+        "embedding": {
+          "type": "float[]",
+          "required": true
+        },
+        "model": {
+          "type": "enum",
+          "required": true
+        }
+      },
+      "states": [
+        "active",
+        "stale"
+      ],
+      "lifecycle": [
+        "active",
+        "stale",
+        "active"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Event",
+      "type": "event",
+      "description": "A state-changing occurrence. Has a trigger, payload, preconditions, and postconditions.",
+      "file": "data-model.dog",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true
+        },
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "trigger": {
+          "type": "string",
+          "required": true
+        },
+        "payload": {
+          "type": "json",
+          "required": true
+        },
+        "preconditions": {
+          "type": "string[]",
+          "required": true
+        },
+        "postconditions": {
+          "type": "string[]",
+          "required": true
+        },
+        "probability": {
+          "type": "number",
+          "required": true,
+          "constraints": "0.0-1.0"
+        }
+      },
+      "states": [
+        "specified",
+        "modeled",
+        "verified"
+      ],
+      "lifecycle": [
+        "specified",
+        "modeled",
+        "verified"
+      ],
+      "chars": 0
     }
   ],
   "edges": [
     {
       "source": "Compile",
       "target": ".dag",
+      "verb": "produces",
+      "cardinality": "1:1",
+      "required": false,
+      "cascade": "none",
       "file": "data-model.dog",
-      "section": "Relationship: Compile → .dag"
+      "section": "(root)"
     },
     {
       "source": "Node",
       "target": "Node",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "cascade": "none",
       "file": "data-model.dog",
-      "section": "Relationship: Node → Node"
+      "section": "(root)"
     },
     {
       "source": "Task",
       "target": "Task",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "cascade": "none",
       "file": "data-model.dog",
-      "section": "Relationship: Task → Task"
+      "section": "(root)"
     },
     {
       "source": "Prediction",
       "target": "Task",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "cascade": "none",
       "file": "data-model.dog",
-      "section": "Relationship: Prediction → Task"
+      "section": "(root)"
     },
     {
       "source": "Vector",
       "target": "Node",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "cascade": "none",
       "file": "data-model.dog",
-      "section": "Relationship: Vector → Node"
+      "section": "(root)"
+    },
+    {
+      "source": "Compile",
+      "target": ".dag",
+      "verb": "produces",
+      "cardinality": "1:1",
+      "required": false,
+      "cascade": "none",
+      "file": "data-model.dog",
+      "section": "Entity: Node"
+    },
+    {
+      "source": "Node",
+      "target": "Node",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "cascade": "none",
+      "file": "data-model.dog",
+      "section": "Entity: Node"
+    },
+    {
+      "source": "Task",
+      "target": "Task",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "cascade": "none",
+      "file": "data-model.dog",
+      "section": "Entity: Node"
+    },
+    {
+      "source": "Prediction",
+      "target": "Task",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "cascade": "none",
+      "file": "data-model.dog",
+      "section": "Entity: Node"
+    },
+    {
+      "source": "Vector",
+      "target": "Node",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "cascade": "none",
+      "file": "data-model.dog",
+      "section": "Entity: Node"
     }
   ],
-  "count": 8
+  "files": 7
 }
