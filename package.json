@@ -12,5 +12,9 @@
     "lint": "bun run --filter '*' lint",
     "test": "bun test",
     "validate": "bun packages/spec-cli/src/index.ts validate"
+  },
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "commander": "^15.0.0"
   }
 }

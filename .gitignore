@@ -1,1 +1,4 @@
 node_modules/
+dist/
+packages/dotdog/dist/
+packages/dotdog/node_modules/
