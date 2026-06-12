@@ -1,30 +1,30 @@
-# dotdog — The Spec Dog
+# dotdog
 
-A CLI tool and file format for structured, AI-queryable software specifications.
+> dotdog is a CLI tool and file format for structured, AI-queryable software specifications. Write specs in `.dog` files (markdown + YAML), compile to `.dag` graphs (JSON), query via MCP. Built for humans and AI agents.
 
-## Install
+Important notes:
 
-```bash
-npm install -g dotdog
-```
+- `.dog` files are the human-authored source of truth. `.dag` files are machine-compiled, never edited by hand.
+- The MCP server (`dotdog serve`) exposes specs to any MCP-compatible AI agent over stdio with zero hallucination risk.
+- dotdog validates its own specs. Every release cycle uses the tool to score itself.
 
-## Commands
+## Docs
 
-- `dotdog validate` — Score your spec completeness
-- `dotdog parse` — Parse .dog files to AST
-- `dotdog compile` — Compile .dog to .dag graph
-- `dotdog generate` — Generate missing spec files
-- `dotdog serve` — MCP server for AI agents
-- `dotdog staleness` — Detect spec/reality drift
-- `dotdog visualize` — Mermaid graph from .dag
+- [README](https://github.com/specdog/dotdog#readme): Full README with install, quick start, and command reference
+- [AGENTS.md](https://github.com/specdog/dotdog/blob/main/AGENTS.md): Instructions for AI coding agents working in this repo
+- [Format spec : .dog](https://github.com/specdog/dotdog/blob/main/spec/format-spec.dog): The `.dog` language definition (EBNF grammar, validation rules)
+- [Format spec : .dag](https://github.com/specdog/dotdog/blob/main/spec/format-spec-dag.dog): The `.dag` graph definition (MCP API, token efficiency)
+- [GitHub Pages](https://specdog.github.io/dotdog): Landing page with docs
 
-## Format
+## Quick Start for Agents
 
-- `.dog` — Human-written spec (markdown + YAML entities). Open source.
-- `.dag` — Machine-compiled graph (JSON). Token-efficient for AI agents.
+- [Package source](https://github.com/specdog/dotdog/blob/main/packages/dotdog/src/cli.ts): CLI entry point : all commands registered here
+- [Parser](https://github.com/specdog/dotdog/blob/main/packages/dotdog/src/parser.ts): `.dog` text → typed AST
+- [Grammar types](https://github.com/specdog/dotdog/blob/main/packages/dotdog/src/grammar.ts): TypeScript type definitions (Entity, Relationship, Event, etc.)
+- [MCP server](https://github.com/specdog/dotdog/blob/main/packages/dotdog/src/serve.ts): MCP server implementation over stdio
 
-## Key Links
+## Optional
 
-- GitHub: https://github.com/specdog/dotdog
-- npm: https://www.npmjs.com/package/dotdog
-- Format spec: https://github.com/specdog/dotdog/blob/main/spec/format-spec.dog
+- [npm page](https://www.npmjs.com/package/dotdog): npm registry listing
+- [Example project specs](https://github.com/specdog/dotdog/tree/main/projects/spec-platform/specs): The platform's own `.dog` files : real-world example
+- [Contributing](https://github.com/specdog/dotdog/blob/main/CONTRIBUTING.md): How to contribute
