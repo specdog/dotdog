@@ -8,6 +8,8 @@ import { init } from './init';
 import { list } from './list';
 import { analyze } from './analyze';
 
+import { parseCommand } from './parse';
+
 const program = new Command();
 
 program
@@ -31,6 +33,13 @@ program
   .description('Run a simulation scenario')
   .option('-p, --project <name>', 'Project name', 'default')
   .action((scenario, opts) => simulate(scenario, opts.project));
+
+program
+  .command('parse <file>')
+  .description('Parse a .dog file and output the AST')
+  .option('--json', 'Output full JSON AST')
+  .option('--summary', 'Output summary only')
+  .action((file, opts) => parseCommand(file, opts));
 
 program
   .command('init <project>')

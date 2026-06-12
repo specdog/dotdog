@@ -1,7 +1,11 @@
-// Spec Engine — core types and parser for .spec.md files
+// Spec Engine — core types, parser, and validation for .dog files
 // This is the foundation everything else builds on.
 
 import { z } from 'zod';
+
+// Re-export parser
+export { parse, parseToJSON } from './parser';
+export type { DocumentNode, SectionNode, EntityNode, RelationshipNode, EventNode, PredictionNode, ProseNode, TableNode, BlockNode, PropertyDef } from './grammar';
 
 // --- Types ---
 
