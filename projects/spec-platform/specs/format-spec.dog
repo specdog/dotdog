@@ -1,0 +1,146 @@
+# The .dog Format — Formal Specification v1.0
+
+The `.dog` file format is a structured, AI-queryable specification language for software projects. It uses markdown for prose and YAML blocks for typed entities, relationships, and constraints.
+
+A `.dog` file defines one dimension of a project's spec genome. Together, multiple `.dog` files form a complete, traversable knowledge graph.
+
+## Grammar (EBNF)
+
+```
+dog-file        ::= block*
+
+block           ::= heading-block | prose-block | entity-block | relationship-block 
+                  | event-block | prediction-block | table-block | code-block
+
+heading-block   ::= ("##" | "###") SPACE text NEWLINE
+
+entity-block    ::= "###" SPACE "Entity:" SPACE entity-name NEWLINE
+                    prose*
+                    "```yaml" NEWLINE
+                    entity-body
+                    "```" NEWLINE
+
+relationship-block ::= "###" SPACE "Relationship:" SPACE source "→" target NEWLINE
+                        prose*
+                        "```yaml" NEWLINE
+                        relationship-body
+                        "```" NEWLINE
+
+entity-body     ::= "entity:" SPACE entity-name NEWLINE
+                    "type:" SPACE type-name NEWLINE
+                    "description:" SPACE text NEWLINE
+                    "properties:" NEWLINE
+                    property* NEWLINE
+                    "states:" SPACE "[" state ("," SPACE state)* "]" NEWLINE
+                    "lifecycle:" SPACE state ("→" SPACE state)* NEWLINE
+
+property        ::= SPACE SPACE prop-name ":" NEWLINE
+                    SPACE SPACE SPACE SPACE "type:" SPACE type-def NEWLINE
+                    SPACE SPACE SPACE SPACE "required:" SPACE ("true" | "false") NEWLINE
+                    (SPACE SPACE SPACE SPACE "constraints:" SPACE text NEWLINE)?
+                    (SPACE SPACE SPACE SPACE "default:" SPACE value NEWLINE)?
+                    (SPACE SPACE SPACE SPACE "example:" SPACE value NEWLINE)?
+
+relationship-body ::= "relationship:" SPACE source "→" target NEWLINE
+                      "verb:" SPACE verb-name NEWLINE
+                      "cardinality:" SPACE cardinality NEWLINE
+                      "required:" SPACE ("true" | "false") NEWLINE
+                      "cascade:" SPACE cascade-action NEWLINE
+                      "invariants:" SPACE text NEWLINE
+
+type-def        ::= "string" | "number" | "boolean" | "json"
+                  | "enum"           -- values specified in constraints
+                  | "string[]"       -- array type
+                  | "float[]"        -- array type
+                  | "entity:" name   -- reference to another entity
+                  | "entity:" name "[]"  -- array of entity references
+
+type-name       ::= "entity" | "relationship" | "event" | "prediction" | "node" | "vector"
+verb-name       ::= "contains" | "depends_on" | "references" | "implements"
+                  | "calls" | "owns" | "produces" | "consumes" | "extends" | "precedes"
+cardinality     ::= "1:1" | "1:N" | "N:1" | "N:M"
+cascade-action  ::= "none" | "delete" | "nullify" | "restrict"
+state           ::= identifier
+entity-name     ::= identifier
+identifier      ::= letter (letter | digit | "_")*
+text            ::= any characters except NEWLINE
+value           ::= text | number | "true" | "false" | "null"
+SPACE           ::= " "
+NEWLINE          ::= "\n"
+```
+
+## Entity Schema
+
+Every entity block must contain a YAML code fence with this structure:
+
+```yaml
+entity: Payment
+type: entity
+description: A single payment made by a user toward a split bill
+properties:
+  id:
+    type: string
+    required: true
+  amount:
+    type: number
+    required: true
+    constraints: min 0, 2 decimal places
+  status:
+    type: enum
+    required: true
+    constraints: values: [pending, processing, completed, failed]
+  payer_id:
+    type: string
+    required: true
+    constraints: references User.id
+  split_id:
+    type: string
+    required: true
+    constraints: references Split.id
+  stripe_payment_id:
+    type: string
+    required: false
+states: [pending, processing, completed, failed]
+lifecycle: pending → processing → completed
+          pending → processing → failed
+```
+
+### Property Type Reference
+
+| Type | Example | Notes |
+|------|---------|-------|
+| string | `type: string` | Plain text |
+| number | `type: number` | Integer or float |
+| boolean | `type: boolean` | true or false |
+| json | `type: json` | Arbitrary JSON |
+| enum | `type: enum` | Values in constraints: `values: [a, b, c]` |
+| string[] | `type: string[]` | Array of strings |
+| float[] | `type: float[]` | Array of floats (for embeddings) |
+| entity:X | `type: entity:User` | Reference to another entity |
+| entity:X[] | `type: entity:User[]` | Array of entity references |
+
+## Relationship Schema
+
+```yaml
+relationship: Payment → Split
+verb: belongs_to
+cardinality: N:1
+required: true
+cascade: restrict
+invariants: payment.split_id must reference an existing Split
+```
+
+## AI Agent Instructions
+
+When an AI agent reads a `.dog` file:
+
+1. Parse sections at `##` boundaries for context
+2. Extract entity blocks from `### Entity:` headings with YAML bodies
+3. Extract relationship blocks from `### Relationship:` headings
+4. Build an in-memory graph: entities as nodes, relationships as edges
+5. Traverse the graph to answer queries
+6. Flag entities without descriptions as unembeddable
+
+Every entity with a description is embeddable for semantic search.
+Every relationship is traversable for graph queries.
+The `.dog` format is both human-readable and machine-parseable.
