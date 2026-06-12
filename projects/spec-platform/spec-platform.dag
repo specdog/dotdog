@@ -1,12 +1,12 @@
 {
   "version": "1.2",
   "project": "spec-platform",
-  "compiled_at": "2026-06-12T17:51:34.246Z",
+  "compiled_at": "2026-06-12T17:52:16.358Z",
   "compiler": "dotdog@0.2.5",
   "integrity": {
-    "sha256": "938c5c6c58078a7f26e316d4793bfdf3956dcfefe30376c307147fbeb0ba5f76",
+    "sha256": "47c0f30bfa48593234873d44719293b4080b9c9ecf0ff6b4b8b67f44aafc92da",
     "source_files": 7,
-    "source_bytes": 43980
+    "source_bytes": 44920
   },
   "nodes": [
     {
@@ -87,6 +87,31 @@
       "chars": 0
     },
     {
+      "id": "Compile",
+      "type": "event",
+      "description": "The compilation process. Reads all .dog files, parses entities and relationships, outputs a .dag graph with integrity hash and token savings report.",
+      "file": "data-model.dog",
+      "properties": 3,
+      "states": [
+        "running",
+        "completed",
+        "failed"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "DAG",
+      "type": "entity",
+      "description": "The compiled graph output. A deterministic JSON structure with typed nodes, edges, integrity metadata, and provable token savings. Queryable by AI agents via MCP.",
+      "file": "data-model.dog",
+      "properties": 4,
+      "states": [
+        "current",
+        "stale"
+      ],
+      "chars": 0
+    },
+    {
       "id": "Edge",
       "type": "relationship",
       "description": "A typed connection between two Nodes. Directional (source → target) with cardinality, cascade behavior, and invariants.",
@@ -149,12 +174,37 @@
         "verified"
       ],
       "chars": 0
+    },
+    {
+      "id": "Compile",
+      "type": "event",
+      "description": "The compilation process. Reads all .dog files, parses entities and relationships, outputs a .dag graph with integrity hash and token savings report.",
+      "file": "data-model.dog",
+      "properties": 3,
+      "states": [
+        "running",
+        "completed",
+        "failed"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "DAG",
+      "type": "entity",
+      "description": "The compiled graph output. A deterministic JSON structure with typed nodes, edges, integrity metadata, and provable token savings. Queryable by AI agents via MCP.",
+      "file": "data-model.dog",
+      "properties": 4,
+      "states": [
+        "current",
+        "stale"
+      ],
+      "chars": 0
     }
   ],
   "edges": [
     {
       "source": "Compile",
-      "target": ".dag",
+      "target": "DAG",
       "verb": "produces",
       "cardinality": "1:1",
       "required": false,
@@ -194,7 +244,7 @@
     },
     {
       "source": "Compile",
-      "target": ".dag",
+      "target": "DAG",
       "verb": "produces",
       "cardinality": "1:1",
       "required": false,
@@ -234,9 +284,9 @@
     }
   ],
   "tokens": {
-    "source_total": 10995,
-    "dag_total": 1038,
-    "savings_pct": 90.6,
-    "savings_tokens": 9957
+    "source_total": 11230,
+    "dag_total": 1325,
+    "savings_pct": 88.2,
+    "savings_tokens": 9905
   }
 }
