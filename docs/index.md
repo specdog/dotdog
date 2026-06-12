@@ -49,6 +49,8 @@ upd();
 npm install -g dotdog
 ```
 
+[Adding dotdog to an existing project?](adopting.md)
+
 ## What it does
 
 Describe your app in plain English. dotdog finds what you forgot and fills in the blanks.
