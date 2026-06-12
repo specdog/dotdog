@@ -12,24 +12,6 @@ spec → validate → app → data → better spec → better app → ...
 
 The spec describes the platform. The platform validates the spec. The validation report improves the spec. Each cycle adds granularity.
 
-## Structure
-
-```
-dotdog/
-├── packages/
-│   ├── spec-engine/     # Core types and ontology (shared by everything)
-│   ├── spec-mcp/        # MCP Server — AI agents query specs via stdio
-│   └── spec-cli/        # CLI — spec validate, init, simulate, list
-├── projects/            # Spec genomes (dogfooding)
-│   └── dotdog/
-│       └── specs/
-│           ├── SPEC.dog          # Product spec — screens, flows, stories
-│           ├── constitution.dog  # Immutable rules
-│           └── data-model.dog    # Graph ontology — nodes, edges, tasks, predictions, vectors
-├── templates/           # Spec genome templates for new projects
-└── package.json         # Bun workspace root
-```
-
 ## Install
 
 ```bash
@@ -44,36 +26,47 @@ dotdog init my-project
 dotdog validate
 ```
 
-## $0 Stack
+## Commands
 
-| Component | Technology | Cost |
-|-----------|-----------|------|
-| Runtime | Bun | $0 |
-| Database | bun:sqlite (embedded) | $0 |
-| Types | TypeScript (strict) | $0 |
-| CLI | Commander.js + chalk | $0 |
-| MCP Server | @modelcontextprotocol/sdk (stdio) | $0 |
-| Embeddings | all-MiniLM-L6-v2 (local) | $0 |
-| Hosting | None needed (local-first) | $0 |
+| Command | What it does |
+|---------|-------------|
+| `dotdog validate` | Score your spec completeness |
+| `dotdog parse` | Parse .dog files to AST |
+| `dotdog compile` | Compile .dog to .dag graph |
+| `dotdog generate` | Generate missing spec files |
+| `dotdog serve` | MCP server for AI agents |
+| `dotdog staleness` | Detect drift between spec and reality |
+| `dotdog visualize` | Draw a Mermaid graph from .dag |
+| `dotdog init` | Scaffold a new project |
+| `dotdog list` | List all projects |
 
-## The Spec Graph
+## Format
 
-The spec is not a document. It's a knowledge graph.
+- `.dog` — Human-written spec genome (markdown + YAML). Free and open source.
+- `.dag` — Machine-compiled graph (JSON). Compiled by `dotdog compile`.
 
-- **Nodes**: entities, tasks, predictions, screens, constraints, user stories
-- **Edges**: contains, depends_on, implements, references, calls, precedes
-- **Vectors**: every section embedded for semantic search, contradiction detection, staleness checks
-- **Predictions**: forecasts with triggers, timeframes, confidence, and actual outcome tracking
+## Repository
 
-LLMs traverse the graph at query time. They don't read prose and guess — they get exact typed values.
+```
+dotdog/
+├── packages/dotdog/     # CLI source
+├── spec/                # Format specifications (.dog, .dag)
+├── projects/            # Dogfood project (spec-platform)
+├── templates/           # Project templates
+├── extensions/vscode/   # VS Code extension
+└── docs/                # GitHub Pages
+```
 
 ## Score
 
 ```
-spec validate → 43% complete
+spec validate → 100% complete
 
   ✓ SPEC.dog
   ✓ constitution.dog
   ✓ data-model.dog
-  ⚠ COPY.dog, DESIGN-SYSTEM.dog, plan.dog, INDEX.dog
+  ✓ COPY.dog
+  ✓ DESIGN-SYSTEM.dog
+  ✓ plan.dog
+  ✓ INDEX.dog
 ```
