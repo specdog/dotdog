@@ -21,9 +21,9 @@ spec-platform/
 ├── projects/            # Spec genomes (dogfooding)
 │   └── spec-platform/
 │       └── specs/
-│           ├── SPEC.md          # Product spec — screens, flows, stories
-│           ├── constitution.md  # Immutable rules
-│           └── data-model.md    # Graph ontology — nodes, edges, tasks, predictions, vectors
+│           ├── SPEC.dog          # Product spec — screens, flows, stories
+│           ├── constitution.dog  # Immutable rules
+│           └── data-model.dog    # Graph ontology — nodes, edges, tasks, predictions, vectors
 ├── templates/           # Spec genome templates for new projects
 └── package.json         # Bun workspace root
 ```
@@ -69,8 +69,8 @@ LLMs traverse the graph at query time. They don't read prose and guess — they 
 ```
 spec validate → 43% complete
 
-  ✓ SPEC.md
-  ✓ constitution.md
-  ✓ data-model.md
-  ⚠ COPY.md, DESIGN-SYSTEM.md, plan.md, INDEX.md
+  ✓ SPEC.dog
+  ✓ constitution.dog
+  ✓ data-model.dog
+  ⚠ COPY.dog, DESIGN-SYSTEM.dog, plan.dog, INDEX.dog
 ```

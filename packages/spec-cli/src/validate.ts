@@ -49,8 +49,8 @@ export function validate(dir: string): void {
     console.log('  ' + '─'.repeat(40));
 
     // --- File existence checks ---
-    const requiredFiles = ['SPEC.md'];
-    const optionalFiles = ['constitution.md', 'data-model.md', 'COPY.md', 'DESIGN-SYSTEM.md', 'plan.md', 'INDEX.md'];
+    const requiredFiles = ['SPEC.dog'];
+    const optionalFiles = ['constitution.dog', 'data-model.dog', 'COPY.dog', 'DESIGN-SYSTEM.dog', 'plan.dog', 'INDEX.dog'];
 
     for (const file of requiredFiles) {
       if (files.includes(file)) {
@@ -96,7 +96,7 @@ export function validate(dir: string): void {
       }
 
       // 3. SPEC.md-specific checks
-      if (file === 'SPEC.md') {
+      if (file === 'SPEC.dog') {
         if (!content.includes('User Stories') && !content.includes('User Story')) {
           checks.push({ file, status: 'warn', message: 'no user stories found' });
         }
@@ -106,7 +106,7 @@ export function validate(dir: string): void {
       }
 
       // 4. data-model.md: entity type enforcement (OMD-GraphRAG principle)
-      if (file === 'data-model.md') {
+      if (file === 'data-model.dog') {
         // Count entity blocks — match both "entity: Name" and "### Entity: Name" formats
         const entityMatches = [
           ...content.matchAll(/(?:^|\n)(?:###\s+)?[Ee]ntity:\s*(\S[^\n]*)/g),
@@ -136,7 +136,7 @@ export function validate(dir: string): void {
       }
 
       // 5. constitution.md: principle count
-      if (file === 'constitution.md') {
+      if (file === 'constitution.dog') {
         const principles = (content.match(/^\d+\.\s+\*\*/gm) || []).length;
         if (principles > 0) {
           checks.push({

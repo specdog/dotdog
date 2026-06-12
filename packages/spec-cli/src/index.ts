@@ -6,6 +6,7 @@ import { validate } from './validate';
 import { simulate } from './simulate';
 import { init } from './init';
 import { list } from './list';
+import { analyze } from './analyze';
 
 const program = new Command();
 
@@ -18,6 +19,12 @@ program
   .command('validate [dir]')
   .description('Validate specs in a directory')
   .action((dir = '.') => validate(dir));
+
+program
+  .command('analyze [dir]')
+  .description('Analyze a spec project — what is it, what is missing, what to do next')
+  .option('-p, --project <name>', 'Project name (if multiple)')
+  .action((dir = '.', opts) => analyze(dir, opts.project));
 
 program
   .command('simulate <scenario>')

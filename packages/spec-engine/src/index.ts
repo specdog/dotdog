@@ -140,7 +140,7 @@ export const SpecGenomeSchema = z.object({
   // Behavior
   capabilities: z.array(SpecCapabilitySchema).default([]),
   constraints: z.array(SpecConstraintSchema).default([]),
-  // Screens & flows (from SPEC.md)
+  // Screens & flows (from SPEC.dog)
   screens: z.array(SpecScreenSchema).default([]),
   flows: z.array(SpecFlowSchema).default([]),
   userStories: z.array(SpecUserStorySchema).default([]),
@@ -378,6 +378,315 @@ export function validateChunkSizes(
   }
 
   return warnings;
+}
+
+// --- Project Analysis ---
+
+export interface ProjectAnalysis {
+  project: string;
+  domain: string;
+  stack: string;
+  completeness: number;
+  fileCount: number;
+  files: ProjectFileAnalysis[];
+  gaps: GapFinding[];
+  suggestions: Suggestion[];
+}
+
+export interface ProjectFileAnalysis {
+  file: string;
+  sections: number;
+  topLevelSections: number;
+  size: number;
+  issues: string[];
+}
+
+export interface GapFinding {
+  severity: 'critical' | 'warning' | 'info';
+  file: string;
+  finding: string;
+  suggestion: string;
+}
+
+export interface Suggestion {
+  action: 'create' | 'update' | 'add-section' | 'add-entity' | 'add-failure' | 'add-edge-case' | 'add-prediction';
+  file: string;
+  description: string;
+  priority: 'P0' | 'P1' | 'P2';
+}
+
+/** Analyze a project from its spec files */
+export function analyzeProject(
+  projectName: string,
+  files: Map<string, string>  // filename → content
+): ProjectAnalysis {
+  const analysis: ProjectAnalysis = {
+    project: projectName,
+    domain: 'unknown',
+    stack: 'unknown',
+    completeness: 0,
+    fileCount: files.size,
+    files: [],
+    gaps: [],
+    suggestions: [],
+  };
+
+  // Parse each file
+  for (const [filename, content] of files) {
+    const sections = parseSections(content);
+    const h2s = sections.filter(s => s.level === 2);
+    
+    const fileAnalysis: ProjectFileAnalysis = {
+      file: filename,
+      sections: sections.length,
+      topLevelSections: h2s.length,
+      size: content.length,
+      issues: [],
+    };
+
+    // Check chunk sizes
+    const sizeWarnings = validateChunkSizes(sections);
+    for (const w of sizeWarnings) {
+      fileAnalysis.issues.push(w.message);
+    }
+
+    analysis.files.push(fileAnalysis);
+
+    // Domain detection from SPEC.dog
+    if (filename === 'SPEC.dog') {
+      analysis.domain = detectDomain(content);
+      analysis.stack = detectStack(content);
+      checkSpecCompleteness(content, filename, analysis);
+    }
+
+    // Data model checks
+    if (filename === 'data-model.dog') {
+      checkDataModelCompleteness(content, filename, analysis);
+    }
+
+    // UI completeness
+    if (filename === 'COPY.dog') {
+      checkCopyCompleteness(content, filename, analysis);
+    }
+
+    // Design system completeness  
+    if (filename === 'DESIGN-SYSTEM.dog') {
+      checkDesignCompleteness(content, filename, analysis);
+    }
+
+    // Constitution checks
+    if (filename === 'constitution.dog') {
+      const principles = (content.match(/^\d+\.\s+\*\*/gm) || []).length;
+      if (principles < 3) {
+        analysis.gaps.push({
+          severity: 'warning',
+          file: filename,
+          finding: `Only ${principles} principles defined`,
+          suggestion: 'A strong constitution has 3-7 immutable principles',
+        });
+      }
+    }
+  }
+
+  // Check for missing files
+  const requiredFiles = ['SPEC.dog', 'constitution.dog', 'data-model.dog', 'COPY.dog', 'plan.dog'];
+  for (const file of requiredFiles) {
+    if (!files.has(file)) {
+      analysis.gaps.push({
+        severity: file === 'SPEC.dog' ? 'critical' : 'warning',
+        file,
+        finding: 'Missing',
+        suggestion: `Create ${file} — use 'spec init ${projectName}' then copy from templates/`,
+      });
+      analysis.suggestions.push({
+        action: 'create',
+        file,
+        description: `Create ${file} with project-specific content`,
+        priority: file === 'SPEC.dog' ? 'P0' : 'P1',
+      });
+    }
+  }
+
+  // Score
+  const gapWeights = { critical: 3, warning: 1, info: 0 };
+  const maxScore = 10;
+  const penalty = analysis.gaps.reduce((sum, g) => sum + (gapWeights[g.severity] || 0), 0);
+  analysis.completeness = Math.max(0, Math.round((1 - penalty / (maxScore + penalty)) * 100));
+
+  return analysis;
+}
+
+function detectDomain(specContent: string): string {
+  const purpose = specContent.match(/## Product\s*\n+(.+)/i);
+  if (purpose) return purpose[1].trim().substring(0, 120);
+  const firstPara = specContent.split('\n\n')[0];
+  return firstPara.substring(0, 120);
+}
+
+function detectStack(specContent: string): string {
+  const stackMatch = specContent.match(/## Stack\s*\n([\s\S]+?)(?=\n##|\n#|$)/i);
+  if (stackMatch) {
+    const rows = stackMatch[1].match(/\|.+\|/g);
+    if (rows && rows.length > 1) {
+      const techs: string[] = [];
+      for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i].split('|').map(c => c.trim()).filter(Boolean);
+        if (cols.length >= 2) techs.push(cols[1]);
+      }
+      return techs.join(', ') || 'unknown';
+    }
+  }
+  return 'unknown';
+}
+
+function checkSpecCompleteness(content: string, file: string, analysis: ProjectAnalysis): void {
+  const checks = [
+    { pattern: /User Stor(y|ies)/i, name: 'user stories' },
+    { pattern: /SCREEN|\#\# What the User Sees/i, name: 'screen mockups' },
+    { pattern: /Architecture|graph\s/i, name: 'architecture diagram' },
+    { pattern: /\#\# Stack/i, name: 'tech stack' },
+    { pattern: /Success Criteria/i, name: 'success criteria' },
+  ];
+
+  for (const check of checks) {
+    if (!check.pattern.test(content)) {
+      analysis.gaps.push({
+        severity: 'warning',
+        file,
+        finding: `Missing ${check.name}`,
+        suggestion: `Add ${check.name} section to ${file}`,
+      });
+      analysis.suggestions.push({
+        action: 'add-section',
+        file,
+        description: `Add ${check.name} section`,
+        priority: check.name === 'user stories' || check.name === 'screen mockups' ? 'P0' : 'P1',
+      });
+    }
+  }
+}
+
+function checkDataModelCompleteness(content: string, file: string, analysis: ProjectAnalysis): void {
+  const entityCount = (content.match(/(?:^|\n)(?:###\s+)?[Ee]ntity:/g) || []).length;
+  const relationCount = (content.match(/(?:^|\n)(?:###\s+)?[Rr]elationship:/g) || []).length;
+  const hasEvents = /[Ee]vent/.test(content);
+  const hasStates = /[Ss]tate/.test(content);
+
+  if (entityCount === 0) {
+    analysis.gaps.push({
+      severity: 'critical',
+      file,
+      finding: 'No entities defined',
+      suggestion: 'Define at least 3 entities with descriptions, properties, and states',
+    });
+  }
+
+  if (entityCount > 0 && relationCount === 0) {
+    analysis.gaps.push({
+      severity: 'warning',
+      file,
+      finding: 'Entities defined but no relationships',
+      suggestion: 'Add relationship definitions — how do entities connect?',
+    });
+  }
+
+  if (!hasEvents) {
+    analysis.gaps.push({
+      severity: 'info',
+      file,
+      finding: 'No events defined',
+      suggestion: 'Add event definitions — what triggers state changes?',
+    });
+  }
+
+  if (!hasStates) {
+    analysis.gaps.push({
+      severity: 'warning',
+      file,
+      finding: 'No state machines defined',
+      suggestion: 'Add valid states and transitions for each entity',
+    });
+  }
+
+  // Count entities with descriptions
+  const entityBlocks = content.split(/(?:^|\n)(?:###\s+)?[Ee]ntity:/).slice(1);
+  const withDesc = entityBlocks.filter(b => /description:/i.test(b));
+  if (entityBlocks.length > 0 && withDesc.length < entityBlocks.length) {
+    analysis.gaps.push({
+      severity: 'warning',
+      file,
+      finding: `${entityBlocks.length - withDesc.length}/${entityBlocks.length} entities missing description`,
+      suggestion: 'Every entity needs a description — required for embedding and semantic search',
+    });
+  }
+}
+
+function checkCopyCompleteness(content: string, file: string, analysis: ProjectAnalysis): void {
+  const hasErrorStates = /[Ee]rror/.test(content);
+  const hasLoadingStates = /[Ll]oading/.test(content);
+  const hasEmptyStates = /[Ee]mpty/.test(content);
+  const tableRows = (content.match(/\|.+\|/g) || []).length;
+
+  if (tableRows < 10) {
+    analysis.gaps.push({
+      severity: 'warning',
+      file,
+      finding: `Only ${tableRows} UI strings defined`,
+      suggestion: 'A complete COPY.dog has 50+ strings covering every screen, dialog, error, and system message',
+    });
+  }
+
+  if (!hasErrorStates) {
+    analysis.gaps.push({
+      severity: 'warning',
+      file,
+      finding: 'No error states documented',
+      suggestion: 'Document what the user sees for every failure: network down, validation failed, auth expired, timeout',
+    });
+  }
+
+  const screens = content.match(/\#\#\s+(.+)/g) || [];
+  if (screens.length < 3) {
+    analysis.gaps.push({
+      severity: 'info',
+      file,
+      finding: `Only ${screens.length} screen sections`,
+      suggestion: 'Break COPY.dog into sections by screen or dialog for LLM chunking',
+    });
+  }
+}
+
+function checkDesignCompleteness(content: string, file: string, analysis: ProjectAnalysis): void {
+  const hasTokens = /[Tt]oken/.test(content);
+  const hasComponents = /[Cc]omponent/.test(content);
+  const hasStates = /[Ss]tate/.test(content);
+
+  if (!hasTokens) {
+    analysis.gaps.push({
+      severity: 'warning',
+      file,
+      finding: 'No design tokens defined',
+      suggestion: 'Define Layer 0 tokens: colors, typography, spacing, radius, shadows',
+    });
+  }
+
+  if (!hasComponents) {
+    analysis.gaps.push({
+      severity: 'info',
+      file,
+      finding: 'No component definitions',
+      suggestion: 'Define Layer 1 primitives and Layer 2 components with anatomy, variants, states',
+    });
+  }
+
+  if (!hasStates) {
+    analysis.gaps.push({
+      severity: 'info',
+      file,
+      finding: 'No component states defined',
+      suggestion: 'Document default, hover, active, disabled, loading, error states for each component',
+    });
+  }
 }
 
 // --- Simulation ---
