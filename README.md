@@ -39,14 +39,9 @@ npm install -g dotdog
 ## Quick Start
 
 ```bash
-bun install
-cd projects/dotdog/specs
-
-# Validate our own spec (dogfood)
-bun ../../../packages/spec-cli/src/index.ts validate ../..
-
-# List projects
-bun ../../../packages/spec-cli/src/index.ts list
+npm install -g dotdog
+dotdog init my-project
+dotdog validate
 ```
 
 ## $0 Stack
