@@ -2,3 +2,10 @@ node_modules/
 dist/
 packages/dotdog/dist/
 packages/dotdog/node_modules/
+
+# Security
+.env
+.env.*
+credentials*
+*.pem
+*.key
