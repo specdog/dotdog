@@ -1,17 +1,15 @@
-# The .dag Format — Formal Specification v1.0
+# The .dag Format — Formal Specification v1.1
 
-The `.dag` file format is a compiled, machine-optimized representation of a spec genome. It is the output of the spec engine — a Directed Acyclic Graph encoded as a JSON document.
+The `.dag` file format is a compiled, machine-optimized representation of a spec genome. It is the output of the spec engine — a Directed Acyclic Graph encoded as a JSON document. No prose. No markdown. Pure structure. Designed for AI agents to traverse with zero token waste.
 
-A `.dag` file IS the graph. Nodes are entities. Edges are relationships. Properties are typed values. No prose. No markdown. Pure structure.
-
-## Grammar
+## Grammar (JSON Schema)
 
 ```
 dag-file ::= {
-  "version": "1.0",
+  "version": "1.1",
   "project": string,
   "compiled_at": ISO8601,
-  "score": 0-100,
+  "files": number,
   "nodes": [node, ...],
   "edges": [edge, ...],
   "predictions": [prediction, ...],
@@ -20,24 +18,23 @@ dag-file ::= {
 
 node ::= {
   "id": string,
-  "name": string,
-  "type": node-type,
-  "description": string,
-  "properties": { prop-name: property-def, ... },
+  "file": string,          // source .dog file
+  "chars": number,         // content length (for cost estimation)
+  "properties": { string: { "type": string, "required": boolean, "constraints"?: string }, ... },
   "states": [string, ...],
   "lifecycle": [string, ...],
-  "source_file": string,
-  "source_line": number
+  "description": string    // for embedding
 }
 
 edge ::= {
   "source": string,
   "target": string,
-  "verb": verb-name,
+  "verb": string,
   "cardinality": "1:1" | "1:N" | "N:1" | "N:M",
   "required": boolean,
   "cascade": "none" | "delete" | "nullify" | "restrict",
-  "invariants": string
+  "file": string,
+  "section": string
 }
 
 prediction ::= {
@@ -47,8 +44,7 @@ prediction ::= {
   "timeframe": string | null,
   "confidence": 0.0-1.0,
   "measurement": string,
-  "actual": "pending" | "correct" | "wrong" | "partially_correct",
-  "resolved_at": ISO8601 | null
+  "actual": "pending" | "correct" | "wrong" | "partially_correct"
 }
 
 vector ::= {
@@ -59,52 +55,88 @@ vector ::= {
 }
 ```
 
+## Validation Rules
+
+### MUST (critical — graph is invalid)
+
+| Rule | Check |
+|------|-------|
+| R1 | Valid JSON, parseable without error |
+| R2 | `version` field present and begins with "1." |
+| R3 | `project` field is non-empty string |
+| R4 | Every edge `source` references an existing node `id` |
+| R5 | Every edge `target` references an existing node `id` |
+| R6 | Graph is acyclic — no circular dependencies |
+
+### SHOULD (warning — graph is incomplete)
+
+| Rule | Check |
+|------|-------|
+| R7 | Every node has a non-empty `description` |
+| R8 | Every node has at least one property defined |
+| R9 | Every node has `states` and `lifecycle` |
+| R10 | At least one edge connects nodes |
+
+## Edge Cases
+
+| Case | Behavior |
+|------|----------|
+| Empty graph (no nodes) | Valid. Project has no entities defined. |
+| Orphan node (no edges) | Valid. Node has no relationships yet. |
+| Missing optional fields | Valid. `predictions`, `vectors` can be empty arrays. |
+| Very large graph (1000+ nodes) | Consumer should paginate. No enforced limit. |
+| Duplicate node IDs | Last definition wins. Consumer warns. |
+
+## Token Efficiency
+
+The `.dag` format is optimized for AI agents. Compared to reading `.dog` files:
+
+```
+.dog (read 10 files):    ~8000 tokens (prose, markdown, YAML)
+.dag (read graph):       ~1200 tokens (JSON, no prose)
+                         ──────
+                         85% token savings per query
+```
+
+The compile step pays the parsing cost once. Every agent query saves.
+
+## MCP API
+
+The `spec serve` MCP server exposes the graph to AI agents over stdio:
+
+| Tool | Input | Output |
+|------|-------|--------|
+| listProjects | — | Array of project names |
+| listNodes | project | Array of nodes |
+| getEntity | project, name | Single node with properties, states |
+| getEdges | project, node | All edges to/from a node |
+| getGraph | project | Full .dag JSON |
+
+Agent workflow:
+```
+1. listProjects → ["spec-platform"]
+2. getEntity("spec-platform", "Payment") → {id, properties, states, lifecycle}
+3. getEdges("spec-platform", "Payment") → [{source, target, verb, cardinality}]
+4. Agent has exact types, states, and connections. Zero hallucination.
+```
+
 ## Pipeline
 
 ```
-.dog (human writes)        .dag (machine compiles)
-───────────────            ───────────────
-Markdown + YAML            Pure JSON
-Human-readable             Machine-parseable
-Prose for context          No prose — just graph
-Source of truth            Compiled artifact
-Stored in git              Stored in SQLite
-Free, open source          Paid, enterprise
-Dogfood format             Analytics format
+.dog files → spec parse → AST → spec compile → .dag → spec serve (MCP) → AI agent
 ```
 
-## Relationship
+## Conformance
 
-- `.dog` is the INPUT format. Humans write it. AI reads it at build time.
-- `.dag` is the OUTPUT format. The engine compiles `.dog` into `.dag`. AI traverses it at runtime.
+An implementation is conforming if it:
+1. Produces valid JSON matching the grammar
+2. Validates all MUST rules
+3. Handles all documented edge cases
+4. Exposes the MCP API verbatim or equivalent
 
-```
-SPEC.dog ──→ spec parse ──→ AST ──→ spec compile ──→ project.dag
-                                            ↓
-                                     SQLite / Postgres
-                                            ↓
-                                     AI traverses graph
-```
+## History
 
-## API
-
-```
-GET  /projects/:id/dag          → project.dag (full graph)
-GET  /projects/:id/dag/nodes    → all nodes
-GET  /projects/:id/dag/edges    → all edges
-GET  /projects/:id/dag/node/:id → single node + connected edges
-POST /projects/:id/compile      → recompile .dog → .dag
-```
-
-## AI Agent Instructions
-
-When an AI agent receives a `.dag` file:
-
-1. Parse as JSON
-2. Build a graph: nodes as vertices, edges as directed connections
-3. Traverse for queries: BFS for hop depth, DFS for paths
-4. Compute predictions: confidence × historical_accuracy = expected_outcome
-5. Flag nodes with no description as unembeddable
-6. Flag edges referencing unknown nodes as broken
-
-The `.dag` format is NOT meant for human editing. It is the compiled output of the spec engine.
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2026-06-12 | Initial spec |
+| 1.1 | 2026-06-12 | Validation rules, edge cases, MCP API, token efficiency section |
