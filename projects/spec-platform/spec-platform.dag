@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "project": "spec-platform",
-  "compiled_at": "2026-06-12T12:31:02.410Z",
+  "compiled_at": "2026-06-12T12:46:37.311Z",
   "nodes": [
     {
       "id": "Node",
@@ -66,5 +66,5 @@
       "section": "Relationship: Vector → Node"
     }
   ],
-  "count": 10
+  "count": 8
 }
