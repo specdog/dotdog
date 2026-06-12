@@ -1,0 +1,242 @@
+{
+  "version": "1.2",
+  "project": "spec-platform",
+  "compiled_at": "2026-06-12T17:51:34.246Z",
+  "compiler": "dotdog@0.2.5",
+  "integrity": {
+    "sha256": "938c5c6c58078a7f26e316d4793bfdf3956dcfefe30376c307147fbeb0ba5f76",
+    "source_files": 7,
+    "source_bytes": 43980
+  },
+  "nodes": [
+    {
+      "id": "Node",
+      "type": "entity",
+      "description": "A typed node in the spec knowledge graph. Every entity, task, prediction, and concept is a Node.",
+      "file": "data-model.dog",
+      "properties": 5,
+      "states": [
+        "created",
+        "updated",
+        "archived"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Edge",
+      "type": "relationship",
+      "description": "A typed connection between two Nodes. Directional (source → target) with cardinality, cascade behavior, and invariants.",
+      "file": "data-model.dog",
+      "properties": 8,
+      "states": [
+        "active",
+        "deprecated"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Task",
+      "type": "entity",
+      "description": "A unit of work. Has dependencies, assignment, effort estimates, and a computed completion probability.",
+      "file": "data-model.dog",
+      "properties": 9,
+      "states": [
+        "specified",
+        "building",
+        "built",
+        "verified",
+        "shipped"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Prediction",
+      "type": "prediction",
+      "description": "A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes.",
+      "file": "data-model.dog",
+      "properties": 7,
+      "states": [
+        "pending",
+        "resolved"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Vector",
+      "type": "vector",
+      "description": "A semantic embedding of a spec section. Used for similarity search, contradiction detection, and staleness checks.",
+      "file": "data-model.dog",
+      "properties": 5,
+      "states": [
+        "active",
+        "stale"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Event",
+      "type": "event",
+      "description": "A state-changing occurrence. Has a trigger, payload, preconditions, and postconditions.",
+      "file": "data-model.dog",
+      "properties": 7,
+      "states": [
+        "specified",
+        "modeled",
+        "verified"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Edge",
+      "type": "relationship",
+      "description": "A typed connection between two Nodes. Directional (source → target) with cardinality, cascade behavior, and invariants.",
+      "file": "data-model.dog",
+      "properties": 8,
+      "states": [
+        "active",
+        "deprecated"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Task",
+      "type": "entity",
+      "description": "A unit of work. Has dependencies, assignment, effort estimates, and a computed completion probability.",
+      "file": "data-model.dog",
+      "properties": 9,
+      "states": [
+        "specified",
+        "building",
+        "built",
+        "verified",
+        "shipped"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Prediction",
+      "type": "prediction",
+      "description": "A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes.",
+      "file": "data-model.dog",
+      "properties": 7,
+      "states": [
+        "pending",
+        "resolved"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Vector",
+      "type": "vector",
+      "description": "A semantic embedding of a spec section. Used for similarity search, contradiction detection, and staleness checks.",
+      "file": "data-model.dog",
+      "properties": 5,
+      "states": [
+        "active",
+        "stale"
+      ],
+      "chars": 0
+    },
+    {
+      "id": "Event",
+      "type": "event",
+      "description": "A state-changing occurrence. Has a trigger, payload, preconditions, and postconditions.",
+      "file": "data-model.dog",
+      "properties": 7,
+      "states": [
+        "specified",
+        "modeled",
+        "verified"
+      ],
+      "chars": 0
+    }
+  ],
+  "edges": [
+    {
+      "source": "Compile",
+      "target": ".dag",
+      "verb": "produces",
+      "cardinality": "1:1",
+      "required": false,
+      "file": "data-model.dog"
+    },
+    {
+      "source": "Node",
+      "target": "Node",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "file": "data-model.dog"
+    },
+    {
+      "source": "Task",
+      "target": "Task",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "file": "data-model.dog"
+    },
+    {
+      "source": "Prediction",
+      "target": "Task",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "file": "data-model.dog"
+    },
+    {
+      "source": "Vector",
+      "target": "Node",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "file": "data-model.dog"
+    },
+    {
+      "source": "Compile",
+      "target": ".dag",
+      "verb": "produces",
+      "cardinality": "1:1",
+      "required": false,
+      "file": "data-model.dog"
+    },
+    {
+      "source": "Node",
+      "target": "Node",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "file": "data-model.dog"
+    },
+    {
+      "source": "Task",
+      "target": "Task",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "file": "data-model.dog"
+    },
+    {
+      "source": "Prediction",
+      "target": "Task",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "file": "data-model.dog"
+    },
+    {
+      "source": "Vector",
+      "target": "Node",
+      "verb": "connects",
+      "cardinality": "N:M",
+      "required": false,
+      "file": "data-model.dog"
+    }
+  ],
+  "tokens": {
+    "source_total": 10995,
+    "dag_total": 1038,
+    "savings_pct": 90.6,
+    "savings_tokens": 9957
+  }
+}
