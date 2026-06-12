@@ -14,7 +14,7 @@
     <ellipse id="tongue" cx="60" cy="84" rx="5" ry="6" fill="#ef4444" opacity="0" style="transition:opacity .2s"/>
     <!-- bone in mouth -->
     <g id="bone" opacity="0">
-      <path d="M44 74 Q44 64 55 70 L65 70 Q76 64 76 74 Q76 84 65 80 L55 80 Q44 84 44 74 Z" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <path d="M44 80 Q44 70 55 76 L65 76 Q76 70 76 80 Q76 90 65 86 L55 86 Q44 90 44 80 Z" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
     </g>
   </svg>
   <div id="dog-status" style="font-size:.75em;color:#9ca3af;min-height:18px;margin:4px 0">🐕 Spec</div>
