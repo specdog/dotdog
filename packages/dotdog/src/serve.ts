@@ -11,7 +11,11 @@ function resolvePath(p: string): string {
   const resolved = p.startsWith('/') ? p : join(process.cwd(), p);
   if (!p.startsWith('/') && !p.startsWith('~')) {
     const rel = resolve(process.cwd(), p);
-    if (!rel.startsWith(process.cwd() + '/') && rel !== process.cwd()) {
+    const cwd = process.cwd();
+    const isDescendant = rel.startsWith(cwd + '/');
+    const isSelf = rel === cwd;
+    const isAncestor = cwd.startsWith(rel + '/');
+    if (!isDescendant && !isSelf && !isAncestor) {
       throw new Error(`Path traversal blocked: ${p}`);
     }
     return rel;
