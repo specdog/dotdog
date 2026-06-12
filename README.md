@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/dotdog)](https://www.npmjs.com/package/dotdog) [![License: MIT](https://img.shields.io/npm/l/dotdog)](https://github.com/specdog/spec/blob/main/LICENSE) [![CI](https://github.com/specdog/spec/actions/workflows/publish.yml/badge.svg)](https://github.com/specdog/spec/actions)
 
-Monorepo for the Spec Platform — a knowledge graph system where specs ARE the database and LLMs ARE the query engine.
+Feed the dog. Ship with specs.
 
 ## The Flywheel
 
