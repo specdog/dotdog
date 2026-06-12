@@ -27,7 +27,8 @@ function parseSections(markdown: string): Array<{heading:string,level:number,con
 
 // --- CLI Commands ---
 const program = new Command();
-program.name('spec').alias('dotdog').description('The spec dog — validate, analyze, generate .dog files').version('0.1.0');
+const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8'));
+program.name('spec').alias('dotdog').description('The spec dog — validate, analyze, generate .dog files').version(pkg.version);
 
 program.command('validate [dir]').action((d='.') => {
   const dirs = [join(d,'projects'),join(d,'specs')];
