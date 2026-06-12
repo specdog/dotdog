@@ -1,6 +1,6 @@
 {
   "name": "dotdog",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "The spec dog \u2014 validate, analyze, parse, and generate .dog spec genome files",
   "type": "module",
   "main": "dist/cli.js",
