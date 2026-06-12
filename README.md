@@ -1,6 +1,6 @@
 # dotdog
 
-[![npm](https://img.shields.io/npm/v/dotdog)](https://www.npmjs.com/package/dotdog) [![License: MIT](https://img.shields.io/npm/l/dotdog)](https://github.com/specdog/spec/blob/main/LICENSE) [![CI](https://github.com/specdog/spec/actions/workflows/test.yml/badge.svg)](https://github.com/specdog/spec/actions)
+[![npm](https://img.shields.io/npm/v/dotdog)](https://www.npmjs.com/package/dotdog) [![License: MIT](https://img.shields.io/npm/l/dotdog)](https://github.com/specdog/dotdog/blob/main/LICENSE) [![CI](https://github.com/specdog/dotdog/actions/workflows/test.yml/badge.svg)](https://github.com/specdog/dotdog/actions)
 
 Feed the dog. Ship with specs.
 
@@ -15,13 +15,13 @@ The spec describes the platform. The platform validates the spec. The validation
 ## Structure
 
 ```
-spec-platform/
+dotdog/
 ├── packages/
 │   ├── spec-engine/     # Core types and ontology (shared by everything)
 │   ├── spec-mcp/        # MCP Server — AI agents query specs via stdio
 │   └── spec-cli/        # CLI — spec validate, init, simulate, list
 ├── projects/            # Spec genomes (dogfooding)
-│   └── spec-platform/
+│   └── dotdog/
 │       └── specs/
 │           ├── SPEC.dog          # Product spec — screens, flows, stories
 │           ├── constitution.dog  # Immutable rules
@@ -40,7 +40,7 @@ npm install -g dotdog
 
 ```bash
 bun install
-cd projects/spec-platform/specs
+cd projects/dotdog/specs
 
 # Validate our own spec (dogfood)
 bun ../../../packages/spec-cli/src/index.ts validate ../..
