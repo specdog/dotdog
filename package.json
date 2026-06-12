@@ -1,0 +1,16 @@
+{
+  "name": "spec-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Spec genome platform — validate, simulate, generate code. MCP server for AI agents. $0 stack.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun --cwd packages/spec-api dev",
+    "build": "bun run --filter '*' build",
+    "lint": "bun run --filter '*' lint",
+    "test": "bun test",
+    "validate": "bun packages/spec-cli/src/index.ts validate"
+  }
+}
