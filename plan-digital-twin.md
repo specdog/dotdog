@@ -1,7 +1,7 @@
 # plan: digital-twin-spec-system
 
 > Status: plan (not building yet)
-> Owner: Justin
+> Owner: specdog
 > Created: 2026-06-12
 
 ## What this is

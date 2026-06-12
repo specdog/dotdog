@@ -6,7 +6,7 @@
 
 ## Product
 
-Teams define their software using a spec genome. The platform validates that the spec is complete and consistent, simulates scenarios to predict outcomes, and generates production-ready code scaffolding. AI coding agents (Claude Code, Cursor, Copilot, Hermes) query specs in real-time via MCP.
+Teams define their software using a spec genome. The platform validates that the spec is complete and consistent, simulates scenarios to predict outcomes, and generates production-ready code scaffolding. AI coding agents query specs in real-time via MCP.
 
 One source of truth. Zero ambiguity. Ship with confidence.
 
@@ -42,7 +42,7 @@ DASHBOARD
 ### Flow 2: AI agent queries specs (MCP)
 
 ```
-┌─ Developer in Cursor ──────────────────────────────┐
+┌─ Developer in editor ──────────────────────────────┐
 │                                                     │
 │  User: "Build the payment bubble component"         │
 │                                                     │
@@ -175,7 +175,7 @@ DASHBOARD
 |-------|------|-----|
 | Core Engine | TypeScript | One language across API, MCP, codegen. Runs on Node/Bun/Deno. |
 | API | Elysia (Bun) | Fast, TypeScript-native, OpenAPI auto-gen |
-| MCP Server | @modelcontextprotocol/sdk | Standard protocol. Works with Claude, Cursor, Copilot, Hermes. |
+| MCP Server | @modelcontextprotocol/sdk | Standard protocol. Works with major AI coding agents. |
 | Dashboard | React + Vite | Fast build, small bundle, no framework lock-in |
 | Database | SQLite (embedded) → Postgres (cloud) | Start local, scale to cloud. Same schema. |
 | CLI | Node.js + Commander.js | Zero-dependency install, single binary target |
@@ -186,7 +186,7 @@ DASHBOARD
 
 - Monorepo. One `pnpm-workspace.yaml`. Shared types.
 - SQLite for local/offline. Postgres for cloud. Same Prisma schema.
-- MCP server must work with Claude Code, Cursor, Copilot, Hermes — not just one.
+- MCP server must work with major AI coding agents — not just one.
 - CLI must install via `npm install -g spec-platform` with zero additional deps.
 - The platform IS dogfooded. `specs/` in this repo uses our own format.
 - Free tier: 1 project, local-only, full features. Paid: teams, cloud, predictions.
