@@ -19,4 +19,4 @@ jobs:
       - uses: oven-sh/setup-bun@v1
       - run: cd packages/dotdog && bun install
       - run: cd packages/dotdog && bun build src/cli.ts --outdir dist --target node
-      - run: cd packages/dotdog && npm publish
+      - run: cd packages/dotdog && npm publish --provenance --access public
