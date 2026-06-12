@@ -1,13 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import chalk from 'chalk';
-import {
-  parseSections,
-  validateChunkSizes,
-  buildGraph,
-  auditHopDepth,
-  ONTOLOGY_ENTITY_TYPES,
-} from '@spec/engine';
+import { parse, parseSections } from '@spec/engine';
+import type { DocumentNode, EntityNode, RelationshipNode } from '@spec/engine';
 
 interface Check {
   file: string;
@@ -43,117 +38,107 @@ export function validate(dir: string): void {
 
   for (const project of projects) {
     const projectDir = join(specsDir, project, 'specs');
-    const files = existsSync(projectDir) ? readdirSync(projectDir) : [];
+    const files = existsSync(projectDir) ? readdirSync(projectDir).filter(f => f.endsWith('.dog')) : [];
 
     console.log(chalk.bold(`\n  ${project}`));
     console.log('  ' + '─'.repeat(40));
 
-    // --- File existence checks ---
+    // File existence
     const requiredFiles = ['SPEC.dog'];
     const optionalFiles = ['constitution.dog', 'data-model.dog', 'COPY.dog', 'DESIGN-SYSTEM.dog', 'plan.dog', 'INDEX.dog'];
 
     for (const file of requiredFiles) {
-      if (files.includes(file)) {
-        checks.push({ file, status: 'pass', message: 'exists' });
-      } else {
-        checks.push({ file, status: 'fail', message: 'missing — required' });
-      }
+      checks.push({ file, status: files.includes(file) ? 'pass' : 'fail', message: files.includes(file) ? 'exists' : 'missing — required' });
     }
-
     for (const file of optionalFiles) {
-      if (files.includes(file)) {
-        checks.push({ file, status: 'pass', message: 'exists' });
-      } else {
-        checks.push({ file, status: 'warn', message: 'missing' });
-      }
+      checks.push({ file, status: files.includes(file) ? 'pass' : 'warn', message: files.includes(file) ? 'exists' : 'missing' });
     }
 
-    // --- Content checks (GraphRAG-informed) ---
+    // Parse each file
     for (const file of files) {
       const content = readFileSync(join(projectDir, file), 'utf-8');
+      const ast = parse(content);
 
-      // 1. Section chunking + size check (AgentDocSpec: max 50K chars per chunk)
+      // Section count
       const sections = parseSections(content);
-      const sizeWarnings = validateChunkSizes(sections);
-      for (const w of sizeWarnings) {
-        checks.push({
-          file,
-          status: 'warn',
-          message: w.message,
-        });
-      }
+      const h2s = sections.filter(s => s.level === 2);
+      checks.push({ file, status: 'pass', message: `${sections.length} sections (${h2s.length} top-level). Good for LLM chunking.` });
 
-      // 2. Section count — useful for LLM navigation
-      if (sections.length > 0) {
-        const h2s = sections.filter(s => s.level === 2);
-        if (h2s.length > 0) {
-          checks.push({
-            file,
-            status: 'pass',
-            message: `${sections.length} sections (${h2s.length} top-level). Good for LLM chunking.`,
-          });
+      // Extract all entities and relationships from AST
+      const entities: EntityNode[] = [];
+      const relationships: RelationshipNode[] = [];
+      for (const section of ast.sections) {
+        for (const block of section.blocks) {
+          if (block.kind === 'entity') entities.push(block as EntityNode);
+          if (block.kind === 'relationship') relationships.push(block as RelationshipNode);
         }
       }
 
-      // 3. SPEC.md-specific checks
-      if (file === 'SPEC.dog') {
-        if (!content.includes('User Stories') && !content.includes('User Story')) {
-          checks.push({ file, status: 'warn', message: 'no user stories found' });
-        }
-        if (!content.includes('## What the User Sees') && !content.includes('SCREEN')) {
-          checks.push({ file, status: 'warn', message: 'no screen mockups (ASCII art)' });
-        }
-      }
+      // Entity checks
+      if (entities.length > 0) {
+        const unique = [...new Set(entities.map(e => e.name))];
+        checks.push({ file, status: 'pass', message: `${entities.length} entity definitions (${unique.length} unique)` });
 
-      // 4. data-model.md: entity type enforcement (OMD-GraphRAG principle)
-      if (file === 'data-model.dog') {
-        // Count entity blocks — match both "entity: Name" and "### Entity: Name" formats
-        const entityMatches = [
-          ...content.matchAll(/(?:^|\n)(?:###\s+)?[Ee]ntity:\s*(\S[^\n]*)/g),
-        ];
-        if (entityMatches.length > 0) {
-          const names = entityMatches.map(m => m[1].trim());
-          const uniqueNames = [...new Set(names)];
-          checks.push({
-            file,
-            status: 'pass',
-            message: `${entityMatches.length} entity definitions (${uniqueNames.length} unique)`,
-          });
+        // Descriptions
+        const withDesc = entities.filter(e => e.description && e.description.length > 5);
+        const noDesc = entities.length - withDesc.length;
+        if (noDesc > 0) {
+          checks.push({ file, status: 'warn', message: `${noDesc}/${entities.length} entities missing description — can't be embedded for semantic search` });
+        }
 
-          // Check descriptions — entities need them for embedding
-          const entityBlocks = content.split(/(?:^|\n)(?:###\s+)?[Ee]ntity:/).slice(1);
-          const withDesc = entityBlocks.filter(b =>
-            b.includes('description:') || b.includes('Description:')
-          );
-          if (withDesc.length < entityBlocks.length) {
-            checks.push({
-              file,
-              status: 'warn',
-              message: `${entityBlocks.length - withDesc.length}/${entityBlocks.length} entities missing description — can't be embedded for semantic search`,
-            });
+        // Properties
+        for (const entity of entities) {
+          const propCount = Object.keys(entity.properties).length;
+          if (propCount === 0) {
+            checks.push({ file, status: 'warn', message: `Entity "${entity.name}" has no properties defined` });
+          }
+          // Check for states
+          if (entity.states.length === 0) {
+            checks.push({ file, status: 'warn', message: `Entity "${entity.name}" has no states defined` });
           }
         }
       }
 
-      // 5. constitution.md: principle count
+      // Relationship checks
+      if (relationships.length > 0) {
+        checks.push({ file, status: 'pass', message: `${relationships.length} relationship definitions` });
+
+        // Verify all relationship sources/targets reference real entities
+        const entityNames = new Set(entities.map(e => e.name));
+        for (const rel of relationships) {
+          if (rel.source && !entityNames.has(rel.source)) {
+            checks.push({ file, status: 'warn', message: `Relationship "${rel.source} → ${rel.target}" references unknown source "${rel.source}"` });
+          }
+          if (rel.target && !entityNames.has(rel.target)) {
+            checks.push({ file, status: 'warn', message: `Relationship "${rel.source} → ${rel.target}" references unknown target "${rel.target}"` });
+          }
+        }
+      }
+
+      // SPEC.dog specific
+      if (file === 'SPEC.dog') {
+        if (!content.includes('User Stor') && !content.includes('user stor')) {
+          checks.push({ file, status: 'warn', message: 'no user stories found' });
+        }
+        if (!content.includes('SCREEN') && !content.includes('What the User Sees')) {
+          checks.push({ file, status: 'warn', message: 'no screen mockups (ASCII art)' });
+        }
+      }
+
+      // constitution.dog specific
       if (file === 'constitution.dog') {
         const principles = (content.match(/^\d+\.\s+\*\*/gm) || []).length;
         if (principles > 0) {
-          checks.push({
-            file,
-            status: 'pass',
-            message: `${principles} principles defined`,
-          });
+          checks.push({ file, status: 'pass', message: `${principles} principles defined` });
         }
       }
     }
 
-    // --- Print results ---
+    // Print
     let pass = 0, warn = 0, fail = 0;
     for (const check of checks) {
       const icon = check.status === 'pass' ? chalk.green('  ✓') :
-        check.status === 'warn' ? chalk.yellow('  ⚠') :
-        chalk.red('  ✗');
+        check.status === 'warn' ? chalk.yellow('  ⚠') : chalk.red('  ✗');
       console.log(`${icon} ${check.file.padEnd(22)} ${check.message}`);
       if (check.status === 'pass') pass++;
       else if (check.status === 'warn') warn++;
