@@ -48,7 +48,7 @@ import { serve } from './serve';
 
 const program = new Command();
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8'));
-program.name('spec').alias('dotdog').description('The spec dog — validate, analyze, generate, simulate .dog files').version(pkg.version);
+program.name('spec').alias('dotdog').description('CLI for structured software specs — validate .dog, compile .dag, query via MCP').version(pkg.version);
 
 program.command('validate [dir]').action((d='.') => {
   const dir = resolvePath(d);
