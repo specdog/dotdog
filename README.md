@@ -1,6 +1,6 @@
 # dotdog
 
-[![npm](https://img.shields.io/npm/v/dotdog)](https://www.npmjs.com/package/dotdog) [![License: MIT](https://img.shields.io/npm/l/dotdog)](https://github.com/specdog/spec/blob/main/LICENSE) [![CI](https://github.com/specdog/spec/actions/workflows/publish.yml/badge.svg)](https://github.com/specdog/spec/actions)
+[![npm](https://img.shields.io/npm/v/dotdog)](https://www.npmjs.com/package/dotdog) [![License: MIT](https://img.shields.io/npm/l/dotdog)](https://github.com/specdog/spec/blob/main/LICENSE) [![CI](https://github.com/specdog/spec/actions/workflows/test.yml/badge.svg)](https://github.com/specdog/spec/actions)
 
 Feed the dog. Ship with specs.
 
