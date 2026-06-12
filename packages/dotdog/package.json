@@ -1,7 +1,7 @@
 {
   "name": "dotdog",
-  "version": "0.3.0",
-  "description": "The spec dog — structured, AI-queryable software specifications. Write .dog specs, compile to .dag graphs, query via MCP. Built for humans and AI agents.",
+  "version": "0.2.5",
+  "description": "CLI tool for structured software specifications. Validate .dog files, compile .dag graphs, query via MCP.",
   "type": "module",
   "main": "dist/cli.js",
   "bin": {
@@ -22,6 +22,7 @@
     "mcp",
     "documentation",
     "cli",
+    "dogfood",
     "spec-driven-development",
     "graph",
     "markdown",
@@ -32,10 +33,7 @@
   ],
   "license": "MIT",
   "author": "specdog",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/specdog/dotdog.git"
-  },
+  "repository": "github:specdog/dotdog",
   "dependencies": {
     "commander": "^15.0.0",
     "chalk": "^5.6.0"
