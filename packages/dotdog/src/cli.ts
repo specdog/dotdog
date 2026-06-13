@@ -78,10 +78,10 @@ program.command('validate [dir]').action((d='.') => {
   if (!found) console.log(chalk.yellow('No projects found. Run: spec init <project>'));
 });
 
-program.command('init <project>').action((p) => {
+program.command('init <project>').option('-m, --minimal', 'Only SPEC.dog + data-model.dog').action((p, opts) => {
   const d = join(process.cwd(),'specs',p);
   mkdirSync(d,{recursive:true});
-  const tmpl: Record<string,string> = {
+  const full: Record<string,string> = {
     'SPEC.dog': '# Project\n\n## Product\n\n',
     'constitution.dog': '# Constitution\n\n1. **Rule.**\n',
     'data-model.dog': '# Data Model\n\n## Entities\n\n',
@@ -89,6 +89,11 @@ program.command('init <project>').action((p) => {
     'COPY.dog': '# Copy\n\n| Element | Copy |\n|---|---|\n',
     'INDEX.dog': '# INDEX\n\n| You | Start | Then |\n|---|---|---|\n',
   };
+  const minimal: Record<string,string> = {
+    'SPEC.dog': '# Project\n\n## Product\n\n',
+    'data-model.dog': '# Data Model\n\n## Entities\n\n',
+  };
+  const tmpl = opts.minimal ? minimal : full;
   for (const [f,c] of Object.entries(tmpl)) { writeFileSync(join(d,f),c); console.log(chalk.green(`  ✓ ${f}`)); }
   console.log(chalk.bold(`\nProject "${p}" initialized. Fill in SPEC.dog then run spec validate.`));
 });
@@ -129,78 +134,78 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
       const files = readdirSync(pd).filter(f=>f.endsWith('.dog')).sort();
       if (!files.length) continue;
       found = true;
-      // Read all source files for integrity + token counting
+      // Read source files, count bytes (exclude template stubs for accurate savings)
       const sources: Record<string,string> = {};
-      let sourceBytes = 0;
-      const hash = createHash('sha256');
+      let sourceBytes = 0, contentBytes = 0;
       for (const f of files) {
         const content = readFileSync(join(pd,f),'utf-8');
         sources[f] = content;
-        sourceBytes += Buffer.byteLength(content,'utf-8');
-        hash.update(content);
-        hash.update('\n');
+        const bytes = Buffer.byteLength(content,'utf-8');
+        sourceBytes += bytes;
+        // Exclude template stubs (< 100 bytes) from content-only calc
+        if (bytes >= 100) contentBytes += bytes;
       }
-      const integrity = { sha256: hash.digest('hex'), source_files: files.length, source_bytes: sourceBytes };
-      // Estimate tokens: ~4 chars/token for English prose
       const sourceTokens = Math.round(sourceBytes / 4);
-      // Compile nodes + edges from typed parser
+      const contentTokens = Math.round(contentBytes / 4);
+      // Compile nodes + edges with compact keys
       const nodes: any[] = [], edges: any[] = [];
       for (const f of files) {
         const ast = parse(sources[f]);
         for (const section of ast.sections) {
           for (const block of section.blocks) {
             if (block.kind === 'entity' || block.kind === 'event' || block.kind === 'prediction') {
-              // Build full property schema
-              const propSchema: Record<string, any> = {};
+              // Compact property schema: s=string, n=number, b=boolean, e=enum, j=json, !=required
+              const compactProps: Record<string, string> = {};
               for (const [key, val] of Object.entries(block.properties)) {
-                const def: any = { type: val.type || 'string' };
-                if (val.required) def.required = true;
-                if (val.values) def.values = val.values;
-                if (val.format) def.format = val.format;
-                if (val.default !== undefined) def.default = val.default;
-                if (val.constraints) def.constraints = val.constraints;
-                propSchema[key] = def;
+                let enc = '';
+                const t = val.type || 'string';
+                if (t === 'string') enc = 's';
+                else if (t === 'number') enc = 'n';
+                else if (t === 'boolean') enc = 'b';
+                else if (t === 'enum') enc = 'e';
+                else if (t === 'json') enc = 'j';
+                else enc = t[0]; // fallback: first char
+                if (val.required) enc += '!';
+                compactProps[key] = enc;
               }
               nodes.push({
-                id: block.name,
-                type: block.type,
-                category: block.kind,  // entity, event, or prediction
-                description: block.description || '',
-                file: f,
-                properties: propSchema,
-                states: block.states || [],
-                lifecycle: (block as any).lifecycle || [],
+                i: block.name,
+                t: block.type,
+                g: block.kind,
+                d: block.description || '',
+                p: compactProps,
+                s: block.states || [],
+                l: (block as any).lifecycle || [],
               });
             }
             if (block.kind === 'relationship') {
               edges.push({
-                source: block.source,
-                target: block.target,
-                verb: block.verb,
-                description: block.description || '',
-                cardinality: block.cardinality,
-                required: block.required,
-                file: f
+                s: block.source,
+                t: block.target,
+                v: block.verb,
+                d: block.description || '',
+                c: block.cardinality,
+                r: block.required,
               });
             }
           }
         }
       }
-      // Build enhanced .dag
-      const dag = { version: '1.3', project: p, compiled_at: new Date().toISOString(), compiler: `dotdog@${pkg.version}`, integrity, nodes, edges };
-      // Calculate token savings (approximate: ~4 chars per token for English prose)
+      // Build compact .dag
+      const dag = { v: '1.4', p, c: `dotdog@${pkg.version}`, n: nodes, e: edges };
+      // Calculate token savings
       const dagJson = JSON.stringify(dag);
       const dagTokens = Math.round(Buffer.byteLength(dagJson,'utf-8') / 4);
-      const savingsPct = sourceTokens > 0 ? Math.round((1 - dagTokens / sourceTokens) * 1000) / 10 : 0;
+      const allSavingsPct = sourceTokens > 0 ? Math.round((1 - dagTokens / sourceTokens) * 1000) / 10 : 0;
+      const contentSavingsPct = contentTokens > 0 ? Math.round((1 - dagTokens / contentTokens) * 1000) / 10 : 0;
       const savingsTokens = sourceTokens - dagTokens;
-      // Attach token report to output
       const outPath = opts.output || join(pd,`${p}.dag`);
-      const report = { ...dag, tokens: { method: 'chars/4', source_total: sourceTokens, dag_total: dagTokens, savings_pct: savingsPct, savings_tokens: savingsTokens } };
+      const tokens = { m: 'chars/4', st: sourceTokens, ct: contentTokens, dt: dagTokens, sv: allSavingsPct, cs: contentSavingsPct, saved: savingsTokens };
+      const report = { ...dag, tk: tokens };
       writeFileSync(outPath, JSON.stringify(report, null, 2));
       console.log(chalk.green(`  ✓ ${outPath}`));
       console.log(chalk.gray(`    ${nodes.length} nodes, ${edges.length} edges, ${files.length} files`));
-      console.log(chalk.gray(`    ${sourceTokens} → ${dagTokens} tokens (${savingsPct}% savings, ${savingsTokens} tokens saved)`));
-      console.log(chalk.gray(`    sha256: ${integrity.sha256.substring(0,12)}...`));
+      console.log(chalk.gray(`    ${sourceTokens} → ${dagTokens} tokens (${allSavingsPct}% savings, ${contentSavingsPct}% content-only, ${savingsTokens} saved)`));
     }
   }
   if (!found) console.log(chalk.yellow('No projects found.'));
