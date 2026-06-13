@@ -1,5 +1,5 @@
 // spec serve — MCP server over stdio
-// Exposes .dag graph to AI agents
+// Exposes .dag graph to AI agents (supports compact v1.4 + legacy v1.3)
 
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join, resolve } from 'path';
@@ -22,6 +22,20 @@ function resolvePath(p: string): string {
   }
   return resolved;
 }
+
+// Backward-compatible field accessors (v1.4 compact + v1.3 legacy)
+const N = (dag: any) => dag.n || dag.nodes || [];
+const E = (dag: any) => dag.e || dag.edges || [];
+const P = (dag: any) => dag.p || dag.project || '';
+const ni = (n: any) => n.i || n.id || '';
+const nt = (n: any) => n.t || n.type || '';
+const ng = (n: any) => n.g || n.category || '';
+const nd = (n: any) => n.d || n.description || '';
+const np = (n: any) => n.p || n.properties || {};
+const ns = (n: any) => n.s || n.states || [];
+const nl = (n: any) => n.l || n.lifecycle || [];
+const es = (e: any) => e.s || e.source || '';
+const et = (e: any) => e.t || e.target || '';
 
 export function serve(dir: string = '.'): void {
   const root = resolvePath(dir);
@@ -69,7 +83,7 @@ export function serve(dir: string = '.'): void {
             { name: 'traverse', description: 'Traverse graph: from node, follow edges, return subgraph', inputSchema: { type: 'object', properties: { project: { type:'string' }, from: { type:'string' }, depth: { type:'number', default: 1 } }, required: ['from'] } },
             { name: 'search', description: 'Find entities by name or type', inputSchema: { type: 'object', properties: { project: { type:'string' }, q: { type:'string' }, type: { type:'string' } }, required: ['q'] } },
             { name: 'listProjects', description: 'List all projects', inputSchema: { type: 'object', properties: {} } },
-            { name: 'summary', description: 'Get project summary: node count, edge count, completeness', inputSchema: { type: 'object', properties: { project: { type:'string' } } } },
+            { name: 'summary', description: 'Get project summary: node count, edge count, token savings', inputSchema: { type: 'object', properties: { project: { type:'string' } } } },
             { name: 'schema', description: 'Get full property schema for an entity', inputSchema: { type: 'object', properties: { project: { type:'string' }, entity: { type:'string' } }, required: ['entity'] } },
           ]
         }
@@ -88,18 +102,17 @@ export function serve(dir: string = '.'): void {
       if (name === 'listNodes') {
         const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(dag.nodes || []) }] } };
+        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(N(dag)) }] } };
       }
 
       if (name === 'getEntity') {
         const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const node = (dag.nodes || []).find((n: any) => n.id.toLowerCase() === (args.name || '').toLowerCase());
+        const node = N(dag).find((n: any) => ni(n).toLowerCase() === (args.name || '').toLowerCase());
         if (!node) return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: '{}' }] } };
-        // Agent-optimized: return entity + its immediate edges
-        const edges = (dag.edges || []).filter((e: any) => 
-          e.source.toLowerCase() === node.id.toLowerCase() || 
-          e.target.toLowerCase() === node.id.toLowerCase()
+        const edges = E(dag).filter((e: any) =>
+          es(e).toLowerCase() === ni(node).toLowerCase() ||
+          et(e).toLowerCase() === ni(node).toLowerCase()
         );
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({ ...node, edges }) }] } };
       }
@@ -108,22 +121,27 @@ export function serve(dir: string = '.'): void {
         const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
         const depth = Math.min(Math.max(1, args.depth || 1), 20);
-        const visited = new Set<string>();
+        const visitedNodes = new Set<string>();
+        const visitedEdges = new Set<string>();
         const subgraph: { nodes: any[], edges: any[] } = { nodes: [], edges: [] };
         const queue = [{ id: args.from, depth: 0 }];
         while (queue.length > 0) {
           const curr = queue.shift()!;
-          if (visited.has(curr.id) || curr.depth > depth) continue;
-          visited.add(curr.id);
-          const node = (dag.nodes || []).find((n: any) => n.id.toLowerCase() === curr.id.toLowerCase());
+          if (visitedNodes.has(curr.id) || curr.depth > depth) continue;
+          visitedNodes.add(curr.id);
+          const node = N(dag).find((n: any) => ni(n).toLowerCase() === curr.id.toLowerCase());
           if (node) subgraph.nodes.push(node);
-          const edges = (dag.edges || []).filter((e: any) => 
-            e.source.toLowerCase() === curr.id.toLowerCase() || e.target.toLowerCase() === curr.id.toLowerCase()
+          const edges = E(dag).filter((e: any) =>
+            es(e).toLowerCase() === curr.id.toLowerCase() || et(e).toLowerCase() === curr.id.toLowerCase()
           );
           for (const e of edges) {
-            subgraph.edges.push(e);
-            const next = e.source.toLowerCase() === curr.id.toLowerCase() ? e.target : e.source;
-            if (!visited.has(next)) queue.push({ id: next, depth: curr.depth + 1 });
+            const edgeKey = `${es(e)}→${et(e)}`;
+            if (!visitedEdges.has(edgeKey)) {
+              visitedEdges.add(edgeKey);
+              subgraph.edges.push(e);
+            }
+            const next = es(e).toLowerCase() === curr.id.toLowerCase() ? et(e) : es(e);
+            if (!visitedNodes.has(next)) queue.push({ id: next, depth: curr.depth + 1 });
           }
         }
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(subgraph) }] } };
@@ -134,8 +152,8 @@ export function serve(dir: string = '.'): void {
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
         const q = (args.q || '').toLowerCase();
         const type = (args.type || '').toLowerCase();
-        const results = (dag.nodes || []).filter((n: any) => 
-          n.id.toLowerCase().includes(q) && (!type || (n.type||'').toLowerCase().includes(type))
+        const results = N(dag).filter((n: any) =>
+          ni(n).toLowerCase().includes(q) && (!type || nt(n).toLowerCase().includes(type))
         );
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(results) }] } };
       }
@@ -143,12 +161,14 @@ export function serve(dir: string = '.'): void {
       if (name === 'summary') {
         const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
+        const tk = dag.tk || dag.tokens || {};
         const s = {
-          project: dag.project,
-          nodes: (dag.nodes||[]).length,
-          edges: (dag.edges||[]).length,
-          files: dag.files || dag.count || 0,
-          compiled: dag.compiled_at,
+          project: P(dag),
+          nodes: N(dag).length,
+          edges: E(dag).length,
+          version: dag.v || dag.version || '',
+          savings: tk.sv || tk.savings_pct || 0,
+          method: tk.m || tk.method || '',
         };
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(s) }] } };
       }
@@ -156,14 +176,13 @@ export function serve(dir: string = '.'): void {
       if (name === 'schema') {
         const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const node = (dag.nodes || []).find((n: any) => n.id.toLowerCase() === (args.entity || '').toLowerCase());
+        const node = N(dag).find((n: any) => ni(n).toLowerCase() === (args.entity || '').toLowerCase());
         if (!node) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Entity not found' } };
-        // Agent-optimized: only return property schema, no prose
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
-          entity: node.id,
-          properties: node.properties || {},
-          states: node.states || [],
-          lifecycle: node.lifecycle || [],
+          entity: ni(node),
+          properties: np(node),
+          states: ns(node),
+          lifecycle: nl(node),
         }) }] } };
       }
 
