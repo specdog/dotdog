@@ -34,10 +34,15 @@ svg.addEventListener('click',feed);
 document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;if(e.key==='v')feed();if(e.key==='c')fetchBall();if(e.key==='p')pet();});
 </script>
 
-## 🦴 Install
+## 🦴 Getting Started
 
 ```bash
 npm install -g dotdog
+dotdog init my-project --minimal    # just SPEC.dog + data-model.dog
+dotdog validate                     # score your spec
+dotdog compile                      # build .dag graph
+dotdog tokens                       # see real byte savings
+dotdog serve                        # expose to AI agents via MCP
 ```
 
 [Adding dotdog to an existing project?](adopting.md)
@@ -61,7 +66,7 @@ $ dotdog analyze
 
 $ dotdog compile
   ✓ my-app.dag : 3 nodes, 3 edges
-  12,400 → 1,860 tokens (85% savings)
+  12,400 → 1,860 tokens (85% savings) → real savings: 88.9% smaller
 
 $ dotdog serve
   MCP server running : AI agents query your specs with zero hallucination
@@ -80,7 +85,8 @@ $ dotdog serve
 | `dotdog staleness` | Detect drift between spec and reality |
 | `dotdog visualize` | Output Mermaid graph from .dag |
 | `dotdog simulate` | Run a simulation scenario |
-| `dotdog init` | Scaffold a new project |
+| `dotdog tokens` | Real byte savings (not estimates) |
+| `dotdog init` | Scaffold a new project (`--minimal` for 2 files) |
 | `dotdog list` | List all projects |
 
 ## Format
@@ -112,4 +118,4 @@ $ dotdog serve
 
 ---
 
-dotdog@0.3.1 · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE)
+dotdog@0.3.3 · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE)
