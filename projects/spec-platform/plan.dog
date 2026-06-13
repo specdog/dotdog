@@ -27,39 +27,39 @@
 
 ## Phase 1.5: npm Publish + CLI (done)
 
-- [x] npm publish: dotdog@0.3.1 on npm (latest)
-- [x] 11 commands: validate, analyze, generate, simulate, compile, visualize, serve, staleness, parse, init, list
+- [x] npm publish: dotdog@0.3.5 on npm (latest)
+- [x] 12 commands: validate, analyze, generate, simulate, compile, visualize, serve, staleness, tokens, parse, init, list
 - [x] Hidden command: `dotdog woof` — ASCII Spec the dog
-- [x] `dotdog compile` — .dog → .dag (v1.3: full property schemas, lifecycle, categories, token method)
-- [x] .dag formal specification (format-spec-dag.dog v1.3)
+- [x] `dotdog compile` — .dog → .dag (v1.4: compact single-char keys, encoded properties: s/n/b/e/j+!)
+- [x] `dotdog tokens` — real byte savings (source vs .dag), content-only accounting
+- [x] `dotdog simulate` — scenario walker: reads [1/N] steps, checks against entities/relationships
+- [x] `dotdog init --minimal` — creates only SPEC.dog + data-model.dog
+- [x] .dag formal specification (format-spec-dag.dog v1.4)
 - [x] `dotdog generate` — fills missing files from SPEC.dog
 - [x] `dotdog analyze` — deep analysis, entity audit, gap detection
-- [x] `dotdog simulate` — scenario runner (phase 1 stub)
 - [x] `dotdog visualize` — Mermaid graph from .dag, --save writes .md
 - [x] `dotdog staleness` — detect spec/reality drift (Phases 1-3 only)
 - [x] CI publish via OIDC Trusted Publishing (Node 24)
-- [x] Path resolution: tilde (~) support, path traversal guard, traverse depth cap
+- [x] Path resolution: tilde (~) support, path traversal guard, traverse depth cap (ancestors allowed)
+- [x] CI smoke tests: version, help, validate, analyze, staleness, list — blocks PRs on failure
 - [x] Auto-version from package.json
-- [x] npm hygiene: homepage, bugs, engines fields; trimmed keywords; correct README
-- [x] GitHub Pages — specdog.github.io/dotdog (clean light theme, dog SVG, no legs)
-- [x] llms.txt — llmstxt.org spec
+- [x] npm hygiene: 8 keywords, homepage/bugs/engines fields, correct README shipped
+- [x] GitHub Pages — specdog.github.io/dotdog (Getting Started, light theme, dog SVG, no legs)
+- [x] Org landing — specdog.github.io (try-it input, v0.3.5)
+- [x] llms.txt — llmstxt.org spec, cleaned AI-speak
 - [x] AGENTS.md — AI agent instructions
-- [x] VS Code extension: .dog syntax highlighting
+- [x] VS Code extension: .dog syntax highlighting + validation squiggles (missing files, entity YAML)
+- [x] MCP server: backward-compatible v1.3+v1.4, edge dedup in traverse
+- [x] Predictions: parsed from .dog, compiled with confidence/timeframe/trigger
+- [x] Dogfood verified on 4 projects: spec-platform, CryptChat, Commander.js, PayBot
 - [x] Spec the dog widget: face-only, bone in mouth, feed/pet/fetch (V/C/P keys)
-- [x] Path traversal: ancestor dirs allowed (bug fix — was blocking `validate ..`)
-- [x] CI smoke tests: version, help, validate, analyze, staleness, list
-- [x] Fixed: compile duplicate nodes — parseSections no longer double-walks headings (#101)
-- [x] Fixed: init directory layout — removed double-nesting, .dog files live in project dir (#100)
-- [x] Simplified: scanners read .dog files directly from project dir (no inner `specs/`)
-- [x] Project detection: only dirs with SPEC.dog are treated as projects
-- [x] Fixed: section parsing — `###` headings correctly split, entity headers included (#101 follow-up)
 
 ## Phase 2: Distribution
 
 - [x] Branch protection: 1 review required, no force push
 - [x] Security: Dependabot alerts + auto-fixes enabled
 - [x] VS Code extension: syntax highlighting (extensions/vscode/)
-- [ ] GitHub Action: `dotdog/validate` blocks PRs with broken specs
+- [x] GitHub Action: CI blocks PRs with broken specs (validate exits 1, analyze exits 1)
 
 ## Phase 3: MCP Server Live (done)
 
@@ -112,8 +112,8 @@
 | Phase | Verification |
 |-------|-------------|
 | 0 | `dotdog validate` → 100%, `dotdog analyze` → 0 gaps |
-| 1 | `dotdog compile` → .dag v1.3 with full schemas |
-| 2 | `npm install -g dotdog` → 11 commands working |
+| 1 | `dotdog compile` → .dag v1.4 with compact encoding |
+| 2 | `npm install -g dotdog` → 12 commands working + CI blocks broken specs |
 | 3 | `dotdog serve` → AI agent queries spec via MCP |
 | 4 | `dotdog search "entity"` → returns Node, Edge, Task, Prediction, Vector |
 | 5 | `dotdog simulate payment` → walks through steps, reports success/failure |
