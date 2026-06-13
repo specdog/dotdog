@@ -695,4 +695,95 @@ program.command('search <query>').description('Semantic search across compiled s
   if (!found) console.log(chalk.yellow('No index found. Run dotdog index first.'));
 });
 
+program.command('predictions [dir]').description('List all predictions with status').option('-p, --project <name>').action((d='.', opts) => {
+  const dir = resolvePath(d);
+  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  console.log(chalk.bold('\nPredictions\n'));
+  let found = false;
+  for (const dd of dirs) {
+    if (!existsSync(dd)) continue;
+    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    for (const p of projects) {
+      if (opts.project && p !== opts.project) continue;
+      const pd = join(dd,p);
+      if (!existsSync(join(pd,'SPEC.dog'))) continue;
+      const files = readdirSync(pd).filter(f=>f.endsWith('.dog'));
+      for (const f of files) {
+        const content = readFileSync(join(pd,f),'utf-8');
+        const ast = parse(content);
+        for (const section of ast.sections) {
+          for (const block of section.blocks) {
+            if (block.kind === 'prediction') {
+              found = true;
+              const b = block as any;
+              const status = b.status || 'pending';
+              const icon = status === 'correct' ? '✅' : status === 'wrong' ? '❌' : status === 'partial' ? '⚠️' : '⏳';
+              console.log(`  ${icon} ${b.statement || b.name} (${(b.confidence*100).toFixed(0)}% confidence, ${status})`);
+              if (b.measurement) console.log(chalk.gray(`    Measurement: ${b.measurement}`));
+              if (b.timeframe) console.log(chalk.gray(`    Timeframe: ${b.timeframe}`));
+            }
+          }
+        }
+      }
+    }
+  }
+  if (!found) console.log(chalk.yellow('No predictions found.'));
+});
+
+program.command('resolve <name>').description('Mark a prediction as correct, wrong, or partial').option('-p, --project <name>').option('--correct', 'Prediction was correct').option('--wrong', 'Prediction was wrong').option('--partial', 'Prediction was partially correct').action((name, opts) => {
+  const dir = resolvePath('.');
+  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  const status = opts.correct ? 'correct' : opts.wrong ? 'wrong' : opts.partial ? 'partial' : null;
+  if (!status) { console.log(chalk.red('Specify --correct, --wrong, or --partial')); return; }
+  
+  for (const dd of dirs) {
+    if (!existsSync(dd)) continue;
+    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    for (const p of projects) {
+      if (opts.project && p !== opts.project) continue;
+      const pd = join(dd,p);
+      if (!existsSync(join(pd,'SPEC.dog'))) continue;
+      const files = readdirSync(pd).filter(f=>f.endsWith('.dog'));
+      for (const f of files) {
+        const fp = join(pd,f);
+        let content = readFileSync(fp,'utf-8');
+        // Find prediction block with matching statement
+        const ast = parse(content);
+        for (const section of ast.sections) {
+          for (const block of section.blocks) {
+            if (block.kind === 'prediction') {
+              const b = block as any;
+              if ((b.statement || b.name || '').toLowerCase().includes(name.toLowerCase())) {
+                // Find prediction YAML block by heading or statement
+                const searchFor = `### Prediction: ${b.statement || b.name}`;
+                const headingIdx = content.indexOf(searchFor);
+                if (headingIdx >= 0 || true) {
+                  // Find the YAML block after the heading
+                  const startIdx = headingIdx >= 0 ? headingIdx : content.indexOf(b.statement || b.name || '');
+                  const blockStart = content.indexOf('```yaml', startIdx);
+                  const blockEnd = content.indexOf('```', blockStart + 7);
+                  if (blockStart >= 0 && blockEnd >= 0) {
+                    const yamlBlock = content.slice(blockStart, blockEnd + 3);
+                    let newYaml = yamlBlock;
+                    if (yamlBlock.includes('status:')) {
+                      newYaml = yamlBlock.replace(/status:\s*\w+/, `status: ${status}`);
+                    } else {
+                      newYaml = yamlBlock.replace(/\n\s*(trigger|timeframe|confidence|measurement):/, `\n  status: ${status}\n  $1`);
+                    }
+                    content = content.replace(yamlBlock, newYaml);
+                    writeFileSync(fp, content, 'utf-8');
+                    console.log(chalk.green(`  ✓ ${b.statement || b.name}: ${status}`));
+                    return;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  console.log(chalk.yellow(`Prediction "${name}" not found.`));
+});
+
 program.parse();
