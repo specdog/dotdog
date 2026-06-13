@@ -66,14 +66,13 @@
 - [x] `dotdog serve` — MCP server over stdio
 - [x] 6 tools: getEntity, traverse, search, schema, summary, listProjects
 
-## Phase 4: Vector Embeddings
+## Phase 4: Vector Search (done)
 
-- [ ] Parse spec sections into chunks
-- [ ] Embed with all-MiniLM-L6-v2 (384 dims, local, $0)
-- [ ] Store embeddings in SQLite
-- [ ] Semantic search: `dotdog search "payment"` returns relevant sections
-- [ ] Contradiction detection
-- [ ] Staleness detection
+- [x] `dotdog index` — builds TF-IDF search index from .dog sections
+- [x] `dotdog search` — cosine similarity semantic search across specs
+- [x] Zero dependencies. Local. $0.
+- [x] JSON .idx file stored alongside .dag
+- [x] spec-platform: 54 sections, 549 terms indexed
 
 ## Phase 5: Graph Traversal Engine
 
