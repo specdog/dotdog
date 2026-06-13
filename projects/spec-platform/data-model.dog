@@ -324,6 +324,48 @@ relationship: Vector -> Node
   example: Vector("## What the User Sees") → embeds → Node(SPEC.dog)
 ```
 
+## Predictions
+
+### Prediction: dotdog will reach 200 PRs by July 2026
+
+```yaml
+prediction: dotdog reaches 200 PRs
+trigger: PR count exceeds 190
+timeframe: 2026-07-31
+confidence: 0.8
+measurement: github.com/specdog/dotdog/pulls count
+preconditions:
+  - Current velocity of 5-10 PRs per session maintained
+  - Phase C (predictive layer) shipped by end of June
+```
+
+### Prediction: .dag token savings will exceed 90% for spec-platform
+
+```yaml
+prediction: spec-platform .dag savings exceed 90%
+trigger: spec-platform SPEC.dog grows past 15KB
+timeframe: 2026-08-01
+confidence: 0.9
+measurement: dotdog tokens command on spec-platform
+preconditions:
+  - .dag v1.4 compact format deployed
+  - More entities added to data-model.dog
+```
+
+### Prediction: First external user will adopt dotdog
+
+```yaml
+prediction: first external dotdog adopter
+trigger: GitHub star count exceeds 10
+timeframe: 2026-09-01
+confidence: 0.5
+measurement: github.com/specdog/dotgod stargazers > 1 non-team member
+preconditions:
+  - dotdog published to npm with stable API
+  - Documentation and adoption guide complete
+  - Competitive positioning live on specdog.github.io
+```
+
 ---
 
 ## Graph Traversal Queries

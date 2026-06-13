@@ -114,6 +114,13 @@ function parseBlocks(lines: string[], start: number, end: number): BlockNode[] {
       if (result) { blocks.push(result.node); i = result.nextLine; continue; }
     }
 
+    // Prediction block?
+    const predMatch = line.match(/^###\s+Prediction:\s*(.+)/);
+    if (predMatch) {
+      const result = parseStructuredBlock(lines, i, end, 'prediction', predMatch[1]);
+      if (result) { blocks.push(result.node); i = result.nextLine; continue; }
+    }
+
     // Table?
     if (/^\|.+\|/.test(line) && i + 1 < end && /^\|[-| ]+\|/.test(lines[i + 1])) {
       const table = parseTable(lines, i, end);
@@ -211,6 +218,13 @@ function parseStructuredBlock(
     };
   }
 
+  if (kind === 'prediction') {
+    return {
+      node: buildPredictionNode(headerRest, description, yaml, start, i),
+      nextLine: i,
+    };
+  }
+
   return null;
 }
 
@@ -235,7 +249,11 @@ function buildEntityNode(name: string, description: string, yaml: Record<string,
 
   const states = Array.isArray(yaml.states) ? yaml.states as string[] : [];
   const lifecycleStr = (yaml.lifecycle as string) || '';
-  const lifecycle = lifecycleStr ? lifecycleStr.split(/\s*→\s*/) : [];
+  const lifecycleParts = lifecycleStr ? lifecycleStr.split(/\s*→\s*/).map(s => s.trim()) : [];
+  const lifecycle: string[] = [];
+  for (let si = 0; si < lifecycleParts.length - 1; si++) {
+    lifecycle.push(`${lifecycleParts[si]} → ${lifecycleParts[si + 1]}`);
+  }
 
   return {
     kind: 'entity',
@@ -264,6 +282,7 @@ function buildRelationshipNode(headerRest: string, description: string, yaml: Re
     source,
     target,
     verb: (yaml.verb as string) || 'connects',
+    description: description || (yaml.description as string) || '',
     cardinality: (yaml.cardinality as string) || 'N:M',
     required: yaml.required === true,
     cascade: (yaml.cascade as string) || 'none',
@@ -290,6 +309,25 @@ function buildEventNode(name: string, description: string, yaml: Record<string, 
     lineStart: lineStart + 1,
     lineEnd,
   };
+}
+
+// --- Prediction builder ---
+
+function buildPredictionNode(name: string, description: string, yaml: Record<string, unknown>, lineStart: number, lineEnd: number): PredictionNode {
+  return {
+    kind: 'prediction',
+    statement: name,
+    description,
+    trigger: (yaml.trigger as string) || '',
+    timeframe: (yaml.timeframe as string) || '',
+    confidence: typeof yaml.confidence === 'number' ? yaml.confidence as number : 0,
+    measurement: (yaml.measurement as string) || '',
+    preconditions: Array.isArray(yaml.preconditions) ? yaml.preconditions as string[] : [],
+    postconditions: Array.isArray(yaml.postconditions) ? yaml.postconditions as string[] : [],
+    yaml,
+    lineStart: lineStart + 1,
+    lineEnd,
+  } as any;
 }
 
 // --- Table parser ---
@@ -362,7 +400,7 @@ function parseSimpleYAML(lines: string[]): Record<string, unknown> {
       continue;
     }
 
-    // Nested property:   key: value
+    // Nested property:   key: value (inside a mapping like properties:)
     const nestedMatch = line.match(/^\s{2}(\w[\w_]*):\s*(.+)?$/);
     if (nestedMatch && inNested) {
       nestedKey = nestedMatch[1];
@@ -379,14 +417,21 @@ function parseSimpleYAML(lines: string[]): Record<string, unknown> {
       } else if (value.startsWith('[') && value.endsWith(']')) {
         currentObj[nestedKey] = value.slice(1, -1).split(',').map(s => s.trim());
       } else {
-        // Could be an inline object like {type: string, required: true}
-        const inlineObj = parseInlineObject(value);
-        if (inlineObj) {
-          currentObj[nestedKey] = inlineObj;
-        } else {
-          currentObj[nestedKey] = value;
-        }
+        currentObj[nestedKey] = value;
       }
+      continue;
+    }
+    // Indented key after a scalar top-level value: treat as new top-level key
+    // Allows:  relationship: User -> Order
+    //            verb: places       ← treated as top-level
+    if (nestedMatch && !inNested) {
+      const key = nestedMatch[1];
+      const value = (nestedMatch[2] || '').trim();
+      if (value === 'true') result[key] = true;
+      else if (value === 'false') result[key] = false;
+      else if (/^-?\d+(\.\d+)?$/.test(value)) result[key] = parseFloat(value);
+      else if (value.startsWith('[') && value.endsWith(']')) result[key] = value.slice(1, -1).split(',').map(s => s.trim());
+      else result[key] = value;
       continue;
     }
 
