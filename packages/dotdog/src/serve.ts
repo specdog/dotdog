@@ -25,7 +25,23 @@ function resolvePath(p: string): string {
 
 // Backward-compatible field accessors (v1.4 compact + v1.3 legacy)
 const N = (dag: any) => dag.n || dag.nodes || [];
-const E = (dag: any) => dag.e || dag.edges || [];
+function nodeEdges(n: any): any[] { return n.es || []; }
+function E(dag: any): any[] {
+  if (dag.e) return dag.e; // v1.4 and earlier
+  // v1.5+: collect all inline edges from nodes
+  const edges: any[] = [];
+  const seen = new Set<string>();
+  for (const node of N(dag)) {
+    for (const e of nodeEdges(node)) {
+      const key = `${node.i||node.id}→${e.t}:${e.v}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        edges.push({ s: node.i || node.id, t: e.t, v: e.v, d: e.d, c: e.c, r: e.r });
+      }
+    }
+  }
+  return edges;
+}
 const P = (dag: any) => dag.p || dag.project || '';
 const ni = (n: any) => n.i || n.id || '';
 const nt = (n: any) => n.t || n.type || '';
@@ -167,6 +183,8 @@ export function serve(dir: string = '.'): void {
           nodes: N(dag).length,
           edges: E(dag).length,
           version: dag.v || dag.version || '',
+          order: dag.o || [],
+          cycles: dag.cy !== undefined ? dag.cy : null,
           savings: tk.sv || tk.savings_pct || 0,
           method: tk.m || tk.method || '',
         };
