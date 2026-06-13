@@ -39,7 +39,7 @@ DASHBOARD
 │  │ last updated 2h ago         3 predictions pending  │ │
 │  └────────────────────────────────────────────────────┘ │
 │  ┌────────────────────────────────────────────────────┐ │
-│  │ Magic Cabinet               8 specs   ◐ 87%       │ │
+│  │ Example Project             8 specs   ◐ 87%       │ │
 │  │ last updated 1d ago         1 constraint violated  │ │
 │  └────────────────────────────────────────────────────┘ │
 │                                                         │
