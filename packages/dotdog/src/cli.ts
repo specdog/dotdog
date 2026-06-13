@@ -208,8 +208,50 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
           }
         }
       }
-      // Build compact .dag
-      const dag = { v: '1.4', p, c: `dotdog@${pkg.version}`, n: nodes, e: edges };
+      // Build compact .dag v1.5 — inline edges into nodes
+      // Topological sort + cycle detection
+      const nodeIds = new Map<string, number>();
+      nodes.forEach((n, i) => nodeIds.set(n.i, i));
+      
+      // Build adjacency for topological sort
+      const inDegree = new Array(nodes.length).fill(0);
+      const adj = new Array(nodes.length).fill(0).map(() => [] as number[]);
+      for (const e of edges) {
+        const si = nodeIds.get(e.s), ti = nodeIds.get(e.t);
+        if (si !== undefined && ti !== undefined) {
+          adj[si].push(ti);
+          inDegree[ti]++;
+        }
+      }
+      
+      // Kahn's algorithm for topological sort + cycle detection
+      const queue: number[] = [];
+      for (let j = 0; j < nodes.length; j++) if (inDegree[j] === 0) queue.push(j);
+      const order: string[] = [];
+      while (queue.length > 0) {
+        const u = queue.shift()!;
+        order.push(nodes[u].i);
+        for (const v of adj[u]) {
+          inDegree[v]--;
+          if (inDegree[v] === 0) queue.push(v);
+        }
+      }
+      const cycles = order.length !== nodes.length;
+      
+      // Inline edges into nodes (both directions)
+      for (let j = 0; j < nodes.length; j++) {
+        const id = nodes[j].i;
+        nodes[j].es = edges.filter(e => e.s === id || e.t === id).map(e => ({
+          t: e.s === id ? e.t : e.s,
+          v: e.v || '',
+          d: e.d || '',
+          c: e.c,
+          r: e.r,
+          dir: e.s === id ? 'out' : 'in',
+        }));
+      }
+      
+      const dag = { v: '1.5', p, c: `dotdog@${pkg.version}`, n: nodes, o: order, cy: cycles };
       // Calculate token savings
       const dagJson = JSON.stringify(dag);
       const dagTokens = Math.round(Buffer.byteLength(dagJson,'utf-8') / 4);
@@ -346,6 +388,35 @@ program.command('analyze [dir]').description('Analyze a spec project : score, ga
       for (const r of allRelationships) {
         if (r.source && !entityNames.has(r.source)) gaps.push(`🟡 Relationship: unknown source "${r.source}"`);
         if (r.target && !entityNames.has(r.target)) gaps.push(`🟡 Relationship: unknown target "${r.target}"`);
+      }
+      // Contradiction detection
+      const contradictions: string[] = [];
+      const relMap = new Map<string, RelationshipNode[]>();
+      for (const r of allRelationships) {
+        const key = `${r.source}→${r.target}`;
+        if (!relMap.has(key)) relMap.set(key, []);
+        relMap.get(key)!.push(r);
+      }
+      for (const [key, rels] of relMap) {
+        if (rels.length > 1) {
+          const verbs = [...new Set(rels.map(r => r.verb))];
+          if (verbs.length > 1) contradictions.push(`🔴 Contradiction: "${key}" has conflicting verbs: ${verbs.join(', ')}`);
+          else contradictions.push(`🟡 Duplicate: "${key}" appears ${rels.length} times with same verb "${verbs[0]}"`);
+        }
+      }
+      // Check for bidirectional conflicts
+      for (const r of allRelationships) {
+        const reverse = allRelationships.find(r2 => r2.source === r.target && r2.target === r.source);
+        if (reverse && r.verb !== reverse.verb && r.source < r.target) {
+          contradictions.push(`🟡 Bidirectional: "${r.source}→${r.target}" verb "${r.verb}" vs "${reverse.source}→${reverse.target}" verb "${reverse.verb}"`);
+        }
+      }
+      for (const c of contradictions) {
+        if (c.startsWith('🔴')) hasGaps = true;
+      }
+      if (contradictions.length > 0) {
+        console.log(chalk.bold(`\n  Contradictions (${contradictions.length})`));
+        for (const c of contradictions) console.log(`  ${c}`);
       }
       if (gaps.length > 0) { console.log(chalk.bold(`\n  Gaps (${gaps.length})`)); for (const g of gaps) console.log(`  ${g}`); }
       else console.log(chalk.green('\n  No gaps found.'));
