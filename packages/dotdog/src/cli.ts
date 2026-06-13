@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { existsSync, readdirSync, readFileSync, mkdirSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
+import { buildIndex, searchIndex } from './index';
 import { homedir } from 'os';
 import { createHash } from 'crypto';
 import type { DocumentNode, SectionNode, BlockNode, EntityNode, RelationshipNode, ProseNode, TableNode, PropertyDef } from './grammar';
@@ -571,6 +572,56 @@ program.command('woof').action(() => {
   console.log('  /       O');
   console.log(' /   (_____/');
   console.log('/_____/   U');
+});
+
+program.command('index [dir]').description('Build search index for semantic queries').action((d='.') => {
+  const dir = resolvePath(d);
+  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  let built = 0;
+  for (const dd of dirs) {
+    if (!existsSync(dd)) continue;
+    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    for (const p of projects) {
+      const pd = join(dd,p);
+      if (!existsSync(join(pd,'SPEC.dog'))) continue;
+      const idx = buildIndex(pd, p);
+      writeFileSync(join(pd,`${p}.idx`), JSON.stringify(idx));
+      console.log(chalk.green(`  ✓ ${p} : ${idx.entries.length} sections indexed (${idx.vocabulary.length} terms)`));
+      built++;
+    }
+  }
+  if (!built) console.log(chalk.yellow('No projects found. Run dotdog init first.'));
+});
+
+program.command('search <query>').description('Semantic search across compiled specs').option('-p, --project <name>').action((query, opts) => {
+  console.log(chalk.bold(`\nSearch: "${query}"\n`));
+  const dir = resolvePath('.');
+  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  let found = false;
+  for (const dd of dirs) {
+    if (!existsSync(dd)) continue;
+    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    for (const p of projects) {
+      if (opts.project && p !== opts.project) continue;
+      const pd = join(dd,p);
+      const idxFile = join(pd,`${p}.idx`);
+      if (!existsSync(idxFile)) continue;
+      found = true;
+      const idx = JSON.parse(readFileSync(idxFile,'utf-8'));
+      const results = searchIndex(idx, query, 8);
+      if (results.length === 0) {
+        console.log(chalk.gray(`  ${p}: No matches`));
+        continue;
+      }
+      console.log(chalk.green(`  ${p} — ${results.length} results:`));
+      for (const r of results) {
+        const preview = r.entry.content.replace(/\n/g, ' ').slice(0, 100);
+        console.log(chalk.gray(`    ${Math.round(r.score * 100)}%  [${r.entry.file}] ${r.entry.heading}`));
+        console.log(chalk.gray(`         ${preview}...`));
+      }
+    }
+  }
+  if (!found) console.log(chalk.yellow('No index found. Run dotdog index first.'));
 });
 
 program.parse();
