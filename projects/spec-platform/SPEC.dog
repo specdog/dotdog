@@ -10,6 +10,14 @@ Teams define their software using a spec genome. The platform validates that the
 
 One source of truth. Zero ambiguity. Ship with confidence.
 
+### Flow 5: dotdog compiles specs (dogfood)
+
+```
+[1/3] Developer writes .dog specs with entities like Node, Task, and Prediction
+[2/3] dotdog Compile parses entities and relationships into a DAG graph
+[3/3] Compile produces DAG with token savings → AI agent queries via MCP
+```
+
 ## What the User Sees
 
 ### Flow 1: Team writes specs (Dashboard)
