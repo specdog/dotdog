@@ -320,14 +320,13 @@ function buildPredictionNode(name: string, description: string, yaml: Record<str
     description,
     trigger: (yaml.trigger as string) || '',
     timeframe: (yaml.timeframe as string) || '',
-    confidence: typeof yaml.confidence === 'number' ? yaml.confidence as number : 0,
+    confidence: (yaml.confidence as number) || 0,
     measurement: (yaml.measurement as string) || '',
-    preconditions: Array.isArray(yaml.preconditions) ? yaml.preconditions as string[] : [],
-    postconditions: Array.isArray(yaml.postconditions) ? yaml.postconditions as string[] : [],
+    status: (yaml.status as string) || 'pending',
     yaml,
-    lineStart: lineStart + 1,
+    lineStart,
     lineEnd,
-  } as any;
+  };
 }
 
 // --- Table parser ---
