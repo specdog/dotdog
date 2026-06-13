@@ -1,163 +1,277 @@
 {
-  "version": "1.2",
-  "project": "spec-platform",
-  "compiled_at": "2026-06-12T21:25:21.567Z",
-  "compiler": "dotdog@0.2.5",
-  "integrity": {
-    "sha256": "b39931128e6dac01ed9823dad83d3b8cd2c9276517a1680316c2aaee00e5234e",
-    "source_files": 7,
-    "source_bytes": 46726
-  },
-  "nodes": [
+  "v": "1.4",
+  "p": "spec-platform",
+  "c": "dotdog@0.3.3",
+  "n": [
     {
-      "id": "Node",
-      "type": "entity",
-      "description": "A typed node in the spec knowledge graph. Every entity, task, prediction, and concept is a Node.",
-      "file": "data-model.dog",
-      "properties": 5,
-      "states": [
+      "i": "Node",
+      "t": "entity",
+      "g": "entity",
+      "d": "A typed node in the spec knowledge graph. Every entity, task, prediction, and concept is a Node.",
+      "p": {
+        "id": "s!",
+        "type": "e!",
+        "name": "s!",
+        "description": "s!",
+        "properties": "j!"
+      },
+      "s": [
         "created",
         "updated",
         "archived"
       ],
-      "chars": 0
+      "l": [
+        "created → updated",
+        "updated → archived"
+      ]
     },
     {
-      "id": "Edge",
-      "type": "relationship",
-      "description": "A typed connection between two Nodes. Directional (source → target) with cardinality, cascade behavior, and invariants.",
-      "file": "data-model.dog",
-      "properties": 8,
-      "states": [
+      "i": "Edge",
+      "t": "relationship",
+      "g": "entity",
+      "d": "A typed connection between two Nodes. Directional (source → target) with cardinality, cascade behavior, and invariants.",
+      "p": {
+        "id": "s!",
+        "source_id": "s!",
+        "target_id": "s!",
+        "verb": "e!",
+        "cardinality": "e!",
+        "required": "b!",
+        "cascade": "e!",
+        "invariants": "s!"
+      },
+      "s": [
         "active",
         "deprecated"
       ],
-      "chars": 0
+      "l": [
+        "active → deprecated"
+      ]
     },
     {
-      "id": "Task",
-      "type": "entity",
-      "description": "A unit of work. Has dependencies, assignment, effort estimates, and a computed completion probability.",
-      "file": "data-model.dog",
-      "properties": 9,
-      "states": [
+      "i": "Task",
+      "t": "entity",
+      "g": "entity",
+      "d": "A unit of work. Has dependencies, assignment, effort estimates, and a computed completion probability.",
+      "p": {
+        "id": "s!",
+        "name": "s!",
+        "status": "e!",
+        "priority": "e!",
+        "estimated_hours": "n!",
+        "actual_hours": "n!",
+        "depends_on": "s!",
+        "assigned_to": "s!",
+        "completion_probability": "n!"
+      },
+      "s": [
         "specified",
         "building",
         "built",
         "verified",
         "shipped"
       ],
-      "chars": 0
+      "l": [
+        "specified → building",
+        "building → built",
+        "built → verified",
+        "verified → shipped"
+      ]
     },
     {
-      "id": "Prediction",
-      "type": "prediction",
-      "description": "A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes.",
-      "file": "data-model.dog",
-      "properties": 7,
-      "states": [
+      "i": "Prediction",
+      "t": "prediction",
+      "g": "entity",
+      "d": "A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes.",
+      "p": {
+        "id": "s!",
+        "statement": "s!",
+        "trigger": "s!",
+        "timeframe": "s!",
+        "confidence": "n!",
+        "measurement": "s!",
+        "actual_outcome": "e!"
+      },
+      "s": [
         "pending",
         "resolved"
       ],
-      "chars": 0
+      "l": [
+        "pending → resolved"
+      ]
     },
     {
-      "id": "Vector",
-      "type": "vector",
-      "description": "A semantic embedding of a spec section. Used for similarity search, contradiction detection, and staleness checks.",
-      "file": "data-model.dog",
-      "properties": 5,
-      "states": [
+      "i": "Vector",
+      "t": "vector",
+      "g": "entity",
+      "d": "A semantic embedding of a spec section. Used for similarity search, contradiction detection, and staleness checks.",
+      "p": {
+        "id": "s!",
+        "node_id": "s!",
+        "content": "s!",
+        "embedding": "f!",
+        "model": "e!"
+      },
+      "s": [
         "active",
         "stale"
       ],
-      "chars": 0
+      "l": [
+        "active → stale",
+        "stale → active"
+      ]
     },
     {
-      "id": "Event",
-      "type": "event",
-      "description": "A state-changing occurrence. Has a trigger, payload, preconditions, and postconditions.",
-      "file": "data-model.dog",
-      "properties": 7,
-      "states": [
+      "i": "Event",
+      "t": "event",
+      "g": "entity",
+      "d": "A state-changing occurrence. Has a trigger, payload, preconditions, and postconditions.",
+      "p": {
+        "id": "s!",
+        "name": "s!",
+        "trigger": "s!",
+        "payload": "j!",
+        "preconditions": "s!",
+        "postconditions": "s!",
+        "probability": "n!"
+      },
+      "s": [
         "specified",
         "modeled",
         "verified"
       ],
-      "chars": 0
+      "l": [
+        "specified → modeled",
+        "modeled → verified"
+      ]
     },
     {
-      "id": "Compile",
-      "type": "event",
-      "description": "The compilation process. Reads all .dog files, parses entities and relationships, outputs a .dag graph with integrity hash and token savings report.",
-      "file": "data-model.dog",
-      "properties": 3,
-      "states": [
+      "i": "Compile",
+      "t": "event",
+      "g": "entity",
+      "d": "The compilation process. Reads all .dog files, parses entities and relationships, outputs a .dag graph with integrity hash and token savings report.",
+      "p": {
+        "source_files": "n!",
+        "output_hash": "s!",
+        "token_savings_pct": "n!"
+      },
+      "s": [
         "running",
         "completed",
         "failed"
       ],
-      "chars": 0
+      "l": [
+        "running → completed"
+      ]
     },
     {
-      "id": "DAG",
-      "type": "entity",
-      "description": "The compiled graph output. A deterministic JSON structure with typed nodes, edges, integrity metadata, and provable token savings. Queryable by AI agents via MCP.",
-      "file": "data-model.dog",
-      "properties": 4,
-      "states": [
+      "i": "DAG",
+      "t": "entity",
+      "g": "entity",
+      "d": "The compiled graph output. A deterministic JSON structure with typed nodes, edges, integrity metadata, and provable token savings. Queryable by AI agents via MCP.",
+      "p": {
+        "version": "s!",
+        "sha256": "s!",
+        "source_files": "n!",
+        "token_savings_pct": "n!"
+      },
+      "s": [
         "current",
         "stale"
       ],
-      "chars": 0
+      "l": [
+        "current → stale"
+      ]
+    },
+    {
+      "i": "dotdog will reach 200 PRs by July 2026",
+      "t": "prediction",
+      "g": "prediction",
+      "d": "",
+      "p": {},
+      "s": [],
+      "l": [],
+      "cf": 0.8,
+      "tf": "2026-07-31",
+      "tg": "PR count exceeds 190",
+      "ms": "github.com/specdog/dotdog/pulls count"
+    },
+    {
+      "i": ".dag token savings will exceed 90% for spec-platform",
+      "t": "prediction",
+      "g": "prediction",
+      "d": "",
+      "p": {},
+      "s": [],
+      "l": [],
+      "cf": 0.9,
+      "tf": "2026-08-01",
+      "tg": "spec-platform SPEC.dog grows past 15KB",
+      "ms": "dotdog tokens command on spec-platform"
+    },
+    {
+      "i": "First external user will adopt dotdog",
+      "t": "prediction",
+      "g": "prediction",
+      "d": "",
+      "p": {},
+      "s": [],
+      "l": [],
+      "cf": 0.5,
+      "tf": "2026-09-01",
+      "tg": "GitHub star count exceeds 10",
+      "ms": "github.com/specdog/dotgod stargazers > 1 non-team member"
     }
   ],
-  "edges": [
+  "e": [
     {
-      "source": "Compile",
-      "target": "DAG",
-      "verb": "produces",
-      "cardinality": "1:1",
-      "required": false,
-      "file": "data-model.dog"
+      "s": "Compile",
+      "t": "DAG",
+      "v": "produces",
+      "d": "",
+      "c": "1:1",
+      "r": false
     },
     {
-      "source": "Node",
-      "target": "Node",
-      "verb": "connects",
-      "cardinality": "N:M",
-      "required": false,
-      "file": "data-model.dog"
+      "s": "Node",
+      "t": "Node",
+      "v": "connects",
+      "d": "",
+      "c": "N:M",
+      "r": false
     },
     {
-      "source": "Task",
-      "target": "Task",
-      "verb": "connects",
-      "cardinality": "N:M",
-      "required": false,
-      "file": "data-model.dog"
+      "s": "Task",
+      "t": "Task",
+      "v": "depends_on",
+      "d": "",
+      "c": "N:M",
+      "r": false
     },
     {
-      "source": "Prediction",
-      "target": "Task",
-      "verb": "connects",
-      "cardinality": "N:M",
-      "required": false,
-      "file": "data-model.dog"
+      "s": "Prediction",
+      "t": "Task",
+      "v": "measures",
+      "d": "",
+      "c": "1:N",
+      "r": false
     },
     {
-      "source": "Vector",
-      "target": "Node",
-      "verb": "connects",
-      "cardinality": "N:M",
-      "required": false,
-      "file": "data-model.dog"
+      "s": "Vector",
+      "t": "Node",
+      "v": "embeds",
+      "d": "",
+      "c": "1:1",
+      "r": true
     }
   ],
-  "tokens": {
-    "source_total": 11682,
-    "dag_total": 724,
-    "savings_pct": 93.8,
-    "savings_tokens": 10958
+  "tk": {
+    "m": "chars/4",
+    "st": 11998,
+    "ct": 11998,
+    "dt": 978,
+    "sv": 91.8,
+    "cs": 91.8,
+    "saved": 11020
   }
 }

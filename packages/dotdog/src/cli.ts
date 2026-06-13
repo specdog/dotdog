@@ -153,10 +153,10 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
         const ast = parse(sources[f]);
         for (const section of ast.sections) {
           for (const block of section.blocks) {
-            if (block.kind === 'entity' || block.kind === 'event' || block.kind === 'prediction') {
+            if (block.kind === 'entity' || block.kind === 'event') {
               // Compact property schema: s=string, n=number, b=boolean, e=enum, j=json, !=required
               const compactProps: Record<string, string> = {};
-              for (const [key, val] of Object.entries(block.properties)) {
+              for (const [key, val] of Object.entries(block.properties || {})) {
                 let enc = '';
                 const t = val.type || 'string';
                 if (t === 'string') enc = 's';
@@ -169,13 +169,28 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
                 compactProps[key] = enc;
               }
               nodes.push({
-                i: block.name,
-                t: block.type,
+                i: (block as any).name || '',
+                t: (block as any).type || '',
                 g: block.kind,
-                d: block.description || '',
+                d: (block as any).description || '',
                 p: compactProps,
-                s: block.states || [],
+                s: (block as any).states || [],
                 l: (block as any).lifecycle || [],
+              });
+            }
+            if (block.kind === 'prediction') {
+              nodes.push({
+                i: (block as any).statement || (block as any).name || '',
+                t: 'prediction',
+                g: 'prediction',
+                d: (block as any).description || '',
+                p: {},
+                s: [],
+                l: [],
+                cf: (block as any).confidence || 0,
+                tf: (block as any).timeframe || '',
+                tg: (block as any).trigger || '',
+                ms: (block as any).measurement || '',
               });
             }
             if (block.kind === 'relationship') {
@@ -209,6 +224,42 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
     }
   }
   if (!found) console.log(chalk.yellow('No projects found.'));
+});
+
+program.command('tokens [dir]').action((d='.') => {
+  const dir = resolvePath(d);
+  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  let found = false;
+  for (const dd of dirs) {
+    if (!existsSync(dd)) continue;
+    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    for (const p of projects) {
+      const pd = join(dd,p);
+      if (!existsSync(join(pd,'SPEC.dog'))) continue;
+      const dagFile = join(pd,`${p}.dag`);
+      if (!existsSync(dagFile)) continue;
+      found = true;
+      // Count source bytes
+      const dogFiles = readdirSync(pd).filter(f=>f.endsWith('.dog'));
+      let sourceBytes = 0, contentBytes = 0;
+      for (const f of dogFiles) {
+        const bytes = Buffer.byteLength(readFileSync(join(pd,f),'utf-8'),'utf-8');
+        sourceBytes += bytes;
+        if (bytes >= 100) contentBytes += bytes;
+      }
+      const dagBytes = Buffer.byteLength(readFileSync(dagFile,'utf-8'),'utf-8');
+      const savings = sourceBytes > 0 ? Math.round((1 - dagBytes / sourceBytes) * 1000) / 10 : 0;
+      console.log(chalk.bold(`\n  ${p}`));
+      console.log(chalk.gray(`    ${dogFiles.length} .dog files: ${sourceBytes} bytes`));
+      console.log(chalk.gray(`    .dag file: ${dagBytes} bytes`));
+      console.log(chalk.green(`    ${savings}% smaller (${sourceBytes - dagBytes} bytes saved)`));
+      if (contentBytes && contentBytes !== sourceBytes) {
+        const cs = Math.round((1 - dagBytes / contentBytes) * 1000) / 10;
+        console.log(chalk.gray(`    content-only: ${contentBytes} bytes → ${cs}% savings`));
+      }
+    }
+  }
+  if (!found) console.log(chalk.yellow('No .dag files found. Run compile first.'));
 });
 
 program.command('visualize [dir]').option('-s, --save').action((d='.', opts) => {

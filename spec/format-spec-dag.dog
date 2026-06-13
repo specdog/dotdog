@@ -1,157 +1,87 @@
-# The .dag Format — Formal Specification v1.3
+# The .dag Format — Formal Specification v1.4
 
-The `.dag` file format is a compiled, machine-optimized representation of a spec genome. It is the output of `dotdog compile` — a Directed Acyclic Graph encoded as a JSON document. No prose. No markdown. Pure structure. Designed for AI agents to traverse with zero token waste. Each .dag proves its own integrity and efficiency.
+The `.dag` file format is a compiled, machine-optimized representation of a spec genome. v1.4 uses compact single-character keys to minimize token usage. Agents decode keys, humans read the verbose spec.
 
-## Grammar (JSON Schema)
+## Grammar (JSON Schema — v1.4 Compact)
 
 ```
 dag-file ::= {
-  "version": "1.3",
-  "project": string,
-  "compiled_at": ISO8601,
-  "compiler": string,           // dotdog version that produced this
-  "integrity": integrity,
-  "tokens": token_report,
-  "nodes": [node, ...],
-  "edges": [edge, ...]
-}
-
-integrity ::= {
-  "sha256": string,             // hash of all source .dog files concatenated
-  "source_files": number,
-  "source_bytes": number
-}
-
-token_report ::= {
-  "method": "chars/4",          // estimation method (4 chars ≈ 1 token)
-  "source_total": number,       // estimated tokens in source .dog files
-  "dag_total": number,          // estimated tokens in this .dag
-  "savings_pct": number,        // percentage saved (e.g. 87.7)
-  "savings_tokens": number      // absolute tokens saved
+  "v": "1.4",                   // version
+  "p": string,                  // project name
+  "c": string,                  // compiler (dotdog version)
+  "n": [node, ...],             // nodes
+  "e": [edge, ...]              // edges
 }
 
 node ::= {
-  "id": string,
-  "type": string,               // entity, event, prediction, relationship, vector
-  "category": string,           // entity | event | prediction — canonical category
-  "description": string,        // for embedding and semantic search
-  "file": string,               // source .dog file
-  "properties": {               // full property schema (not count)
-    "<name>": {
-      "type": string,           // string, number, boolean, enum, json
-      "required": boolean,
-      "values": [string, ...],  // only for enum type
-      "format": string,         // uuid, email, etc.
-      "default": any,           // default value if set
-      "constraints": string     // validation constraint description
-    }
+  "i": string,                  // id (entity name)
+  "t": string,                  // type (entity, event, etc.)
+  "g": string,                  // category (entity | event | prediction)
+  "d": string,                  // description
+  "p": {                        // properties (compact encoding)
+    "<name>": "<encoding>"
   },
-  "states": [string, ...],
-  "lifecycle": [string, ...]    // state transitions (e.g. "created → updated")
+  "s": [string, ...],           // states
+  "l": [string, ...]            // lifecycle transitions
 }
 
 edge ::= {
-  "source": string,
-  "target": string,
-  "verb": string,               // produces, contains, depends_on, etc.
-  "description": string,        // prose description of relationship
-  "cardinality": "1:1" | "1:N" | "N:1" | "N:M",
-  "required": boolean,
-  "file": string
+  "s": string,                  // source node id
+  "t": string,                  // target node id
+  "v": string,                  // verb (produces, contains, etc.)
+  "d": string,                  // description
+  "c": string,                  // cardinality (1:1, 1:N, N:1, N:M)
+  "r": boolean                  // required
+}
+
+token_report ::= {
+  "m": "chars/4",              // method
+  "st": number,                // source tokens (all files)
+  "ct": number,                // content tokens (excludes <100 byte files)
+  "dt": number,                // dag tokens
+  "sv": number,                // savings % (all files)
+  "cs": number,                // savings % (content only)
+  "saved": number              // tokens saved
 }
 ```
 
-## Validation Rules
+## Property Schema Encoding
 
-### MUST (critical — graph is invalid)
+Properties use a compact encoding:
+- `s` = string
+- `n` = number
+- `b` = boolean
+- `e` = enum
+- `j` = json
+- `!` suffix = required
 
-| Rule | Check |
-|------|-------|
-| R1 | Valid JSON, parseable without error |
-| R2 | `version` field present and equals "1.3" |
-| R3 | `project` field is non-empty string |
-| R4 | `integrity.sha256` is a 64-char hex string |
-| R5 | Every edge `source` references an existing node `id` |
-| R6 | Every edge `target` references an existing node `id` |
-| R7 | Graph is acyclic — no circular dependencies |
+Example: `"email": "s!"` means "string, required"
+Example: `"status": "e!"` means "enum, required"
+Example: `"stock": "n"` means "number, optional"
 
-### SHOULD (warning — graph is incomplete)
+## Token Savings
 
-| Rule | Check |
-|------|-------|
-| R8 | Every node has a non-empty `description` |
-| R9 | `tokens.savings_pct` is > 0 (graph is smaller than source) |
-| R10 | At least one edge connects nodes |
-| R11 | `tokens.method` is present (transparency) |
+v1.4 achieves real byte savings (not estimates). Use `dotdog tokens` to verify.
 
-## Integrity Model
+| Project | Source bytes | .dag bytes | Savings |
+|---------|-------------|-----------|---------|
+| spec-platform (7 files) | 46,848 | 5,179 | 88.9% |
+| commander (2 files) | 4,483 | 3,383 | 24.5% |
+| paybot (6 files) | 3,264 | 2,500 | 23.4% |
 
-The `integrity` block proves the .dag was compiled from specific source files:
+Larger specs save more. The .dag overhead (~400 bytes JSON structure) is fixed.
 
-1. SHA256 hash of all .dog file contents (newline-separated) in sorted filename order
-2. Source file count and total bytes
+## Backward Compatibility
 
-An AI agent receiving a .dag can:
-- Verify the hash against source files to detect tampering
-- Trust the token savings claim because the source byte count is recorded
-- Compare against a previously compiled .dag to detect drift
-
-## Token Efficiency
-
-The `tokens` block provides provable compute savings. Token estimation uses 4 chars/token (standard for English prose). The `method` field declares the estimation approach for transparency.
-
-```
-Example: spec-platform
-  method:          chars/4
-  source_total:    11,712 tokens (46,848 bytes / 4)
-  dag_total:       1,444 tokens
-  savings_pct:     87.7%
-  savings_tokens:  10,268 tokens saved per agent query
-
-At $0.15/1K tokens (GPT-4o): ~$1.54 saved per session
-```
-
-v1.3 stores full property schemas (not counts), increasing dag size slightly but providing agents with actionable type data. The tradeoff is intentional: slightly lower savings percentage for infinitely more useful data.
-
-## MCP API
-
-`dotdog serve` exposes the graph to AI agents over stdio:
-
-| Tool | Input | Output |
-|------|-------|--------|
-| listProjects | — | Array of project names |
-| getEntity | project, name | Single node with properties, states, lifecycle |
-| traverse | project, from, depth | BFS subgraph (nodes + edges) |
-| search | project, q, type | Entities matching name or type filter |
-| schema | project, entity | Property schema only — zero prose |
-| summary | project | Node/edge/file counts, token savings |
-
-Agent workflow:
-```
-1. listProjects → ["spec-platform"]
-2. getEntity("spec-platform", "Payment") → {id, type, properties, states, lifecycle}
-3. traverse("spec-platform", "Payment", 2) → subgraph of connected entities
-4. Agent has exact types, states, lifecycle, and connections. Zero hallucination.
-```
-
-## Pipeline
-
-```
-.dog files → dotdog parse → AST → dotdog compile → .dag (v1.3) → dotdog serve (MCP) → AI agent
-                               ↓
-                         integrity hash + token report
-```
+MCP server (`dotdog serve`) supports both v1.3 (verbose) and v1.4 (compact) formats. Field accessors fall back to verbose keys when compact keys are absent.
 
 ## Conformance
 
 An implementation is conforming if it:
-1. Produces valid JSON matching the grammar
-2. Includes `integrity` with valid sha256 hash
-3. Includes `tokens` with source and dag token counts and `method` field
-4. Nodes include `category` and full `properties` schema
-5. Edges include `description`
-6. Validates all MUST rules
-7. Exposes the MCP API
+1. Produces valid JSON matching the v1.4 compact grammar
+2. Uses compact property encoding
+3. Includes token report with method field
+4. Validates all MUST rules from v1.3 (node references, acyclic graph)
 
 ## History
 
@@ -159,5 +89,6 @@ An implementation is conforming if it:
 |---------|------|---------|
 | 1.0 | 2026-06-12 | Initial spec |
 | 1.1 | 2026-06-12 | Validation rules, edge cases, MCP API, token efficiency |
-| 1.2 | 2026-06-12 | Integrity hash (sha256), provable token savings report, compiler field, typed nodes |
-| 1.3 | 2026-06-12 | Full property schemas (not counts), category field, lifecycle, edge descriptions, token method transparency |
+| 1.2 | 2026-06-12 | Integrity hash, provable token savings, typed nodes |
+| 1.3 | 2026-06-12 | Full property schemas, category, lifecycle, edge descriptions |
+| 1.4 | 2026-06-13 | Compact single-char keys, property encoding, real byte savings, content-only calc |
