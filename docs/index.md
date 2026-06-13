@@ -94,18 +94,50 @@ $ dotdog serve
 - `.dog` : Human-written spec (markdown + YAML entities). Free forever.
 - `.dag` : Machine-compiled graph (JSON). Token-efficient for AI agents.
 
-## For AI Agents
+## MCP Server
 
-`dotdog serve` exposes your specs via MCP. Six tools:
+`dotdog serve` runs an MCP server over stdio. AI agents query compiled .dag spec graphs without hallucination.
+
+### Setup
+
+Claude Desktop, Cursor, or any MCP client:
+
+```json
+{
+  "mcpServers": {
+    "dotdog": {
+      "command": "npx",
+      "args": ["-y", "dotdog", "serve"]
+    }
+  }
+}
+```
+
+Run `dotdog compile` first to generate .dag files.
+
+### Tools
 
 | Tool | Description |
 |------|-------------|
-| `getEntity` | Exact entity with properties, states, edges |
-| `traverse` | BFS subgraph from any node |
+| `getEntity` | Full entity: properties, states, lifecycle, connected edges |
+| `traverse` | BFS subgraph from a starting node |
 | `search` | Find entities by name or type |
-| `schema` | Property definitions only : agent-optimized |
-| `summary` | Node/edge/file counts |
-| `listProjects` | All project names |
+| `schema` | Property schema only: names, types, required |
+| `summary` | Node count, edge count, version, token savings |
+| `listProjects` | All project names with compiled .dag files |
+
+### Example
+
+```
+Agent: listProjects()
+→ ["spec-platform"]
+
+Agent: getEntity("spec-platform", "Compile")  
+→ { id: "Compile", type: "entity", lifecycle: ["running → completed"], edges: […] }
+
+Agent: summary("spec-platform")
+→ { project: "spec-platform", nodes: 11, edges: 5, savings: 91% }
+```
 
 ## Links
 
