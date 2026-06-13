@@ -1,6 +1,6 @@
 {
   "name": "dotdog",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "CLI tool for structured software specifications. Validate .dog files, compile .dag graphs, query via MCP.",
   "type": "module",
   "main": "dist/cli.js",
