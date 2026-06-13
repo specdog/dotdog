@@ -67,7 +67,6 @@ v1.4 achieves real byte savings (not estimates). Use `dotdog tokens` to verify.
 |---------|-------------|-----------|---------|
 | spec-platform (7 files) | 46,848 | 5,179 | 88.9% |
 | commander (2 files) | 4,483 | 3,383 | 24.5% |
-| paybot (6 files) | 3,264 | 2,500 | 23.4% |
 
 Larger specs save more. The .dag overhead (~400 bytes JSON structure) is fixed.
 
