@@ -58,7 +58,7 @@ program.name('spec').alias('dotdog').description('CLI for structured software sp
 program.command('validate [dir]').action((d='.') => {
   const dir = resolvePath(d);
   const dirs = [join(dir,'projects'),join(dir,'specs')];
-  let found = false;
+  let found = false, hasErrors = false;
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
     const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
@@ -71,11 +71,12 @@ program.command('validate [dir]').action((d='.') => {
       const optional = ['COPY.dog','plan.dog','DESIGN-SYSTEM.dog','INDEX.dog'].filter(f=>!files.includes(f));
       console.log(chalk.bold(`\n  ${p} : ${files.length} .dog files, ${100-Math.round((missing.length*3+optional.length)/20*100)}% complete`));
       for (const f of files) console.log(chalk.gray(`    ${f}`));
-      if (missing.length) console.log(chalk.red(`  Missing required: ${missing.join(', ')}`));
+      if (missing.length) { console.log(chalk.red(`  Missing required: ${missing.join(', ')}`)); hasErrors = true; }
       if (optional.length) console.log(chalk.yellow(`  Missing optional: ${optional.join(', ')}`));
     }
   }
   if (!found) console.log(chalk.yellow('No projects found. Run: spec init <project>'));
+  if (hasErrors) process.exit(1);
 });
 
 program.command('init <project>').option('-m, --minimal', 'Only SPEC.dog + data-model.dog').action((p, opts) => {
@@ -292,7 +293,7 @@ program.command('analyze [dir]').description('Analyze a spec project : score, ga
   const dir = resolvePath(d);
   const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
   console.log(chalk.bold('\nSpec Analysis\n'));
-  let found = false;
+  let found = false, hasGaps = false;
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
     const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
@@ -347,9 +348,11 @@ program.command('analyze [dir]').description('Analyze a spec project : score, ga
       }
       if (gaps.length > 0) { console.log(chalk.bold(`\n  Gaps (${gaps.length})`)); for (const g of gaps) console.log(`  ${g}`); }
       else console.log(chalk.green('\n  No gaps found.'));
+      if (gaps.length > 0) hasGaps = true;
     }
   }
   if (!found) console.log(chalk.yellow('No spec projects found. Run: dotdog init <project>'));
+  if (hasGaps) process.exit(1);
 });
 
 program.command('generate [dir]').description('Generate missing spec files from SPEC.dog').option('-p, --project <name>').action((d='.', opts) => {
