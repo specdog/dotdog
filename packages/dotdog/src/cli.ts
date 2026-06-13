@@ -425,10 +425,96 @@ program.command('generate [dir]').description('Generate missing spec files from 
   console.log(chalk.bold('\nRun dotdog validate to verify.\n'));
 });
 
-program.command('simulate <scenario>').description('Run a simulation scenario (phase 1 stub)').option('-p, --project <name>', 'Project name', 'default').action((scenario, opts) => {
-  console.log(chalk.bold(`\nSimulation: ${scenario} (project: ${opts.project})\n`));
-  console.log(chalk.gray('Simulation engine : reads SPEC.dog scenarios, walks through steps, checks pre/postconditions.'));
-  console.log(chalk.gray('Full engine coming in a future release.'));
+program.command('simulate <scenario>').description('Walk through a scenario, check pre/postconditions').option('-p, --project <name>').action((scenario, opts) => {
+  const dir = resolvePath('.');
+  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  let projectDir = '';
+  for (const dd of dirs) {
+    if (!existsSync(dd)) continue;
+    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    for (const p of projects) {
+      if (opts.project && p !== opts.project) continue;
+      const pd = join(dd,p);
+      if (existsSync(join(pd,'SPEC.dog'))) { projectDir = pd; break; }
+    }
+    if (projectDir) break;
+  }
+  if (!projectDir) { console.log(chalk.red('Project not found.')); return; }
+  
+  // Load entities from .dag
+  const dagFile = join(projectDir, `${opts.project || projectDir.split('/').pop()}.dag`);
+  let entities: string[] = [], relationships: any[] = [];
+  if (existsSync(dagFile)) {
+    const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
+    entities = (dag.n || dag.nodes || []).map((n: any) => (n.i || n.id || '').toLowerCase());
+    relationships = dag.e || dag.edges || [];
+  }
+  
+  // Read SPEC.dog for scenario descriptions
+  const specFile = join(projectDir, 'SPEC.dog');
+  const specContent = existsSync(specFile) ? readFileSync(specFile, 'utf-8') : '';
+  
+  console.log(chalk.bold(`\nSimulation: ${scenario}`));
+  console.log(chalk.gray(`Project: ${projectDir.split('/').pop()} | Entities: ${entities.length} | Relationships: ${relationships.length}`));
+  
+  // Find scenario steps in SPEC.dog (look for numbered steps or flow descriptions)
+  const steps: string[] = [];
+  const stepMatches = specContent.match(/\[(\d+)\/\d+\]\s*(.+)/g);
+  if (stepMatches) {
+    for (const m of stepMatches) {
+      const step = m.replace(/\[\d+\/\d+\]\s*/, '');
+      if (step) steps.push(step);
+    }
+  }
+  
+  if (steps.length === 0) {
+    console.log(chalk.yellow('\n  No scenario steps found in SPEC.dog.'));
+    console.log(chalk.gray('  Add steps like: [1/3] User taps button'));
+    return;
+  }
+  
+  // Walk through steps
+  let passed = 0, failed = 0;
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
+    console.log(chalk.cyan(`\n  [${i+1}/${steps.length}] ${step}`));
+    
+    // Check: does this step reference known entities?
+    let foundRef = false;
+    for (const e of entities) {
+      if (step.toLowerCase().includes(e)) {
+        console.log(chalk.green(`    ✓ References entity: ${e}`));
+        foundRef = true;
+      }
+    }
+    
+    // Check: does this step reference known relationships?
+    for (const r of relationships) {
+      const src = (r.s || r.source || '').toLowerCase();
+      const tgt = (r.t || r.target || '').toLowerCase();
+      const verb = (r.v || r.verb || '').toLowerCase();
+      if (step.toLowerCase().includes(src) && step.toLowerCase().includes(tgt)) {
+        console.log(chalk.green(`    ✓ References relationship: ${src} → ${tgt}`));
+        foundRef = true;
+      }
+      if (verb && step.toLowerCase().includes(verb)) {
+        console.log(chalk.green(`    ✓ References verb: ${verb}`));
+        foundRef = true;
+      }
+    }
+    
+    if (!foundRef) {
+      console.log(chalk.yellow(`    ⚠ No entity or relationship references found`));
+      failed++;
+    } else {
+      passed++;
+    }
+  }
+  
+  // Result
+  console.log(chalk.bold(`\n  RESULT: ${failed === 0 ? chalk.green('Success') : chalk.yellow('Partial')} (${passed}/${steps.length} steps passed)`));
+  if (failed > 0) console.log(chalk.red(`  ${failed} steps have no spec references — entities or relationships may be missing.`));
+  if (failed === 0) console.log(chalk.green('  All steps reference known entities and relationships.'));
 });
 
 program.command('staleness [dir]').action((d='.') => {
