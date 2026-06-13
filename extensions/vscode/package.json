@@ -1,24 +1,51 @@
 {
   "name": "dotdog",
   "displayName": "dotdog",
-  "description": "Syntax highlighting for .dog spec files",
-  "version": "0.1.0",
+  "description": "Syntax highlighting and validation for .dog spec files",
+  "version": "0.2.0",
   "publisher": "specdog",
   "license": "MIT",
   "repository": "https://github.com/specdog/dotdog",
-  "engines": { "vscode": "^1.80.0" },
-  "categories": ["Programming Languages"],
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "activationEvents": [
+    "onLanguage:dotdog"
+  ],
+  "main": "./out/extension.js",
   "contributes": {
-    "languages": [{
-      "id": "dotdog",
-      "extensions": [".dog"],
-      "aliases": ["dotdog", "dog"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "dotdog",
-      "scopeName": "text.dog",
-      "path": "./syntaxes/dog.tmLanguage.json"
-    }]
+    "languages": [
+      {
+        "id": "dotdog",
+        "extensions": [
+          ".dog"
+        ],
+        "aliases": [
+          "dotdog",
+          "dog"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "dotdog",
+        "scopeName": "text.dog",
+        "path": "./syntaxes/dog.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
   }
 }
