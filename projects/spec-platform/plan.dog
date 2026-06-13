@@ -51,7 +51,7 @@
 - [x] VS Code extension: .dog syntax highlighting + validation squiggles (missing files, entity YAML)
 - [x] MCP server: backward-compatible v1.3+v1.4, edge dedup in traverse
 - [x] Predictions: parsed from .dog, compiled with confidence/timeframe/trigger
-- [x] Dogfood verified on 4 projects: spec-platform, CryptChat, Commander.js, PayBot
+- [x] Dogfood verified: spec-platform + Commander.js
 - [x] Spec the dog widget: face-only, bone in mouth, feed/pet/fetch (V/C/P keys)
 
 ## Phase 2: Distribution
