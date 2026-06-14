@@ -9,4 +9,6 @@ packages/dotdog/node_modules/
 credentials*
 *.pem
 *.key
+*.dag
+*.idx
 
