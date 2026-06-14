@@ -37,7 +37,13 @@ document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.
 ## 🦴 Getting Started
 
 ```bash
+# npm
 npm install -g dotdog
+
+# or Homebrew
+brew tap specdog/dotdog
+brew install dotdog
+
 dotdog init my-project --minimal    # just SPEC.dog + data-model.dog
 dotdog validate                     # score your spec
 dotdog compile                      # build .dag graph
