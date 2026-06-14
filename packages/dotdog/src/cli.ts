@@ -786,4 +786,49 @@ program.command('resolve <name>').description('Mark a prediction as correct, wro
   console.log(chalk.yellow(`Prediction "${name}" not found.`));
 });
 
+// Kit commands — pre-written .dog templates
+const kitDir = join(resolve(import.meta.dirname || '.'), '..', 'kits');
+const builtInKits = existsSync(kitDir) ? readdirSync(kitDir,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name) : [];
+
+const kitCmd = program.command('kit').description('Manage spec kits');
+
+kitCmd.command('list').description('List available kits').action(() => {
+  console.log(chalk.bold('\nAvailable kits\n'));
+  if (builtInKits.length === 0) {
+    console.log(chalk.gray('  No built-in kits found.'));
+  } else {
+    for (const k of builtInKits) {
+      const specFile = join(kitDir, k, 'SPEC.dog');
+      const desc = existsSync(specFile) 
+        ? readFileSync(specFile,'utf-8').split('\n')[1]?.replace(/^>\s*/,'') || ''
+        : '';
+      console.log(`  ${chalk.green(k)}  ${chalk.gray(desc)}`);
+    }
+  }
+  console.log(chalk.gray('\n  Community kits: npm install @scope/kit-<name> then dotdog kit install <name>'));
+});
+
+kitCmd.command('init <kit>').description('Init a project from a kit').option('-p, --project <name>').action((kit, opts) => {
+  const src = join(kitDir, kit);
+  if (!existsSync(src)) {
+    console.log(chalk.red(`Kit "${kit}" not found. Available: ${builtInKits.join(', ')}`));
+    return;
+  }
+  const projectName = opts.project || kit;
+  const dir = resolvePath('.');
+  const dest = join(dir, 'specs', projectName);
+  if (existsSync(dest)) {
+    console.log(chalk.yellow(`Project "${projectName}" already exists.`));
+    return;
+  }
+  mkdirSync(dest, {recursive: true});
+  const files = readdirSync(src).filter(f=>f.endsWith('.dog'));
+  for (const f of files) {
+    writeFileSync(join(dest, f), readFileSync(join(src, f), 'utf-8'));
+    console.log(chalk.green(`  ✓ ${f}`));
+  }
+  console.log(chalk.gray(`\n  Kit "${kit}" initialized in specs/${projectName}/`));
+  console.log(chalk.gray(`  Run: dotdog validate`));
+});
+
 program.parse();

@@ -1,0 +1,20 @@
+# ERC20 Token
+
+> Fungible token spec. ERC20 compliant. Mint, burn, transfer, approve.
+
+## Product
+
+A standard ERC20 token. Users hold balances, transfer tokens, approve spenders.
+
+### Flow: User transfers tokens
+```
+User calls transfer(to, amount) → Token updates balances → Transfer event emitted
+```
+
+## Architecture
+
+| Component | Role |
+|-----------|------|
+| Token | ERC20 contract: mint, burn, transfer, approve |
+| Balance | Per-address token balance |
+| Allowance | Per-spender approved amount |

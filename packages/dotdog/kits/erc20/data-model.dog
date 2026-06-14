@@ -1,0 +1,97 @@
+# Data Model — ERC20
+
+## Entities
+
+### Entity: Token
+
+An ERC20-compliant fungible token.
+
+```yaml
+entity: Token
+type: contract
+properties:
+  name:
+    type: string
+    required: true
+  symbol:
+    type: string
+    required: true
+  decimals:
+    type: number
+    required: true
+  totalSupply:
+    type: number
+    required: true
+  owner:
+    type: string
+    required: true
+states: [deployed, active, paused]
+lifecycle: deployed → active → paused
+```
+
+### Entity: Transfer
+
+A token transfer between two addresses.
+
+```yaml
+entity: Transfer
+type: event
+properties:
+  from:
+    type: string
+    required: true
+  to:
+    type: string
+    required: true
+  amount:
+    type: number
+    required: true
+  timestamp:
+    type: number
+    required: true
+states: [pending, confirmed]
+lifecycle: pending → confirmed
+```
+
+### Entity: Approval
+
+An allowance for a spender to transfer tokens.
+
+```yaml
+entity: Approval
+type: event
+properties:
+  owner:
+    type: string
+    required: true
+  spender:
+    type: string
+    required: true
+  amount:
+    type: number
+    required: true
+states: [pending, confirmed]
+lifecycle: pending → confirmed
+```
+
+## Relationships
+
+### Relationship: Transfer → Token
+
+```yaml
+relationship: Transfer -> Token
+verb: modifies
+cardinality: N:1
+required: true
+description: Transfer modifies token balances
+```
+
+### Relationship: Approval → Token
+
+```yaml
+relationship: Approval -> Token
+verb: authorizes
+cardinality: N:1
+required: true
+description: Approval authorizes spender for token
+```
