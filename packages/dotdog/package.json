@@ -12,7 +12,8 @@
     "dist/",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "kits/"
   ],
   "keywords": [
     "specification",

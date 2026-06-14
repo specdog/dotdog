@@ -1,0 +1,8 @@
+# Constitution — ERC20
+
+## Principles
+
+1. **ERC20 compliance** — implements IERC20 interface
+2. **No admin rug** — owner cannot seize user balances
+3. **Zero-address protection** — cannot transfer to address(0)
+4. **Event emission** — all state changes emit events
