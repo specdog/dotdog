@@ -1,0 +1,20 @@
+# Hackathon Starter
+
+> Build fast. Ship working. This is your foundation.
+
+## Product
+
+A web3 application. Built for a hackathon. Works in a live demo.
+
+### Flow
+```
+User connects wallet → App reads chain state → User submits transaction → App confirms onchain → Demo complete
+```
+
+## Architecture
+
+| Component | Role |
+|-----------|------|
+| UI | Frontend: wallet connection, transaction button |
+| Contract | Onchain logic: storage, verification |
+| RPC | Chain connection: read state, submit tx |

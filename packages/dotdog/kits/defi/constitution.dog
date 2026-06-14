@@ -1,0 +1,8 @@
+# Constitution — DeFi
+
+## Principles
+
+1. **ERC-4626 compliance** — standard vault interface
+2. **No admin withdrawal** — owner cannot drain user deposits
+3. **Slippage protection** — deposits and withdrawals respect bounds
+4. **Strategy isolation** — one strategy failure cannot drain vault

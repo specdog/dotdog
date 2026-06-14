@@ -1,0 +1,131 @@
+# Data Model — NFT
+
+## Entities
+
+### Entity: Collection
+
+ERC-721 compliant NFT collection.
+
+```yaml
+entity: Collection
+type: contract
+properties:
+  name:
+    type: string
+    required: true
+  symbol:
+    type: string
+    required: true
+  totalSupply:
+    type: number
+    required: true
+  owner:
+    type: string
+    required: true
+  royaltyBps:
+    type: number
+    required: false
+states: [deployed, active, paused]
+lifecycle: deployed → active → paused
+```
+
+### Entity: Token
+
+A unique NFT within a collection.
+
+```yaml
+entity: Token
+type: entity
+properties:
+  tokenId:
+    type: number
+    required: true
+  owner:
+    type: string
+    required: true
+  tokenURI:
+    type: string
+    required: true
+  collection:
+    type: string
+    required: true
+states: [unminted, minted, transferred, burned]
+lifecycle: unminted → minted → transferred → burned
+```
+
+### Entity: Metadata
+
+JSON metadata for an NFT token.
+
+```yaml
+entity: Metadata
+type: entity
+properties:
+  name:
+    type: string
+    required: true
+  description:
+    type: string
+    required: true
+  image:
+    type: string
+    required: true
+  attributes:
+    type: json
+    required: false
+states: [draft, published]
+lifecycle: draft → published
+```
+
+### Entity: Royalty
+
+Secondary sale royalty payment.
+
+```yaml
+entity: Royalty
+type: event
+properties:
+  creator:
+    type: string
+    required: true
+  amount:
+    type: number
+    required: true
+  salePrice:
+    type: number
+    required: true
+states: [pending, paid]
+lifecycle: pending → paid
+```
+
+## Relationships
+
+### Relationship: Collection → Token
+
+```yaml
+relationship: Collection -> Token
+verb: mints
+cardinality: 1:N
+required: true
+description: Collection mints unique tokens
+```
+
+### Relationship: Token → Metadata
+
+```yaml
+relationship: Token -> Metadata
+verb: references
+cardinality: 1:1
+required: true
+description: Token references its metadata
+```
+
+### Relationship: Token → Royalty
+
+```yaml
+relationship: Token -> Royalty
+verb: triggers
+cardinality: 1:N
+required: false
+description: Transfer triggers royalty payment
+```

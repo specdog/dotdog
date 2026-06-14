@@ -1,0 +1,64 @@
+# Data Model — Hackathon
+
+## Entities
+
+### Entity: User
+
+A connected wallet. The app's user.
+
+```yaml
+entity: User
+type: entity
+properties:
+  address:
+    type: string
+    required: true
+  chainId:
+    type: number
+    required: true
+  balance:
+    type: number
+    required: false
+states: [disconnected, connected, transacting]
+lifecycle: disconnected → connected → transacting
+```
+
+### Entity: Transaction
+
+An onchain action by the user.
+
+```yaml
+entity: Transaction
+type: event
+properties:
+  hash:
+    type: string
+    required: true
+  from:
+    type: string
+    required: true
+  to:
+    type: string
+    required: true
+  value:
+    type: number
+    required: true
+  status:
+    type: enum
+    required: true
+states: [pending, confirmed, failed]
+lifecycle: pending → confirmed
+lifecycle: pending → failed
+```
+
+## Relationships
+
+### Relationship: User → Transaction
+
+```yaml
+relationship: User -> Transaction
+verb: submits
+cardinality: 1:N
+required: true
+description: User submits transactions
+```

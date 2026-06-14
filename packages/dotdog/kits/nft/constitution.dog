@@ -1,0 +1,8 @@
+# Constitution — NFT
+
+## Principles
+
+1. **ERC-721 compliance** — implements IERC721 interface
+2. **Metadata permanence** — tokenURI must be immutable or IPFS-backed
+3. **Royalty enforcement** — EIP-2981 compliant
+4. **No admin rug** — owner cannot seize tokens
