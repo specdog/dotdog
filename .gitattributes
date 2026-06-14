@@ -1,2 +1,2 @@
 *.dog linguist-language=Markdown
-# .dog — Spec Genome files. Rendered as Markdown on GitHub.
+*.dag linguist-language=JSON
