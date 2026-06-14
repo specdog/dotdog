@@ -1,0 +1,21 @@
+# DeFi Protocol
+
+> Yield-bearing vault. Users deposit tokens, earn yield via strategies, withdraw with returns.
+
+## Product
+
+A yield vault. Users deposit USDC, vault deploys capital into strategies, users withdraw with accrued yield.
+
+### Flow
+```
+User approves Vault → deposit(amount) → Vault mints Shares → Strategy earns yield → User withdraws with returns
+```
+
+## Architecture
+
+| Component | Role |
+|-----------|------|
+| Vault | ERC-4626 vault. Deposits, withdrawals, share minting. |
+| Strategy | Yield source. Lending, LP, staking. |
+| Share | ERC-20 token representing vault ownership. |
+| Yield | Accrued returns distributed to shareholders. |

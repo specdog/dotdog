@@ -1,0 +1,131 @@
+# Data Model — DeFi
+
+## Entities
+
+### Entity: Vault
+
+ERC-4626 compliant yield vault.
+
+```yaml
+entity: Vault
+type: contract
+properties:
+  name:
+    type: string
+    required: true
+  symbol:
+    type: string
+    required: true
+  underlying:
+    type: string
+    required: true
+  totalAssets:
+    type: number
+    required: true
+  performanceFee:
+    type: number
+    required: false
+states: [initialized, active, paused, emergency]
+lifecycle: initialized → active → paused → emergency
+```
+
+### Entity: Strategy
+
+Yield-generating strategy.
+
+```yaml
+entity: Strategy
+type: contract
+properties:
+  name:
+    type: string
+    required: true
+  vault:
+    type: string
+    required: true
+  apy:
+    type: number
+    required: true
+  tvl:
+    type: number
+    required: true
+  risk:
+    type: enum
+    required: true
+states: [proposed, active, harvesting, closed]
+lifecycle: proposed → active → harvesting → closed
+```
+
+### Entity: Share
+
+ERC-20 token representing vault ownership.
+
+```yaml
+entity: Share
+type: contract
+properties:
+  vault:
+    type: string
+    required: true
+  totalSupply:
+    type: number
+    required: true
+  pricePerShare:
+    type: number
+    required: true
+states: [active]
+lifecycle: active → active
+```
+
+### Entity: Yield
+
+Accrued returns from strategies.
+
+```yaml
+entity: Yield
+type: event
+properties:
+  amount:
+    type: number
+    required: true
+  strategy:
+    type: string
+    required: true
+  timestamp:
+    type: number
+    required: true
+states: [harvested, distributed]
+lifecycle: harvested → distributed
+```
+
+## Relationships
+
+### Relationship: Vault → Strategy
+
+```yaml
+relationship: Vault -> Strategy
+verb: deploys
+cardinality: 1:N
+required: true
+description: Vault deploys capital into strategies
+```
+
+### Relationship: Strategy → Yield
+
+```yaml
+relationship: Strategy -> Yield
+verb: produces
+cardinality: 1:N
+required: true
+description: Strategy harvests yield
+```
+
+### Relationship: Vault → Share
+
+```yaml
+relationship: Vault -> Share
+verb: mints
+cardinality: 1:1
+required: true
+description: Vault mints shares on deposit
+```

@@ -1,0 +1,21 @@
+# NFT Collection
+
+> Non-fungible token collection. ERC-721 compliant. Mint, transfer, metadata.
+
+## Product
+
+An NFT collection. Users mint tokens with metadata. Tokens are unique, transferable, and have royalty support.
+
+### Flow
+```
+Creator deploys Collection → User mints Token → Token has metadata → User transfers Token → Royalty paid to creator
+```
+
+## Architecture
+
+| Component | Role |
+|-----------|------|
+| Collection | ERC-721 contract. Mint, burn, transfer. |
+| Token | Unique NFT with metadata URI. |
+| Metadata | JSON: name, description, image, attributes. |
+| Royalty | Secondary sale fee paid to creator. |
