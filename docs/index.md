@@ -54,7 +54,10 @@ dotdog serve                        # expose to AI agents via MCP
 [Adding dotdog to an existing project?](adopting.md)
 
 [Tutorial: Build a spec-driven project](tutorial.md)  
-[Why dotdog? Compare with alternatives](why-dotdog.md)
+[Why dotdog? Compare with alternatives](why-dotdog.md)  
+[FAQ](faq.md)  
+[Integrations](integrations.md)  
+[Use Cases](use-cases.md)
 
 ## What it does
 
