@@ -1,0 +1,460 @@
+# Magic Cabinet — Data Model
+
+> The spec IS the layout engine. Rooms contain walls. Walls have obstacles and hold cabinets. Cabinets use materials. Events drive state transitions. Every entity and relationship is encoded so an AI can simulate: will this layout fit?
+
+---
+
+## Entities
+
+### Entity: Room
+
+A physical kitchen space defined by wall segments. One room per project.
+
+```yaml
+entity: Room
+type: entity
+properties:
+  id:
+    type: string
+    format: uuid-v4
+    required: true
+  name:
+    type: string
+    required: true
+    constraints: 1-100 chars, non-empty
+  wall_count:
+    type: number
+    required: true
+    default: 4
+    constraints: 3-8, integer
+states: [draft, measured, validated, locked]
+lifecycle: draft → measured → validated → locked
+```
+
+### Entity: Wall
+
+A single wall segment with dimensions and obstacles. Cabinets are placed on walls.
+
+```yaml
+entity: Wall
+type: entity
+properties:
+  id:
+    type: string
+    format: uuid-v4
+    required: true
+  length:
+    type: number
+    required: true
+    constraints: ">0, <=20000, mm, integer"
+  height:
+    type: number
+    required: true
+    constraints: "2000-3500, mm, integer"
+  is_load_bearing:
+    type: boolean
+    required: true
+    default: false
+states: [blank, has_obstacles, has_cabinets]
+lifecycle: blank → has_obstacles → has_cabinets
+```
+
+### Entity: Obstacle
+
+Something on a wall that blocks cabinet placement — windows, doors, outlets, pipes, vents, appliances, sinks.
+
+```yaml
+entity: Obstacle
+type: entity
+properties:
+  id:
+    type: string
+    format: uuid-v4
+    required: true
+  type:
+    type: enum
+    values: [window, door, outlet, pipe, vent, structural, appliance, sink, custom]
+    required: true
+  position_from_left:
+    type: number
+    required: true
+    constraints: ">=0, <=wall.length, mm"
+  width:
+    type: number
+    required: true
+    constraints: ">0, <=wall.length, mm"
+  height_from_floor:
+    type: number
+    required: true
+    constraints: ">=0, <=wall.height, mm"
+  height:
+    type: number
+    required: true
+    constraints: ">0, <=wall.height, mm"
+states: [active, removed]
+lifecycle: active → removed
+```
+
+### Entity: Cabinet
+
+A single cabinet placed on a wall. Widths are discrete (50mm increments). Depth and height determined by type.
+
+```yaml
+entity: Cabinet
+type: entity
+properties:
+  id:
+    type: string
+    format: uuid-v4
+    required: true
+  type:
+    type: enum
+    values: [base, wall, tall, corner, sink_base, appliance_garage, open_shelf, custom]
+    required: true
+  width:
+    type: number
+    required: true
+    constraints: "150-1200, step 50, mm"
+  depth:
+    type: number
+    required: true
+    constraints: "base/wall/tall=600, sink_base=650, corner=650, mm"
+  height:
+    type: number
+    required: true
+    constraints: "base=720, wall=900, tall=2100, mm"
+  material_id:
+    type: string
+    required: true
+    constraints: references Material.id
+  position_from_left:
+    type: number
+    required: false
+    constraints: ">=0, mm"
+states: [proposed, confirmed, installed]
+lifecycle: proposed → confirmed → installed
+```
+
+### Entity: Material
+
+A cabinet material/finish combination. Tracks cost, lead time, and stock status.
+
+```yaml
+entity: Material
+type: entity
+properties:
+  id:
+    type: string
+    required: true
+    constraints: kebab-case, unique
+  name:
+    type: string
+    required: true
+    constraints: 1-100 chars
+  type:
+    type: enum
+    values: [wood, laminate, thermofoil, acrylic, metal, glass, custom]
+    required: true
+  cost_per_linear_meter:
+    type: number
+    required: true
+    constraints: ">0, USD, 2 decimal places"
+  lead_time_days:
+    type: number
+    required: true
+    constraints: ">=0, integer"
+  in_stock:
+    type: boolean
+    required: true
+    default: true
+states: [available, low_stock, backordered, discontinued]
+lifecycle: available → low_stock → backordered → discontinued
+```
+
+### Entity: Door
+
+A cabinet door/face — what the customer sees. Tall cabinets can have 2+ doors.
+
+```yaml
+entity: Door
+type: entity
+properties:
+  id:
+    type: string
+    format: uuid-v4
+    required: true
+  cabinet_id:
+    type: string
+    required: true
+    constraints: references Cabinet.id
+  style:
+    type: enum
+    values: [shaker, slab, raised_panel, glass_front, beadboard, louvers, custom]
+    required: true
+  hinge_side:
+    type: enum
+    values: [left, right]
+    required: true
+  handle_type:
+    type: enum
+    values: [knob, pull, cup, touch_latch, none]
+    required: true
+  handle_finish:
+    type: enum
+    values: [brushed_nickel, chrome, matte_black, brass, bronze, copper, custom]
+    required: true
+states: [attached, removed, damaged]
+lifecycle: attached → removed → attached
+```
+
+### Entity: Interior
+
+What's inside the cabinet — shelves and drawers.
+
+```yaml
+entity: Interior
+type: entity
+properties:
+  id:
+    type: string
+    format: uuid-v4
+    required: true
+  cabinet_id:
+    type: string
+    required: true
+    constraints: references Cabinet.id
+  shelf_count:
+    type: number
+    required: true
+    default: 1
+    constraints: ">=0, <=5, integer"
+  shelf_adjustable:
+    type: boolean
+    required: true
+    default: true
+  drawer_count:
+    type: number
+    required: true
+    default: 0
+    constraints: ">=0, <=4, integer, base cabinets only"
+  soft_close:
+    type: boolean
+    required: true
+    default: false
+states: [empty, configured, installed]
+lifecycle: empty → configured → installed
+```
+
+### Entity: MeasurementSource
+
+How the wall was measured — affects confidence in dimensions.
+
+```yaml
+entity: MeasurementSource
+type: entity
+properties:
+  id:
+    type: string
+    format: uuid-v4
+    required: true
+  wall_id:
+    type: string
+    required: true
+    constraints: references Wall.id
+  method:
+    type: enum
+    values: [laser, tape, photo_estimate, professional, unknown]
+    required: true
+  measured_by:
+    type: string
+    required: true
+  measured_at:
+    type: datetime
+    format: iso8601
+    required: true
+  photo_url:
+    type: string
+    format: url
+    required: false
+states: [submitted, verified, disputed]
+lifecycle: submitted → verified → disputed
+```
+
+---
+
+## Relationships
+
+### Relationship: Room → Wall
+
+```yaml
+relationship: Room → Wall
+verb: contains
+cardinality: 1:N
+required: true
+cascade: delete
+invariants:
+  - room.wall_count === count(walls in room)
+```
+
+### Relationship: Wall → Obstacle
+
+```yaml
+relationship: Wall → Obstacle
+verb: has
+cardinality: 1:N
+required: false
+cascade: delete
+invariants:
+  - obstacle.position_from_left + obstacle.width <= wall.length
+```
+
+### Relationship: Wall → Cabinet
+
+```yaml
+relationship: Wall → Cabinet
+verb: holds
+cardinality: 1:N
+required: false
+cascade: delete
+invariants:
+  - sum(cabinet.width for cabinets on wall) + sum(gaps) <= wall.length - sum(obstacle.width for obstacles on wall)
+```
+
+### Relationship: Cabinet → Material
+
+```yaml
+relationship: Cabinet → Material
+verb: uses
+cardinality: N:1
+required: true
+cascade: restrict
+invariants:
+  - Cannot delete material if any cabinet uses it
+```
+
+### Relationship: Cabinet → Door
+
+```yaml
+relationship: Cabinet → Door
+verb: has
+cardinality: 1:N
+required: false
+cascade: delete
+invariants:
+  - Tall cabinets can have 2+ doors. Base/wall cabinets typically 1.
+```
+
+### Relationship: Cabinet → Interior
+
+```yaml
+relationship: Cabinet → Interior
+verb: contains
+cardinality: 1:1
+required: false
+cascade: delete
+invariants:
+  - Drawer count constrained to base cabinets only
+```
+
+### Relationship: Wall → MeasurementSource
+
+```yaml
+relationship: Wall → MeasurementSource
+verb: documented_by
+cardinality: 1:1
+required: true
+cascade: delete
+invariants: []
+```
+
+---
+
+## Events
+
+### Event: wall.measured
+
+Triggered when user submits wall dimensions. Moves wall from blank to measured. If all walls in room are measured, room state advances to measured.
+
+```yaml
+event: wall.measured
+trigger: User submits wall dimensions
+payload:
+  wall_id: string
+  length: number (mm)
+  height: number (mm)
+preconditions:
+  - wall.state === blank
+postconditions:
+  - wall.state === measured
+  - wall.length is set
+  - wall.height is set
+side_effects:
+  - room.state → measured (if all walls measured)
+probability: null (deterministic)
+```
+
+### Event: cabinet.placed
+
+Triggered by layout engine or manual placement. Validates no overlaps with obstacles or other cabinets.
+
+```yaml
+event: cabinet.placed
+trigger: Layout engine or manual placement assigns cabinet to wall position
+payload:
+  cabinet_id: string
+  wall_id: string
+  position_from_left: number (mm)
+  width: number (mm)
+preconditions:
+  - wall.state === has_obstacles
+  - position_from_left + width <= wall.length
+  - no overlap with any obstacle on wall
+  - no overlap with any other cabinet on wall
+postconditions:
+  - cabinet.state === proposed
+side_effects:
+  - wall.state → has_cabinets (if first cabinet on wall)
+probability: null
+```
+
+### Event: material.backordered
+
+Triggered externally when supplier reports stock depletion. Flags all cabinets using this material for review. Extends project timeline.
+
+```yaml
+event: material.backordered
+trigger: Supplier reports stock depletion
+payload:
+  material_id: string
+  new_lead_time_days: number
+preconditions:
+  - material.state !== discontinued
+postconditions:
+  - material.state === backordered
+  - material.in_stock === false
+  - material.lead_time_days === new_lead_time_days
+side_effects:
+  - All cabinets using this material flagged for review
+  - Project timeline extended by new_lead_time_days
+probability: 0.03 (per material, per week)
+```
+
+### Event: layout.validated
+
+Triggered when all constraints pass automated check. Room advances to validated state.
+
+```yaml
+event: layout.validated
+trigger: All constraints pass automated check
+payload:
+  room_id: string
+preconditions:
+  - All walls in room have length and height
+  - All cabinets have material assigned
+  - No cabinet-obstacle overlaps
+  - All cabinet widths are valid discrete values
+  - All materials are in_stock or backordered (not discontinued)
+postconditions:
+  - room.state === validated
+probability: null
+```
