@@ -306,12 +306,17 @@ program.command('tokens [dir]').action((d='.') => {
       }
       const dagBytes = Buffer.byteLength(readFileSync(dagFile,'utf-8'),'utf-8');
       const savings = sourceBytes > 0 ? Math.round((1 - dagBytes / sourceBytes) * 1000) / 10 : 0;
+      // Compute dag-only savings (strips tk metadata that inflates on-disk size)
+      const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
+      const dagOnly = JSON.stringify({v: dag.v, p: dag.p, n: dag.n});
+      const dagOnlyBytes = Buffer.byteLength(dagOnly,'utf-8');
+      const dagOnlyPct = sourceBytes > 0 ? Math.round((1 - dagOnlyBytes / sourceBytes) * 1000) / 10 : 0;
       console.log(chalk.bold(`\n  ${p}`));
       console.log(chalk.gray(`    ${dogFiles.length} .dog files: ${sourceBytes} bytes`));
-      console.log(chalk.gray(`    .dag file: ${dagBytes} bytes`));
-      console.log(chalk.green(`    ${savings}% smaller (${sourceBytes - dagBytes} bytes saved)`));
+      console.log(chalk.gray(`    .dag on disk: ${dagBytes} bytes (${savings}% savings, includes metadata)`));
+      console.log(chalk.green(`    .dag payload: ${dagOnlyBytes} bytes (${dagOnlyPct}% savings, graph only)`));
       if (contentBytes && contentBytes !== sourceBytes) {
-        const cs = Math.round((1 - dagBytes / contentBytes) * 1000) / 10;
+        const cs = Math.round((1 - dagOnlyBytes / contentBytes) * 1000) / 10;
         console.log(chalk.gray(`    content-only: ${contentBytes} bytes → ${cs}% savings`));
       }
     }
