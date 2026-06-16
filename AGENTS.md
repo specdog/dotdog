@@ -5,10 +5,10 @@
 ## Quick Start (read this first)
 
 **Before any task**, load the spec graph:
-- File: `projects/spec-platform/spec-platform.dag` (11 entities, 5 relationships, 6KB)
+- File: `projects/spec-platform/spec-platform.dag` (11 entities, 5 relationships, v2 positional format, ~740 tokens)
 - MCP: `npx dotdog serve` (6 tools: getEntity, traverse, search, schema, summary, listProjects)
 
-The .dag is 91% smaller than raw .dog files. One file. All structure.
+The .dag is 94% smaller than raw .dog files (v2 positional format). One file. All structure.
 
 ## Commands (when modifying specs)
 
