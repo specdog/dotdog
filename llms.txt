@@ -1,6 +1,6 @@
 # dotdog
 
-> dotdog is a CLI tool for structured software specs. Write specs in `.dog` files (markdown + YAML), compile to `.dag` graphs (JSON), query via MCP. Built for developers and AI agents.
+> dotdog is a CLI tool for structured software specs. Write specs in `.dog` files (markdown + YAML), compile to `.dag` graphs (positional JSON, v2, 94% token savings), query via MCP. Built for developers and AI agents.
 
 Important notes:
 

@@ -72,7 +72,7 @@ $ dotdog analyze
 
 $ dotdog compile
   ✓ my-app.dag : 3 nodes, 3 edges
-  12,400 → 1,860 tokens (85% savings) → real savings: 88.9% smaller
+  12,100 → 739 tokens (94% savings) — v2 positional format
 
 $ dotdog serve
   MCP server running : AI agents query your specs with zero hallucination
@@ -98,7 +98,7 @@ $ dotdog serve
 ## Format
 
 - `.dog` : Human-written spec (markdown + YAML entities). Free forever.
-- `.dag` : Machine-compiled graph (JSON). Token-efficient for AI agents.
+- `.dag` : Machine-compiled graph (positional JSON, v2). 94% token savings. Optimized for LLM consumption via MCP.
 
 ## MCP Server
 
@@ -142,7 +142,7 @@ Agent: getEntity("spec-platform", "Compile")
 → { id: "Compile", type: "entity", lifecycle: ["running → completed"], edges: […] }
 
 Agent: summary("spec-platform")
-→ { project: "spec-platform", nodes: 11, edges: 5, savings: 91% }
+→ { project: "spec-platform", nodes: 11, edges: 5, savings: 94% }
 ```
 
 ## Links
@@ -156,4 +156,4 @@ Agent: summary("spec-platform")
 
 ---
 
-dotdog@0.3.3 · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE)
+dotdog@0.4.0 · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE)
