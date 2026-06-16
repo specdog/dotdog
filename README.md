@@ -10,10 +10,11 @@
 ## Install
 
 ```bash
-npm install -g dotdog
+npm install -g dotdog    # npm
+bun add -g dotdog        # bun
 ```
 
-Requires Node.js >= 20.
+Requires Node.js >= 20 or Bun >= 1.3.
 
 ## Quick Start
 
@@ -67,7 +68,7 @@ lifecycle: active → suspended
 
 ### `.dag` : Machine-Compiled Graph
 
-JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a deterministic structure. 85% token savings vs raw `.dog` files for AI agents.
+JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a deterministic structure. 94% token savings vs raw `.dog` files for AI agents.
 
 ## MCP Server : AI Agent Integration
 
@@ -117,7 +118,7 @@ cp -r extensions/vscode ~/.vscode/extensions/dotdog
 
 - **GitHub:** [specdog/dotdog](https://github.com/specdog/dotdog)
 - **npm:** [dotdog](https://www.npmjs.com/package/dotdog)
-- **Docs:** [GitHub Pages](https://specdog.github.io/dotdog)
+- **Docs:** [Tutorial](https://specdog.github.io/dotdog/tutorial) · [FAQ](https://specdog.github.io/dotdog/faq) · [Integrations](https://specdog.github.io/dotdog/integrations) · [Use Cases](https://specdog.github.io/dotdog/use-cases)
 - **llms.txt:** [llms.txt](llms.txt) : structured for AI agent discovery
 - **AGENTS.md:** [AGENTS.md](AGENTS.md) : instructions for AI coding agents
 
