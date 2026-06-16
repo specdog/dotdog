@@ -212,6 +212,19 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
           }
         }
       }
+      // Validate all relationship targets reference real entities
+      const entityNames = new Set(nodes.map((n: any) => n.i));
+      for (const e of edges) {
+        if (e.s && !entityNames.has(e.s)) {
+          console.log(chalk.red(`  ✗ Unknown relationship source "${e.s}" (target: "${e.t}")`));
+          process.exit(1);
+        }
+        if (e.t && !entityNames.has(e.t)) {
+          console.log(chalk.red(`  ✗ Unknown relationship target "${e.t}" (source: "${e.s}")`));
+          process.exit(1);
+        }
+      }
+
       // Build compact .dag v1.5 — inline edges into nodes
       // Topological sort + cycle detection
       const nodeIds = new Map<string, number>();
