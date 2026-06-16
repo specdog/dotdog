@@ -9,6 +9,18 @@
         "commander": "^15.0.0",
       },
     },
+    "packages/dotdog": {
+      "name": "dotdog",
+      "version": "0.3.5",
+      "bin": {
+        "dotdog": "dist/cli.js",
+        "spec": "dist/cli.js",
+      },
+      "dependencies": {
+        "chalk": "^5.6.0",
+        "commander": "^15.0.0",
+      },
+    },
     "packages/spec-cli": {
       "name": "@spec/cli",
       "version": "0.1.0",
@@ -87,6 +99,8 @@
     "debug": ["debug@4.4.3", "", { "dependencies": { "ms": "^2.1.3" }, "peerDependencies": { "supports-color": "*" }, "optionalPeers": ["supports-color"] }, "sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA=="],
 
     "depd": ["depd@2.0.0", "", {}, "sha512-g7nH6P6dyDioJogAAGprGpCtVImJhpPk/roCzdb3fIh61/s/nPsfR6onyMwkCAR/OlC3yBC0lESvUoQEAssIrw=="],
+
+    "dotdog": ["dotdog@workspace:packages/dotdog"],
 
     "dunder-proto": ["dunder-proto@1.0.1", "", { "dependencies": { "call-bind-apply-helpers": "^1.0.1", "es-errors": "^1.3.0", "gopd": "^1.2.0" } }, "sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A=="],
 

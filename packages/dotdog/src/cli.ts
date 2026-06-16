@@ -316,12 +316,37 @@ program.command('visualize [dir]').option('-s, --save').action((d='.', opts) => 
       const dagFile = join(dd,p,`${p}.dag`);
       if (!existsSync(dagFile)) continue;
       const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
+      const nodes = dag.n || dag.nodes || [];
       let out = '```mermaid\ngraph LR\n';
-      for (const n of dag.nodes||[]) out += `    ${n.id.replace(/\s+/g,'_')}[${n.id}]\n`;
-      for (const e of dag.edges||[]) out += `    ${e.source.replace(/\s+/g,'_')} -->|${e.verb||''}| ${e.target.replace(/\s+/g,'_')}\n`;
+      for (const n of nodes) {
+        const raw = n.i || n.id || '';
+        const id = raw.replace(/\s+/g,'_').replace(/^[^a-zA-Z]+/, 'n_');
+        if (raw) out += `    ${id}[${raw}]\n`;
+      }
+      // Edges — v1.5 inlined n.es, deduplicated
+      const seen = new Set<string>();
+      for (const n of nodes) {
+        for (const e of (n.es || [])) {
+          if (e.dir === 'in') continue;
+          const src = (n.i || n.id || '').replace(/\s+/g,'_').replace(/^[^a-zA-Z]+/, 'n_');
+          const tgt = (e.t || '').replace(/\s+/g,'_').replace(/^[^a-zA-Z]+/, 'n_');
+          const verb = e.v || '';
+          const key = `${src}→${tgt}:${verb}`;
+          if (!seen.has(key) && src && tgt) { seen.add(key); out += `    ${src} -->|${verb}| ${tgt}\n`; }
+        }
+      }
+      // Legacy top-level edges (v1.3)
+      const legacyEdges = dag.e || dag.edges || [];
+      for (const e of legacyEdges) {
+        const src = (e.s || e.source || '').replace(/\s+/g,'_').replace(/^[^a-zA-Z]+/, 'n_');
+        const tgt = (e.t || e.target || '').replace(/\s+/g,'_').replace(/^[^a-zA-Z]+/, 'n_');
+        const verb = e.v || e.verb || '';
+        const key = `${src}→${tgt}:${verb}`;
+        if (!seen.has(key) && src && tgt) { seen.add(key); out += `    ${src} -->|${verb}| ${tgt}\n`; }
+      }
       out += '```\n';
       if (opts.save) {
-        const outFile = join(dd,p,'..',`${p}.md`);
+        const outFile = join(dd,p,`${p}.md`);
         writeFileSync(outFile, `# ${p} : Spec Graph\n\n${out}`);
         console.log(chalk.green(`  ✓ ${outFile}`));
       }
@@ -519,7 +544,19 @@ program.command('simulate <scenario>').description('Walk through a scenario, che
   if (existsSync(dagFile)) {
     const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
     entities = (dag.n || dag.nodes || []).map((n: any) => (n.i || n.id || '').toLowerCase());
-    relationships = dag.e || dag.edges || [];
+    // v1.5 inlines edges in n.es, v1.3 has top-level e/edges
+    if (dag.e || dag.edges) {
+      relationships = dag.e || dag.edges || [];
+    } else {
+      const seen = new Set<string>();
+      for (const n of (dag.n || dag.nodes || [])) {
+        for (const e of (n.es || [])) {
+          if (e.dir === 'in') continue;
+          const key = `${n.i||n.id}→${e.t}:${e.v}`;
+          if (!seen.has(key)) { seen.add(key); relationships.push({ s: n.i||n.id, t: e.t, v: e.v, d: e.d, r: e.r }); }
+        }
+      }
+    }
   }
   
   // Read SPEC.dog for scenario descriptions
@@ -614,11 +651,12 @@ program.command('staleness [dir]').action((d='.') => {
         const phase = phaseMatch ? parseInt(phaseMatch[1]) : 99;
         if (phase > 3) continue;  // skip future phases
         // Check npm publish
-        if (text.includes('npm publish') || text.includes('npm install')) {
-          try {
-            const pkg = JSON.parse(readFileSync(join(resolvePath('.'),'packages/dotdog/package.json'),'utf-8'));
-            if (pkg.version && !done) { console.log(chalk.yellow(`  ⚠ Should be [x]: ${m[2].trim()}`)); issues++; }
-          } catch {}
+        if ((text.includes('npm publish') || text.includes('npm install')) && !done) {
+          const pkgPath = join(resolvePath('.'),'packages/dotdog/package.json');
+          if (existsSync(pkgPath)) {
+            const pkg = JSON.parse(readFileSync(pkgPath,'utf-8'));
+            if (pkg.version) { console.log(chalk.yellow(`  ⚠ Should be [x]: ${m[2].trim()}`)); issues++; }
+          }
         }
         // Check compile
         if (text.includes('compile')) {
@@ -757,10 +795,8 @@ program.command('resolve <name>').description('Mark a prediction as correct, wro
                 // Find prediction YAML block by heading or statement
                 const searchFor = `### Prediction: ${b.statement || b.name}`;
                 const headingIdx = content.indexOf(searchFor);
-                if (headingIdx >= 0 || true) {
-                  // Find the YAML block after the heading
-                  const startIdx = headingIdx >= 0 ? headingIdx : content.indexOf(b.statement || b.name || '');
-                  const blockStart = content.indexOf('```yaml', startIdx);
+                if (headingIdx >= 0) {
+                  const blockStart = content.indexOf('```yaml', headingIdx);
                   const blockEnd = content.indexOf('```', blockStart + 7);
                   if (blockStart >= 0 && blockEnd >= 0) {
                     const yamlBlock = content.slice(blockStart, blockEnd + 3);
