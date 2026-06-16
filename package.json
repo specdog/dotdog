@@ -2,15 +2,12 @@
   "name": "spec-platform",
   "version": "0.1.0",
   "private": true,
-  "description": "Spec genome platform — validate, simulate, generate code. MCP server for AI agents. $0 stack.",
-  "workspaces": [
-    "packages/*"
-  ],
+  "description": "Spec genome platform \u2014 validate, simulate, generate code. MCP server for AI agents. $0 stack.",
   "scripts": {
     "dev": "bun --cwd packages/spec-api dev",
-    "build": "bun run --filter '*' build",
+    "build": "cd packages/dotdog && bun build src/cli.ts --outdir dist --target node",
     "lint": "bun run --filter '*' lint",
-    "test": "bun test",
+    "test": "bun test packages/dotdog/__tests__/",
     "validate": "bun packages/spec-cli/src/index.ts validate"
   },
   "dependencies": {
