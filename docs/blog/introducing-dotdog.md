@@ -1,6 +1,10 @@
-# dotdog — Specs AI Agents Can Actually Use
-
-## The problem
+---
+layout: default
+title: "dotdog — Specs AI Agents Can Actually Use"
+date: 2026-06-16
+author: specdog
+description: "Write specs in .dog files. Validate, compile, and serve them to AI agents via MCP. Zero hallucination."
+---
 
 Specs rot. They live in wikis, Google Docs, or Notion — written once, never read again. AI agents read prose and guess. Hallucinations compound.
 
@@ -27,6 +31,6 @@ The `.dag` graph is positional JSON — no keys, no prose, no empty fields. 94% 
 
 ## Try it
 
-- GitHub: https://github.com/specdog/dotdog
-- npm: https://www.npmjs.com/package/dotdog
-- Docs: https://specdog.github.io/dotdog
+- [GitHub](https://github.com/specdog/dotdog)
+- [npm](https://www.npmjs.com/package/dotdog)
+- [Docs](https://specdog.github.io/dotdog)
