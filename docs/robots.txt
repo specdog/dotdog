@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://specdog.github.io/dotdog/sitemap.xml
