@@ -157,3 +157,17 @@ Agent: summary("spec-platform")
 ---
 
 dotdog@0.4.0 · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE)
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "dotdog",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Linux, macOS, Windows",
+  "description": "CLI tool for structured software specs. Validate .dog files, compile .dag graphs, query via MCP.",
+  "url": "https://specdog.github.io/dotdog",
+  "offers": { "@type": "Offer", "price": "0" }
+}
+</script>
