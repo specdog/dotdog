@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test';
-import { $ } from 'bun';
+import { $, which } from 'bun';
 
-const BUN = '/Users/dico/.bun/bin/bun';
+const BUN = which('bun') || process.execPath;
 
 describe('CLI', () => {
   test('--version', async () => {
