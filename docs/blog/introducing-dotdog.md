@@ -2,7 +2,7 @@
 layout: default
 title: "dotdog — Specs AI Agents Can Actually Use"
 date: 2026-06-16
-author: specdog
+author: Justin Diclemente
 description: "Write specs in .dog files. Validate, compile, and serve them to AI agents via MCP. Zero hallucination."
 ---
 
