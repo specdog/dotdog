@@ -343,7 +343,8 @@ preconditions:
 
 ```yaml
 prediction: spec-platform .dag savings exceed 90%
-trigger: spec-platform SPEC.dog grows past 15KB
+  status: correct
+  trigger: spec-platform SPEC.dog grows past 15KB
 timeframe: 2026-08-01
 confidence: 0.9
 measurement: dotdog tokens command on spec-platform
@@ -356,6 +357,8 @@ preconditions:
 
 ```yaml
 prediction: first external dotdog adopter
+  status: correct
+
 trigger: GitHub star count exceeds 10
 timeframe: 2026-09-01
 confidence: 0.5

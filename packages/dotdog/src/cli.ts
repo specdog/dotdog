@@ -96,7 +96,11 @@ program.command('init <project>').option('-m, --minimal', 'Only SPEC.dog + data-
     'data-model.dog': '# Data Model\n\n## Entities\n\n',
   };
   const tmpl = opts.minimal ? minimal : full;
-  for (const [f,c] of Object.entries(tmpl)) { writeFileSync(join(d,f),c); console.log(chalk.green(`  ✓ ${f}`)); }
+  for (const [f,c] of Object.entries(tmpl)) {
+    writeFileSync(join(d,f),c);
+    try { parse(c); } catch (_) { console.log(chalk.red(`  ✗ Template ${f} is invalid`)); process.exit(1); }
+    console.log(chalk.green(`  ✓ ${f}`));
+  }
   console.log(chalk.bold(`\nProject "${p}" initialized. Fill in SPEC.dog then run spec validate.`));
 });
 
@@ -501,6 +505,7 @@ program.command('generate [dir]').description('Generate missing spec files from 
       dm += '```\n\n';
     }
     writeFileSync(join(specDir,'data-model.dog'), dm);
+    try { parse(dm); } catch (_) { console.log(chalk.red('  ✗ Generated data-model.dog is invalid')); process.exit(1); }
     console.log(chalk.green(`  ✓ data-model.dog (${entities.length} entities)`));
   }
   // Generate COPY.dog
@@ -508,6 +513,7 @@ program.command('generate [dir]').description('Generate missing spec files from 
     let copy = '# App Copy\n\n| Screen | Element | Copy |\n|--------|---------|------|\n';
     for (const s of uiStrings) copy += `| ${s.screen} | ${s.element} | ${s.text} |\n`;
     writeFileSync(join(specDir,'COPY.dog'), copy);
+    try { parse(copy); } catch (_) { console.log(chalk.red('  ✗ Generated COPY.dog is invalid')); process.exit(1); }
     console.log(chalk.green(`  ✓ COPY.dog (${uiStrings.length} strings)`));
   }
   // Generate INDEX.dog
@@ -517,6 +523,7 @@ program.command('generate [dir]').description('Generate missing spec files from 
     idx += '| AI agent | data-model.dog | COPY.dog → SPEC.dog |\n';
     idx += '| Designer | SPEC.dog | COPY.dog |\n';
     writeFileSync(join(specDir,'INDEX.dog'), idx);
+    try { parse(idx); } catch (_) { console.log(chalk.red('  ✗ Generated INDEX.dog is invalid')); process.exit(1); }
     console.log(chalk.green('  ✓ INDEX.dog'));
   }
   console.log(chalk.bold('\nRun dotdog validate to verify.\n'));
@@ -785,6 +792,7 @@ program.command('resolve <name>').description('Mark a prediction as correct, wro
       for (const f of files) {
         const fp = join(pd,f);
         let content = readFileSync(fp,'utf-8');
+        const originalContent = readFileSync(fp, 'utf-8');
         // Find prediction block with matching statement
         const ast = parse(content);
         for (const section of ast.sections) {
@@ -804,11 +812,19 @@ program.command('resolve <name>').description('Mark a prediction as correct, wro
                     if (yamlBlock.includes('status:')) {
                       newYaml = yamlBlock.replace(/status:\s*\w+/, `status: ${status}`);
                     } else {
-                      newYaml = yamlBlock.replace(/\n\s*(trigger|timeframe|confidence|measurement):/, `\n  status: ${status}\n  $1`);
+                      newYaml = yamlBlock.replace(/\n\s*(trigger|timeframe|confidence|measurement):/, `\n  status: ${status}\n$&`);
                     }
                     content = content.replace(yamlBlock, newYaml);
-                    writeFileSync(fp, content, 'utf-8');
-                    console.log(chalk.green(`  ✓ ${b.statement || b.name}: ${status}`));
+                    // Validate mutation produced valid .dog file
+                    try {
+                      parse(content);
+                      writeFileSync(fp, content, 'utf-8');
+                      console.log(chalk.green(`  ✓ ${b.statement || b.name}: ${status}`));
+                    } catch (_) {
+                      writeFileSync(fp, originalContent, 'utf-8');
+                      console.log(chalk.red(`  \u2717 resolve produced invalid output for "${name}" — reverted`));
+                      process.exit(1);
+                    }
                     return;
                   }
                 }
