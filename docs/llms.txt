@@ -1,0 +1,30 @@
+# dotdog
+
+> dotdog is a CLI tool for structured software specs. Write specs in `.dog` files (markdown + YAML), compile to `.dag` graphs (positional JSON, v2, 94% token savings), query via MCP. Built for developers and AI agents.
+
+Important notes:
+
+- `.dog` files are the human-authored source of truth. `.dag` files are machine-compiled, never edited by hand.
+- The MCP server (`dotdog serve`) exposes specs to any MCP-compatible AI agent over stdio with zero hallucination risk.
+- dotdog validates its own specs. Every release cycle uses the tool to score itself.
+
+## Docs
+
+- [README](https://github.com/specdog/dotdog#readme): Full README with install, quick start, and command reference
+- [AGENTS.md](https://github.com/specdog/dotdog/blob/main/AGENTS.md): Instructions for AI coding agents working in this repo
+- [Format spec : .dog](https://github.com/specdog/dotdog/blob/main/spec/format-spec.dog): The `.dog` language definition (EBNF grammar, validation rules)
+- [Format spec : .dag](https://github.com/specdog/dotdog/blob/main/spec/format-spec-dag.dog): The `.dag` graph definition (MCP API, token efficiency)
+- [GitHub Pages](https://specdog.github.io/dotdog): Landing page with docs
+
+## Quick Start for Agents
+
+- [Package source](https://github.com/specdog/dotdog/blob/main/packages/dotdog/src/cli.ts): CLI entry point : all commands registered here
+- [Parser](https://github.com/specdog/dotdog/blob/main/packages/dotdog/src/parser.ts): `.dog` text → typed AST
+- [Grammar types](https://github.com/specdog/dotdog/blob/main/packages/dotdog/src/grammar.ts): TypeScript type definitions (Entity, Relationship, Event, etc.)
+- [MCP server](https://github.com/specdog/dotdog/blob/main/packages/dotdog/src/serve.ts): MCP server implementation over stdio
+
+## Optional
+
+- [npm page](https://www.npmjs.com/package/dotdog): npm registry listing
+- [Example project specs](https://github.com/specdog/dotdog/tree/main/projects/spec-platform/specs): The platform's own `.dog` files : real-world example
+- [Contributing](https://github.com/specdog/dotdog/blob/main/CONTRIBUTING.md): How to contribute
