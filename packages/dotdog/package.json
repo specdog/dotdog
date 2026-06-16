@@ -16,14 +16,23 @@
     "kits/"
   ],
   "keywords": [
-    "specification",
+    "agent",
+    "ai",
+    "bun",
     "cli",
-    "mcp",
-    "graph",
+    "code-generation",
     "dag",
-    "yaml",
+    "graph",
+    "knowledge-graph",
+    "llm",
     "markdown",
-    "spec-driven-development"
+    "mcp",
+    "spec-driven-development",
+    "spec-genome",
+    "specification",
+    "structured",
+    "typescript",
+    "yaml"
   ],
   "license": "MIT",
   "author": "specdog",
@@ -34,5 +43,9 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "homepage": "https://specdog.github.io/dotdog",
+  "bugs": {
+    "url": "https://github.com/specdog/dotdog/issues"
   }
 }
