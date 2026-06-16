@@ -107,6 +107,12 @@ cp -r extensions/vscode ~/.vscode/extensions/dotdog
 - [`.dog` format spec](spec/format-spec.dog) : language definition, EBNF grammar, validation rules
 - [`.dag` format spec](spec/format-spec-dag.dog) : graph definition, MCP API, token efficiency
 
+## Related Projects
+
+- **[dotdefi](https://github.com/specdog/dotdefi)** — Spec-first DeFi development. Write .dog specs, generate Solidity stubs.
+- **[dogfood-paybot](https://github.com/specdog/dogfood-paybot)** — Dogfood test: dotdog on a real payment bot project.
+- **[homebrew-dotdog](https://github.com/specdog/homebrew-dotdog)** — Homebrew tap for `brew install dotdog`.
+
 ## Links
 
 - **GitHub:** [specdog/dotdog](https://github.com/specdog/dotdog)
