@@ -1,5 +1,5 @@
 // spec serve — MCP server over stdio
-// Exposes .dag graph to AI agents (supports compact v1.4 + legacy v1.3)
+// Exposes .dag graph to AI agents (supports v2 positional, v1.5, v1.4, v1.3)
 
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join, resolve } from 'path';
@@ -23,33 +23,49 @@ function resolvePath(p: string): string {
   return resolved;
 }
 
-// Backward-compatible field accessors (v1.4 compact + v1.3 legacy)
+// v2 format detector: positional arrays where first element is a number
+const isV2 = (n: any) => Array.isArray(n) && typeof n[0] === 'number';
 const N = (dag: any) => dag.n || dag.nodes || [];
-function nodeEdges(n: any): any[] { return n.es || []; }
+
+// Convert v2 positional edge to v1-compatible object
+function edgeToObj(n: any, tgtIdx: number, v2e: any[]): any {
+  return { t: String(tgtIdx), v: v2e[1] || '', c: v2e[2] || '', r: v2e[3] || 0 };
+}
+function nodeEdges(n: any): any[] {
+  if (isV2(n)) return (n[6] || []).map((e: any[]) => edgeToObj(n, e[0], e));
+  return n.es || [];
+}
 function E(dag: any): any[] {
-  if (dag.e) return dag.e; // v1.4 and earlier
-  // v1.5+: collect all inline edges from nodes
+  if (dag.e) return dag.e;
   const edges: any[] = [];
   const seen = new Set<string>();
   for (const node of N(dag)) {
     for (const e of nodeEdges(node)) {
-      const key = `${node.i||node.id}→${e.t}:${e.v}`;
+      const src = isV2(node) ? String(node[0]) : (node.i || node.id || '');
+      const key = `${src}→${e.t}:${e.v}`;
       if (!seen.has(key)) {
         seen.add(key);
-        edges.push({ s: node.i || node.id, t: e.t, v: e.v, d: e.d, c: e.c, r: e.r });
+        edges.push({ s: src, t: e.t, v: e.v, d: e.d, c: e.c, r: e.r });
       }
     }
   }
   return edges;
 }
 const P = (dag: any) => dag.p || dag.project || '';
-const ni = (n: any) => n.i || n.id || '';
-const nt = (n: any) => n.t || n.type || '';
-const ng = (n: any) => n.g || n.category || '';
-const nd = (n: any) => n.d || n.description || '';
-const np = (n: any) => n.p || n.properties || {};
-const ns = (n: any) => n.s || n.states || [];
-const nl = (n: any) => n.l || n.lifecycle || [];
+const ni = (n: any) => isV2(n) ? String(n[0]) : (n.i || n.id || '');
+const nt = (n: any) => isV2(n) ? (n[2] || '') : (n.t || n.type || '');
+const nd = (n: any) => isV2(n) ? (n[3] || '') : (n.d || n.description || '');
+function np(n: any): any {
+  if (isV2(n)) {
+    const flat = n[4] || [];
+    const obj: Record<string,string> = {};
+    for (let i = 0; i < flat.length; i += 2) obj[flat[i]] = flat[i+1] || '';
+    return obj;
+  }
+  return n.p || n.properties || {};
+}
+const ns = (n: any) => isV2(n) ? (n[5] || []) : (n.s || n.states || []);
+const nl = (n: any) => isV2(n) ? [] : (n.l || n.lifecycle || []);
 const es = (e: any) => e.s || e.source || '';
 const et = (e: any) => e.t || e.target || '';
 
@@ -130,7 +146,7 @@ export function serve(dir: string = '.'): void {
           es(e).toLowerCase() === ni(node).toLowerCase() ||
           et(e).toLowerCase() === ni(node).toLowerCase()
         );
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({ ...node, edges }) }] } };
+        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(isV2(node) ? { id: String(node[0]), name: node[1]||'', type: node[2]||'', description: node[3]||'', properties: np(node), states: ns(node), edges } : { ...node, edges }) }] } };
       }
 
       if (name === 'traverse') {
@@ -146,7 +162,7 @@ export function serve(dir: string = '.'): void {
           if (visitedNodes.has(curr.id) || curr.depth > depth) continue;
           visitedNodes.add(curr.id);
           const node = N(dag).find((n: any) => ni(n).toLowerCase() === curr.id.toLowerCase());
-          if (node) subgraph.nodes.push(node);
+          if (node) subgraph.nodes.push(isV2(node) ? { id: String(node[0]), name: node[1]||'', type: node[2]||'', description: node[3]||'', properties: np(node), states: ns(node), edges: nodeEdges(node) } : node);
           const edges = E(dag).filter((e: any) =>
             es(e).toLowerCase() === curr.id.toLowerCase() || et(e).toLowerCase() === curr.id.toLowerCase()
           );

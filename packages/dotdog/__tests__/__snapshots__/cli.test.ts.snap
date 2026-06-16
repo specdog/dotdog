@@ -15,10 +15,13 @@ graph LR
     n_dag_token_savings_will_exceed_90%_for_spec-platform[.dag token savings will exceed 90% for spec-platform]
     First_external_user_will_adopt_dotdog[First external user will adopt dotdog]
     Node -->|connects| Node
+    Node -->|embeds| Vector
     Task -->|depends_on| Task
+    Task -->|measures| Prediction
     Prediction -->|measures| Task
     Vector -->|embeds| Node
     Compile -->|produces| DAG
+    DAG -->|produces| Compile
 \`\`\`
 
 "

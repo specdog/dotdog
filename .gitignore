@@ -12,3 +12,4 @@ credentials*
 *.dag
 *.idx
 
+*.tgz
