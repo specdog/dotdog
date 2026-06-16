@@ -225,50 +225,46 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
         }
       }
 
-      // Build compact .dag v1.5 — inline edges into nodes
-      // Topological sort + cycle detection
+      // Build positional .dag v2 — arrays not objects, no keys, no empties
+      // Schema: [id_int, name_str, type_str, desc_str, [prop_k1, prop_v1, ...], [state1, ...], [[tgt_id, verb, card?, req?], ...]]
+      // Prediction nodes append: [confidence, timeframe, trigger, measurement]
       const nodeIds = new Map<string, number>();
       nodes.forEach((n, i) => nodeIds.set(n.i, i));
-      
-      // Build adjacency for topological sort
-      const inDegree = new Array(nodes.length).fill(0);
-      const adj = new Array(nodes.length).fill(0).map(() => [] as number[]);
-      for (const e of edges) {
-        const si = nodeIds.get(e.s), ti = nodeIds.get(e.t);
-        if (si !== undefined && ti !== undefined) {
-          adj[si].push(ti);
-          inDegree[ti]++;
-        }
-      }
-      
-      // Kahn's algorithm for topological sort + cycle detection
-      const queue: number[] = [];
-      for (let j = 0; j < nodes.length; j++) if (inDegree[j] === 0) queue.push(j);
-      const order: string[] = [];
-      while (queue.length > 0) {
-        const u = queue.shift()!;
-        order.push(nodes[u].i);
-        for (const v of adj[u]) {
-          inDegree[v]--;
-          if (inDegree[v] === 0) queue.push(v);
-        }
-      }
-      const cycles = order.length !== nodes.length;
-      
-      // Inline edges into nodes (both directions)
+      const v2nodes: any[] = [];
       for (let j = 0; j < nodes.length; j++) {
-        const id = nodes[j].i;
-        nodes[j].es = edges.filter(e => e.s === id || e.t === id).map(e => ({
-          t: e.s === id ? e.t : e.s,
-          v: e.v || '',
-          d: e.d || '',
-          c: e.c,
-          r: e.r,
-          dir: e.s === id ? 'out' : 'in',
-        }));
+        const nd = nodes[j];
+        // Flatten property key-value pairs into array
+        const props: any[] = [];
+        if (nd.p) for (const [k, v] of Object.entries(nd.p)) props.push(k, v);
+        const states = nd.s || [];
+        // Build edges with integer target IDs, no descriptions
+        const outEdges: any[] = [];
+        const seen = new Set<string>();
+        for (const e of edges) {
+          if (e.s !== nd.i && e.t !== nd.i) continue;
+          const tid = nodeIds.get(e.s === nd.i ? e.t : e.s);
+          if (tid === undefined) continue;
+          const key = `${j}→${tid}:${e.v}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const ee: any[] = [tid, e.v || ''];
+          if (e.c) ee.push(e.c);
+          if (e.r) ee.push(1);
+          outEdges.push(ee);
+        }
+        const entry: any[] = [j, nd.i || '', nd.t || '', nd.d || '', props, states, outEdges];
+        // Predictions append forecast data
+        if (nd.g === 'prediction') {
+          const f: any[] = [];
+          if (nd.cf) f.push(nd.cf);
+          if (nd.tf) f.push(nd.tf);
+          if (nd.tg) f.push(nd.tg);
+          if (nd.ms) f.push(nd.ms);
+          if (f.length) entry.push(f);
+        }
+        v2nodes.push(entry);
       }
-      
-      const dag = { v: '1.5', p, c: `dotdog@${pkg.version}`, n: nodes, o: order, cy: cycles };
+      const dag = { v: 2, p, n: v2nodes };
       // Calculate token savings
       const dagJson = JSON.stringify(dag);
       const dagTokens = Math.round(Buffer.byteLength(dagJson,'utf-8') / 4);
@@ -334,20 +330,34 @@ program.command('visualize [dir]').option('-s, --save').action((d='.', opts) => 
       if (!existsSync(dagFile)) continue;
       const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
       const nodes = dag.n || dag.nodes || [];
+      // v2 format detector: positional arrays where first element is a number
+      const isV2 = (n: any) => Array.isArray(n) && typeof n[0] === 'number';
+      // Get display name for a node (v2: lookup by index, v1: use i/id field)
+      const nodeName = (n: any) => isV2(n) ? (nodes[n[0]] ? nodes[n[0]][1] || String(n[0]) : String(n[0])) : (n.i || n.id || '');
+      // Get ID-safe slug
+      const slug = (s: string) => s.replace(/\s+/g,'_').replace(/^[^a-zA-Z]+/, 'n_');
       let out = '```mermaid\ngraph LR\n';
       for (const n of nodes) {
-        const raw = n.i || n.id || '';
-        const id = raw.replace(/\s+/g,'_').replace(/^[^a-zA-Z]+/, 'n_');
-        if (raw) out += `    ${id}[${raw}]\n`;
+        const raw = isV2(n) ? (n[1] || String(n[0])) : (n.i || n.id || '');
+        if (raw) out += `    ${slug(raw)}[${raw}]\n`;
       }
-      // Edges — v1.5 inlined n.es, deduplicated
+      // Edges
       const seen = new Set<string>();
       for (const n of nodes) {
-        for (const e of (n.es || [])) {
-          if (e.dir === 'in') continue;
-          const src = (n.i || n.id || '').replace(/\s+/g,'_').replace(/^[^a-zA-Z]+/, 'n_');
-          const tgt = (e.t || '').replace(/\s+/g,'_').replace(/^[^a-zA-Z]+/, 'n_');
-          const verb = e.v || '';
+        const edges = isV2(n) ? (n[6] || []) : (n.es || []);
+        for (const e of edges) {
+          const srcName = isV2(n) ? (n[1] || String(n[0])) : (n.i || n.id || '');
+          const src = slug(srcName);
+          let tgtName: string, verb: string;
+          if (isV2(n)) {
+            const tgtNode = nodes[e[0]];
+            tgtName = tgtNode ? (tgtNode[1] || String(tgtNode[0])) : String(e[0]);
+            verb = e[1] || '';
+          } else {
+            tgtName = e.t || '';
+            verb = e.v || '';
+          }
+          const tgt = slug(tgtName);
           const key = `${src}→${tgt}:${verb}`;
           if (!seen.has(key) && src && tgt) { seen.add(key); out += `    ${src} -->|${verb}| ${tgt}\n`; }
         }
@@ -355,8 +365,8 @@ program.command('visualize [dir]').option('-s, --save').action((d='.', opts) => 
       // Legacy top-level edges (v1.3)
       const legacyEdges = dag.e || dag.edges || [];
       for (const e of legacyEdges) {
-        const src = (e.s || e.source || '').replace(/\s+/g,'_').replace(/^[^a-zA-Z]+/, 'n_');
-        const tgt = (e.t || e.target || '').replace(/\s+/g,'_').replace(/^[^a-zA-Z]+/, 'n_');
+        const src = slug(e.s || e.source || '');
+        const tgt = slug(e.t || e.target || '');
         const verb = e.v || e.verb || '';
         const key = `${src}→${tgt}:${verb}`;
         if (!seen.has(key) && src && tgt) { seen.add(key); out += `    ${src} -->|${verb}| ${tgt}\n`; }
@@ -563,17 +573,22 @@ program.command('simulate <scenario>').description('Walk through a scenario, che
   let entities: string[] = [], relationships: any[] = [];
   if (existsSync(dagFile)) {
     const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
-    entities = (dag.n || dag.nodes || []).map((n: any) => (n.i || n.id || '').toLowerCase());
-    // v1.5 inlines edges in n.es, v1.3 has top-level e/edges
+    const simNodes = dag.n || dag.nodes || [];
+    const isV2 = (n: any) => Array.isArray(n) && typeof n[0] === 'number';
+    entities = simNodes.map((n: any) => (isV2(n) ? (n[1] || String(n[0])) : (n.i || n.id || '')).toLowerCase());
+    // Collect edges: v2 uses positional arrays in n[5], v1.5 uses n.es, v1.3 uses top-level e/edges
     if (dag.e || dag.edges) {
       relationships = dag.e || dag.edges || [];
     } else {
       const seen = new Set<string>();
-      for (const n of (dag.n || dag.nodes || [])) {
-        for (const e of (n.es || [])) {
-          if (e.dir === 'in') continue;
-          const key = `${n.i||n.id}→${e.t}:${e.v}`;
-          if (!seen.has(key)) { seen.add(key); relationships.push({ s: n.i||n.id, t: e.t, v: e.v, d: e.d, r: e.r }); }
+      for (const n of simNodes) {
+        const edges = isV2(n) ? (n[6] || []) : (n.es || []);
+        for (const e of edges) {
+          const srcName = isV2(n) ? (n[1] || String(n[0])) : (n.i || n.id || '');
+          const tgtName = isV2(n) ? ((simNodes[e[0]] ? simNodes[e[0]][2] : '') || String(e[0])) : (e.t || '');
+          const verb = isV2(n) ? (e[1] || '') : (e.v || '');
+          const key = `${srcName}→${tgtName}:${verb}`;
+          if (!seen.has(key)) { seen.add(key); relationships.push({ s: srcName, t: tgtName, v: verb }); }
         }
       }
     }
