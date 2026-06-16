@@ -53,6 +53,9 @@ dotdog serve                        # expose to AI agents via MCP
 
 [Adding dotdog to an existing project?](adopting.md)
 
+[Tutorial: Build a spec-driven project](tutorial.md)  
+[Why dotdog? Compare with alternatives](why-dotdog.md)
+
 ## What it does
 
 Describe your app in plain English. dotdog finds what you forgot and fills in the blanks.
