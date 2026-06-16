@@ -1,23 +1,23 @@
 # Security Policy
 
+## Reporting a Vulnerability
+
+If you discover a security vulnerability in dotdog, please report it privately. Do not open a public issue.
+
+Email: security@specdog.dev (or open a private security advisory on GitHub)
+
+We will respond within 48 hours and work on a fix.
+
 ## Supported Versions
 
 | Version | Supported |
-|---------|----------|
-| 0.2.x   | Yes |
-| 0.1.x   | No |
+|---------|-----------|
+| 0.4.x   | Yes |
+| < 0.4.0 | No |
 
-## Reporting a Vulnerability
+## Scope
 
-Do not open a public issue. Email security@specdog.dev.
-
-We respond within 48 hours. We'll coordinate disclosure and a patch release.
-
-## Supply Chain
-
-- Published via GitHub Actions with OIDC Trusted Publishing (no personal tokens)
-- All dependencies pinned and audited
-- Tags trigger publish : only repo admins can push tags
-- Two-person review required on all PRs
-
-If you suspect a compromised release, check the commit SHA against the tag in this repo.
+- MCP server input validation
+- Path traversal in file operations
+- YAML injection in .dog files
+- Token savings calculation integrity

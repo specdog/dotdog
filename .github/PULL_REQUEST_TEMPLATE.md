@@ -1,19 +1,17 @@
 ## Summary
 
-<!-- Briefly: what does this change and why? -->
+<!-- What does this PR do -->
 
-## Checklist
+## Changes
 
-- [ ] `dotdog validate` passes (score does not drop)
-- [ ] Commit messages follow [conventional commits](https://www.conventionalcommits.org/)
-- [ ] No new dependencies without justification
-- [ ] Format spec updated if format changed
-- [ ] Tests pass (if applicable)
+<!-- List specific changes -->
 
-## How to test
+## Verification
 
-<!-- Steps to verify this change works -->
+- [ ] Tests pass (`bun test`)
+- [ ] Dogfood passes (`dotdog validate && dotdog compile`)
+- [ ] No regressions
 
-## Related
+## Issues
 
-<!-- Link issues, discussions, or previous PRs -->
+Closes #
