@@ -1,5 +1,5 @@
 // spec serve — MCP server over stdio
-// Exposes .dag graph to AI agents (supports v2 positional, v1.5, v1.4, v1.3)
+// Exposes .dag graph to AI agents (supports v3, v2 positional, v1.5, v1.4, v1.3)
 
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join, resolve } from 'path';
@@ -207,7 +207,7 @@ export function serve(dir: string = '.'): void {
           project: P(dag),
           nodes: N(dag).length,
           edges: E(dag).length,
-          version: dag.v || dag.version || '',
+          version: dag.v || dag.version || (Array.isArray(dag) ? `${dag[0]}` : 'unknown'),
           order: dag.o || [],
           cycles: dag.cy !== undefined ? dag.cy : null,
           savings: tk.sv || tk.savings_pct || 0,
