@@ -146,6 +146,52 @@ DASHBOARD
 | US-07 | Generate code scaffold from spec genome | P1 | Spec files → database schema, API routes, component stubs |
 | US-08 | Team dashboard with project overview | P2 | Multiple projects, completeness scores, active predictions |
 
+## Predictions
+
+## Predictions
+
+##### 200 PRs by July 2026
+
+```yaml
+prediction: dotdog reaches 200 PRs
+trigger: PR count exceeds 190
+timeframe: 2026-07-31
+confidence: 0.8
+measurement: github.com/specdog/dotdog/pulls count
+preconditions:
+  - Current velocity of 5-10 PRs per session maintained
+  - Phase C (predictive layer) shipped by end of June
+```
+
+##### 90% token savings
+
+```yaml
+prediction: dotdog .dag savings exceed 90%
+status: correct
+trigger: dotdog SPEC.dog grows past 15KB
+timeframe: 2026-08-01
+confidence: 0.9
+measurement: dotdog tokens command on dotdog
+preconditions:
+  - .dag v1.4 compact format deployed
+  - More entities added to data-model.dog
+```
+
+##### First external adopter
+
+```yaml
+prediction: first external dotdog adopter
+status: correct
+trigger: GitHub star count exceeds 10
+timeframe: 2026-09-01
+confidence: 0.5
+measurement: github.com/specdog/dotdog stargazers > 1 non-team member
+preconditions:
+  - dotdog published to npm with stable API
+  - Documentation and adoption guide complete
+  - Competitive positioning live on specdog.github.io
+```
+
 ## Architecture
 
 ```
