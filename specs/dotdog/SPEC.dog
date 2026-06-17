@@ -97,7 +97,7 @@ DASHBOARD
 ```
 ┌─ CLI ───────────────────────────────────────────────┐
 │                                                     │
-│  $ dotdog simulate spec-platform --scenario "compile"│
+│  $ dotdog simulate dotdog --scenario "compile"│
 │                                                     │
 │  Scenario: Node, Task, Prediction → Compile → DAG   │
 │                                                     │
@@ -127,7 +127,7 @@ DASHBOARD
 │    ✓ References entity: Compile                     │
 │                                                     │
 │  RESULT: Success (6/6 steps passed)                 │
-│  All spec-platform entities verified                │
+│  All dotdog entities verified                │
 │  Predictions: token-savings-90% → correct ✓         │
 │                                                     │
 └─────────────────────────────────────────────────────┘
@@ -150,7 +150,7 @@ DASHBOARD
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    spec-platform                      │
+│                    dotdog                      │
 │                                                      │
 │  ┌───────────┐  ┌──────────┐  ┌──────────────────┐  │
 │  │ Dashboard │  │ MCP      │  │ CLI              │  │
@@ -196,7 +196,7 @@ DASHBOARD
 - Monorepo. One `pnpm-workspace.yaml`. Shared types.
 - SQLite for local/offline. Postgres for cloud. Same Prisma schema.
 - MCP server must work with major AI coding agents — not just one.
-- CLI must install via `npm install -g spec-platform` with zero additional deps.
+- CLI must install via `npm install -g dotdog` with zero additional deps.
 - The platform IS dogfooded. `specs/` in this repo uses our own format.
 - Free tier: 1 project, local-only, full features. Paid: teams, cloud, predictions.
 
