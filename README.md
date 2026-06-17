@@ -124,6 +124,8 @@ cp -r extensions/vscode ~/.vscode/extensions/dotdog
 
 ## Spec-Driven Development
 
+Read the **[SDD Handbook](https://specdog.github.io/dotdog/handbook)** — the complete guide to spec-driven development.
+
 dotdog is built for SDD. Write your spec first. Validate it. Compile it. Let AI agents query it. The spec is the source of truth.
 
 ```
