@@ -6,36 +6,42 @@ description: "Write structured specs. Validate completeness. Compile to graphs. 
 
 # dotdog
 
-> Spec-driven development CLI. Write structured specs, validate completeness, compile to graphs, and let AI agents query them via MCP.
+> Write specs, validate completeness, compile to graphs, let AI agents query them.
 
 ## Install
 
-```bash
+```
 npm install -g dotdog
 ```
 
-## How it works
+## See it work
+
+dotdog validates itself. This is real output from the tool checking its own spec:
 
 ```
-$ dotdog init my-project --minimal       # scaffold a spec genome
-$ dotdog validate                        # score completeness
-$ dotdog compile                         # build .dag graph (94% savings)
-$ dotdog serve                           # expose to AI agents via MCP
+$ dotdog validate
+  spec-platform : 7 .dog files, 100% complete
+
+$ dotdog compile
+  ✓ spec-platform.dag
+  11 nodes, 5 edges, 7 files
+  12,110 → 739 tokens (93.9% savings)
 ```
 
-### What each step does
+**100% complete** means every required file exists, every entity has properties, and no gaps were found. The `.dag` graph is 93.9% smaller than the source `.dog` files — AI agents load exact data instead of prose.
 
-**init** creates `.dog` spec files — structured Markdown with typed YAML entities. Start describing your product, its data model, and user stories.
+## What each command does
 
-**validate** scores completeness. Missing entities? Empty descriptions? Unreferenced relationships? The dog finds the gaps.
-
-**compile** builds a positional `.dag` graph. 94% smaller than the source — AI agents load exact data, not prose.
-
-**serve** starts an MCP server over stdio. Any MCP-compatible agent queries your spec: `getEntity`, `traverse`, `search`, `schema`, `summary`, `listProjects`. Zero hallucination.
+| Command | What it does |
+|---------|-------------|
+| `dotdog init` | Scaffold a spec genome — SPEC.dog, data-model.dog, and optional files |
+| `dotdog validate` | Score completeness. Find missing entities, empty descriptions, broken relationships |
+| `dotdog compile` | Build a positional .dag graph. 94% smaller than source, optimized for LLM context |
+| `dotdog serve` | Start MCP server. AI agents query via getEntity, traverse, search, and more |
+| `dotdog verify` | Map entities to code files. Detect when properties change or disappear |
+| `dotdog staleness` | Check plan.dog task completion. Catch unaddressed work |
 
 ## AI Agent Setup
-
-Add to any MCP client (Claude Desktop, Cursor, Copilot):
 
 ```json
 {
@@ -48,34 +54,14 @@ Add to any MCP client (Claude Desktop, Cursor, Copilot):
 }
 ```
 
-Run `dotdog compile` first to generate the `.dag` files.
+Six MCP tools: `getEntity`, `traverse`, `search`, `schema`, `summary`, `listProjects`.
 
 ## More
 
 - [Handbook: Spec-Driven Development](handbook)
 - [Tutorial: Build a spec-driven project](tutorial)
-- [Adding dotdog to an existing project](adopting)
 - [FAQ](faq)
-- [All Commands](#commands)
 
 ---
 
 dotdog@<span id="version">0.5.0</span> · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE) · [GitHub](https://github.com/specdog/dotdog) · [npm](https://www.npmjs.com/package/dotdog)
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "dotdog",
-  "applicationCategory": "DeveloperApplication",
-  "operatingSystem": "Linux, macOS, Windows",
-  "description": "CLI tool for structured software specs. Validate .dog files, compile .dag graphs, query via MCP.",
-  "url": "https://specdog.github.io/dotdog",
-  "offers": { "@type": "Offer", "price": "0" }
-}
-</script>
-
-<script>
-async function loadVersion(){try{const r=await fetch('https://registry.npmjs.org/dotdog/latest');const d=await r.json();document.getElementById('version').textContent=d.version;}catch(e){}}
-loadVersion();
-</script>
