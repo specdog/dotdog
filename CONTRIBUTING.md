@@ -1,5 +1,7 @@
 # Contributing to dotdog
 
+New here? Jump to the [Quick Start](docs/CONTRIBUTING-QUICKSTART.md) — every step has copy-pasteable CLI commands.
+
 Thanks for contributing.
 
 ## Philosophy
