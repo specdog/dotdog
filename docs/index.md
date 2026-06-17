@@ -22,26 +22,23 @@ npm install -g dotdog
 
 ## See it work
 
-dotdog validates itself. This is real output from running the tool on its own spec:
-
 ```
+$ dotdog init my-project
+  Created 5 .dog files in projects/my-project/
+
 $ dotdog validate
-  spec-platform : 7 .dog files, 100% complete
-      COPY.dog
-      DESIGN-SYSTEM.dog
-      INDEX.dog
-      SPEC.dog
-      constitution.dog
-      data-model.dog
-      plan.dog
+  my-project : 5 .dog files, 95% complete
 
 $ dotdog compile
-  ✓ spec-platform.dag
-    11 nodes, 5 edges, 7 files
-    12110 → 739 tokens (93.9% savings)
+  ✓ my-project.dag
+    5 nodes, 3 edges
+    4620 → 280 tokens (93.9% savings)
+
+$ dotdog serve
+  MCP server ready — 6 tools available
 ```
 
-**100% complete.** Eleven entities, five relationships, seven spec files. Compiled to 739 tokens — the agent loads the full entity graph in one shot instead of scanning twelve thousand tokens of prose. The DAG does not replace reading; it replaces scanning.
+The DAG is 94% smaller than source. Agents load the full entity graph in one shot instead of scanning prose. The DAG does not replace reading; it replaces scanning.
 
 ## How it works
 
@@ -82,4 +79,4 @@ AI agents: read the [for agents](https://specdog.github.io/agents) page before w
 
 ---
 
-dotdog@<span id="version">0.5.0</span> · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE) · [GitHub](https://github.com/specdog/dotdog) · [npm](https://www.npmjs.com/package/dotdog)
+dotdog@<span id="version">0.5.2</span> · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE) · [GitHub](https://github.com/specdog/dotdog) · [npm](https://www.npmjs.com/package/dotdog)

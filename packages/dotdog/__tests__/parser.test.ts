@@ -1,15 +1,56 @@
 import { describe, test, expect } from 'bun:test';
 import { parse, parseToJSON } from '../src/parser';
-import { readFileSync } from 'fs';
 
 describe('parser', () => {
-  test('real data-model', () => {
-    const content = readFileSync('projects/spec-platform/data-model.dog', 'utf-8');
+  test('entity and relationship parsing from real-format doc', () => {
+    const content = [
+      '## Data Model',
+      '',
+      '### Entity: Node',
+      '',
+      'A spec node.',
+      '',
+      '```',
+      'entity: Node',
+      'type: entity',
+      'properties:',
+      '  id:',
+      '    type: string',
+      '    format: uuid-v4',
+      '    required: true',
+      'states: [draft, complete]',
+      'lifecycle: draft → complete',
+      '```',
+      '',
+      '### Entity: Task',
+      '',
+      'A work item.',
+      '',
+      '```',
+      'entity: Task',
+      'type: entity',
+      'properties:',
+      '  title:',
+      '    type: string',
+      '    required: true',
+      'states: [specified, building, verified]',
+      'lifecycle: specified → building → verified',
+      '```',
+      '',
+      '### Relationship: Node → Task',
+      '',
+      '```',
+      'relationship: Node → Task',
+      'verb: contains',
+      'cardinality: 1:n',
+      'required: false',
+      '```',
+    ].join('\n');
     const ast = parse(content);
     const entities = ast.sections.flatMap(s => s.blocks.filter(b => b.kind === 'entity'));
     const rels = ast.sections.flatMap(s => s.blocks.filter(b => b.kind === 'relationship'));
-    expect(entities.length).toBe(8);
-    expect(rels.length).toBe(5);
+    expect(entities.length).toBe(2);
+    expect(rels.length).toBe(1);
   });
 
   test('entity parsing', () => {
