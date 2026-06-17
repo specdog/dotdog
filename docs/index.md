@@ -162,7 +162,7 @@ Agent: summary("spec-platform")
 
 ---
 
-dotdog@0.5.0 · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE)
+dotdog@<span id="version">0.5.0</span> · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE)
 
 
 <script type="application/ld+json">
@@ -176,4 +176,10 @@ dotdog@0.5.0 · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE)
   "url": "https://specdog.github.io/dotdog",
   "offers": { "@type": "Offer", "price": "0" }
 }
+</script>
+
+
+<script>
+async function loadVersion(){try{const r=await fetch('https://registry.npmjs.org/dotdog/latest');const d=await r.json();document.getElementById('version').textContent=d.version;}catch(e){}}
+loadVersion();
 </script>
