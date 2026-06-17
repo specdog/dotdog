@@ -1,6 +1,6 @@
 # dotdog — Product Plan
 
-> Derived from spec-platform: 5 entities, 5 relationships.
+> Derived from specs/dotdog: 5 entities, 4 relationships.
 
 ## State
 
