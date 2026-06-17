@@ -27,4 +27,4 @@ dotdog staleness    → detect spec/reality drift
 2. Run `dotdog validate` before committing spec changes
 3. Score must not decrease
 4. Use conventional commits (feat:, fix:, docs:, chore:)
-5. Never commit dist/ or .dag files — they're build artifacts
+5. Never commit dist/ — .dag files are committed for agent efficiency
