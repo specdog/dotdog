@@ -1,0 +1,119 @@
+# DESIGN-SYSTEM — dotdog
+
+> Describes existing design tokens and patterns from `docs/assets/css/style.scss`, `docs/_includes/head-custom.html`, and the dotdog CLI output.
+
+---
+
+## Surfaces
+
+| Surface | Stack | File |
+|---------|-------|------|
+| Docs website | Jekyll + GitHub Pages | `docs/assets/css/style.scss` |
+| CLI output | Node.js / Bun terminal | `packages/dotdog/src/cli.ts` |
+| npm README | Markdown | `packages/dotdog/README.md` |
+
+---
+
+## Tokens
+
+### Colors
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `white` | `#ffffff` | Body background |
+| `ink` | `#1a1a2e` | Body text, headings |
+| `ink-muted` | `#6b7280` | Secondary text, blockquote, nav |
+| `ink-subtle` | `#334155` | Table cell text |
+| `ink-dark` | `#1e293b` | Pre code, table headers |
+| `ink-h3` | `#374151` | H3 headings |
+| `accent` | `#2563eb` | Links |
+| `accent-hover` | `#d97706` | Nav hover |
+| `code-bg` | `#f1f5f9` | Inline code, pre blocks |
+| `code-red` | `#9d174d` | Inline code text |
+| `border` | `#e5e7eb` | Dividers, h2 underline, blockquote, footer |
+| `border-pre` | `#cbd5e1` | Pre block border |
+| `border-table` | `#e2e8f0` | Table row dividers |
+| `th-bg` | `#f8fafc` | Table header background |
+| `blockquote-bg` | `#f9fafb` | Blockquote background |
+| `footer` | `#9ca3af` | Footer text |
+
+### Typography
+
+| Token | Value |
+|-------|-------|
+| `font-family` | `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif` |
+| `h1-size` | `2.2em` |
+| `h2-size` | `1.3em` |
+| `h3-size` | `1.05em` |
+| `body-size` | `1em` (browser default) |
+| `table-size` | `0.92em` |
+| `inline-code-size` | `0.88em` |
+| `pre-code-size` | `0.84em` |
+| `footer-size` | `0.85em` |
+| `nav-size` | `0.9em` |
+| `line-height` | `1.7` (body), `1.6` (pre code) |
+| `font-weight-body` | `400` |
+| `font-weight-heading` | `700` (h1), inherited (h2, h3) |
+| `font-weight-strong` | `600` (th), `500` (inline code, nav) |
+
+### Spacing
+
+| Token | Value |
+|-------|-------|
+| `max-width` | `720px` |
+| `page-padding` | `0 24px` |
+| `header-top` | `48px` |
+| `header-bottom` | `16px` |
+| `footer-top` | `48px` |
+| `footer-padding` | `24px` |
+| `h2-top` | `40px` |
+| `h3-top` | `24px` |
+| `blockquote-margin` | `16px 0` |
+| `blockquote-padding` | `8px 16px` |
+| `table-margin` | `16px 0` |
+| `table-cell-padding` | `10px 14px` |
+| `pre-padding` | `16px 20px` |
+| `code-padding` | `2px 6px` |
+
+### Radii
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `radius-sm` | `3px` | Inline code |
+| `radius-md` | `4px` | Blockquote right corners |
+| `radius-lg` | `6px` | Pre blocks |
+
+---
+
+## Components
+
+### Navigation
+- Horizontal flex, centered, `gap: 24px`
+- Links: `#6b7280`, hover `#d97706`, size `0.9em`, weight 500
+- Present on every docs page
+
+### Code blocks
+- Inline: `background: #f1f5f9`, `padding: 2px 6px`, `border-radius: 3px`, `color: #9d174d`
+- Pre: `background: #f1f5f9`, `border: 1px solid #cbd5e1`, `border-radius: 6px`, `padding: 16px 20px`
+- Pre code: `font-size: 0.84em`, `line-height: 1.6`, no background/border/padding
+
+### Tables
+- Full width, collapsed borders
+- Row dividers: `border-bottom: 1px solid #e2e8f0`
+- Header: `background: #f8fafc`, `font-weight: 600`
+
+### Blockquotes
+- Left border: `3px solid #e5e7eb`
+- Background: `#f9fafb`
+- Right border-radius: `4px`
+
+---
+
+## Constraints
+
+- All docs pages share identical nav and font-family
+- Back-nav on subpages: `← specdog · guide · for agents`
+- Code blocks must have copy buttons (dark `#1e293b` background, checkmark animation)
+- Version footer auto-fetched from npm: `fetch('https://registry.npmjs.org/dotdog/latest')`
+- No JS frameworks — vanilla HTML + CSS
+- CLI output uses chalk for terminal colors (commander for structure)
