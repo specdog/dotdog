@@ -60,31 +60,6 @@ dotdog serve                        # expose to AI agents via MCP
 [Integrations](integrations.md)  
 [Use Cases](use-cases.md)
 
-## What it does
-
-Describe your app in plain English. dotdog finds what you forgot and fills in the blanks.
-
-```
-$ dotdog init my-app
-$ dotdog validate
-
-  my-app : 7 .dog files, 100% complete
-
-$ dotdog analyze
-
-  my-app : 7 files | 100% complete
-    SPEC.dog : 5 sections, 1.0KB
-    data-model.dog : 3 sections, 1.6KB (5 entities, 6 rels)
-  No gaps found.
-
-$ dotdog compile
-  ✓ my-app.dag : 3 nodes, 3 edges
-  12,100 → 739 tokens (94% savings) — v2 positional format
-
-$ dotdog serve
-  MCP server running : AI agents query your specs with zero hallucination
-```
-
 ## Commands
 
 | Command | Description |
@@ -138,19 +113,6 @@ Run `dotdog compile` first to generate .dag files.
 | `schema` | Property schema only: names, types, required |
 | `summary` | Node count, edge count, version, token savings |
 | `listProjects` | All project names with compiled .dag files |
-
-### Example
-
-```
-Agent: listProjects()
-→ ["spec-platform"]
-
-Agent: getEntity("spec-platform", "Compile")  
-→ { id: "Compile", type: "entity", lifecycle: ["running → completed"], edges: […] }
-
-Agent: summary("spec-platform")
-→ { project: "spec-platform", nodes: 11, edges: 5, savings: 94% }
-```
 
 ## Links
 
