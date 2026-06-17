@@ -1,0 +1,134 @@
+# DAO Governance Data Model
+
+## Entities
+
+### Entity: Member
+
+A DAO participant with voting power.
+
+```yaml
+entity: Member
+type: entity
+properties:
+  id:
+    type: string
+    required: true
+  wallet:
+    type: string
+    required: true
+  voting_power:
+    type: number
+    required: true
+states: [active, delegated, suspended]
+lifecycle: active → delegated → suspended
+```
+
+### Entity: Proposal
+
+A governance item submitted for member voting.
+
+```yaml
+entity: Proposal
+type: entity
+properties:
+  id:
+    type: string
+    required: true
+  title:
+    type: string
+    required: true
+  quorum_required:
+    type: number
+    required: true
+  status:
+    type: enum
+    required: true
+states: [draft, active, passed, rejected, executed]
+lifecycle: draft → active → passed → executed
+```
+
+### Entity: Vote
+
+A member decision on a proposal.
+
+```yaml
+entity: Vote
+type: event
+properties:
+  member_id:
+    type: string
+    required: true
+  proposal_id:
+    type: string
+    required: true
+  choice:
+    type: enum
+    required: true
+  weight:
+    type: number
+    required: true
+states: [cast, counted]
+lifecycle: cast → counted
+```
+
+### Entity: TreasuryAllocation
+
+Funds allocated by an executed proposal.
+
+```yaml
+entity: TreasuryAllocation
+type: entity
+properties:
+  id:
+    type: string
+    required: true
+  proposal_id:
+    type: string
+    required: true
+  amount:
+    type: number
+    required: true
+  recipient:
+    type: string
+    required: true
+states: [approved, executed, canceled]
+lifecycle: approved → executed
+```
+
+## Relationships
+
+### Relationship: Member → Proposal
+
+```yaml
+relationship: Member → Proposal
+verb: submits
+cardinality: 1:N
+required: true
+```
+
+### Relationship: Member → Vote
+
+```yaml
+relationship: Member → Vote
+verb: casts
+cardinality: 1:N
+required: true
+```
+
+### Relationship: Proposal → Vote
+
+```yaml
+relationship: Proposal → Vote
+verb: receives
+cardinality: 1:N
+required: true
+```
+
+### Relationship: Proposal → TreasuryAllocation
+
+```yaml
+relationship: Proposal → TreasuryAllocation
+verb: authorizes
+cardinality: 1:1
+required: false
+```

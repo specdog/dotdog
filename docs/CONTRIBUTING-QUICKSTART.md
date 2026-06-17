@@ -46,6 +46,8 @@ bun test
 dotdog validate && dotdog compile
 ```
 
+Adding a kit? Read the [kit contribution guide](contributing-kits.md). Kits live in `packages/dotdog/kits/<name>/` and must include `SPEC.dog`, `constitution.dog`, and `data-model.dog`.
+
 ## 6. Commit
 
 Conventional commits only:

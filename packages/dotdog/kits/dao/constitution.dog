@@ -1,0 +1,9 @@
+# DAO Governance Constitution
+
+## Core Rules
+
+1. One member can cast one vote per proposal.
+2. Proposal execution requires both quorum and majority approval.
+3. Treasury allocations must reference an approved proposal.
+4. Proposal state changes are append-only and auditable.
+5. Voting power is read at the proposal snapshot block.
