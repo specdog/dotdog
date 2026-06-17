@@ -715,6 +715,116 @@ program.command('staleness [dir]').action((d='.') => {
   }
 });
 
+program.command('verify [dir]').description('Verify spec-code alignment. --init auto-generates verify section in plan.dog').option('-i, --init', 'Auto-generate verify section from codebase scan').action((d='.', opts) => {
+  const dir = resolvePath(d);
+  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  console.log(chalk.bold(opts.init ? 'Auto-Generating Verify Section\n' : 'Verification Audit\n'));
+  for (const dd of dirs) {
+    if (!existsSync(dd)) continue;
+    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    for (const p of projects) {
+      const pd = join(dd,p);
+      if (!existsSync(join(pd,'SPEC.dog'))) continue;
+      const planFile = join(pd,'plan.dog');
+      if (!existsSync(planFile)) { console.log(chalk.yellow(`  ${p}: No plan.dog`)); continue; }
+      const dagFile = join(pd,`${p}.dag`);
+      if (!existsSync(dagFile)) { console.log(chalk.yellow(`  ${p}: No .dag file. Run compile first.`)); continue; }
+      const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
+      const plan = readFileSync(planFile,'utf-8');
+      
+      if (opts.init) {
+        // Auto-generate verify section
+        const entities: string[] = [];
+        const props: Map<string,string[]> = new Map();
+        for (const node of dag.n || []) {
+          const name = node[1] || String(node[0]);
+          entities.push(name);
+          if (node[4]) props.set(name, node[4].map((p:any) => p[0]));
+        }
+        let verify = '\n## Verify\n\n';
+        for (const entity of entities) {
+          const nameLower = entity.toLowerCase().replace(/[^a-z0-9]/g,'');
+          let matchFile = '';
+          // Search codebase for matching file
+          const skip = new Set(['node_modules','.git','dist','.bun','dev','build']);
+          const codeDirs = [join(dir,'src'), join(dir,'lib'), join(dir,'app'), dir];
+          for (const cd of codeDirs) {
+            if (!existsSync(cd)) continue;
+            try {
+              const allFiles = readdirSync(cd, {recursive:true}).filter((f:string) => {
+                if (!(f.endsWith('.ts') || f.endsWith('.js') || f.endsWith('.py') || f.endsWith('.sol') || f.endsWith('.go'))) return false;
+                for (const part of f.split('/')) { if (skip.has(part)) return false; }
+                return true;
+              });
+              const match = allFiles.find((f:string) => f.toLowerCase().includes(nameLower));
+              if (match) { matchFile = join(cd, match).replace(dir,'.'); break; }
+            } catch(_) {}
+          }
+
+          verify += `### Entity: ${entity}\n`;
+          if (matchFile) {
+            verify += `  file: ${matchFile}\n`;
+            // Guess properties from code
+            const fullPath = join(dir, matchFile.replace('./',''));
+            if (existsSync(fullPath)) {
+              const code = readFileSync(fullPath,'utf-8');
+              const codeProps = [...code.matchAll(/\b(\w+)\s*[:?]\s*\w+/g)].map(m => m[1]).filter((v,i,a) => a.indexOf(v)===i);
+              if (codeProps.length > 0) {
+                verify += `  properties: [${codeProps.slice(0,10).join(', ')}]\n`;
+              }
+            }
+          } else {
+            verify += `  # no matching file found — map manually\n`;
+          }
+          verify += `\n`;
+        }
+        // Append to plan.dog
+        const updatedPlan = plan.includes('## Verify') ? plan : plan + verify;
+        writeFileSync(planFile, updatedPlan);
+        console.log(chalk.green(`  ${p}: Verify section generated in plan.dog`));
+      } else {
+        // Run verification
+        const verifyMatch = plan.match(/## Verify\n([\s\S]*?)(?=\n## |$)/);
+        if (!verifyMatch) { console.log(chalk.yellow(`  ${p}: No ## Verify section. Run: dotdog verify --init`)); continue; }
+        const verifyBlock = verifyMatch[1];
+        const entityBlocks = [...verifyBlock.matchAll(/### Entity: (\w+)\n([\s\S]*?)(?=### Entity:|$)/g)];
+        let checks = 0, passed = 0;
+        for (const [, ename, ebody] of entityBlocks) {
+          checks++;
+          const fileMatch = ebody.match(/file:\s*(.+)/);
+          const propMatch = ebody.match(/properties:\s*\[([^\]]+)\]/);
+          if (!fileMatch) continue;
+          const filePath = join(dir, fileMatch[1].trim().replace('./',''));
+          if (!existsSync(filePath)) {
+            console.log(chalk.red(`  ✗ ${ename}: file ${fileMatch[1].trim()} not found`));
+            continue;
+          }
+          const code = readFileSync(filePath,'utf-8');
+          const cleanCode = code.replace(/\/\/.*/g,'').replace(/\/\*[\s\S]*?\*\//g,'');
+          if (propMatch) {
+            const props = propMatch[1].split(',').map(s => s.trim());
+            let propPass = 0;
+            for (const prop of props) {
+              const snakeVariant = prop.replace(/_/g,'');
+              const camelVariant = prop.replace(/_([a-z])/g, (_,c) => c.toUpperCase());
+              if (cleanCode.includes(prop) || cleanCode.includes(snakeVariant) || cleanCode.includes(camelVariant)) {
+                propPass++;
+              } else {
+                console.log(chalk.yellow(`  ⚠ ${ename}.${prop}: not found in ${fileMatch[1].trim()}`));
+              }
+            }
+            if (propPass === props.length) passed++;
+          }
+        }
+        if (checks === 0) console.log(chalk.yellow(`  ${p}: No entities mapped. Run: dotdog verify --init`));
+        else if (passed === checks) console.log(chalk.green(`  ${p}: ${passed}/${checks} entities verified`));
+        else console.log(chalk.bold(`  ${p}: ${passed}/${checks} entities verified`));
+      }
+    }
+  }
+});
+
+
 program.command('woof').action(() => {
   console.log('  / \\__');
   console.log(' (    @\\___');
