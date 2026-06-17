@@ -11,7 +11,7 @@
 - [x] DESIGN-SYSTEM.dog — tokens → primitives → components → patterns → screens
 - [x] dotdog validate runs on own specs (100%)
 - [x] dotdog analyze — 0 gaps
-- [x] dotdog list shows spec-platform project
+- [x] dotdog list shows dotdog project
 - [x] dotdog init scaffolds new projects
 - [x] dotdog compile — typed parser, .dag v1.2 with provable token savings
 - [x] MCP server live (`dotdog serve`)
@@ -51,7 +51,7 @@
 - [x] VS Code extension: .dog syntax highlighting + validation squiggles (missing files, entity YAML)
 - [x] MCP server: backward-compatible v1.3+v1.4, edge dedup in traverse
 - [x] Predictions: parsed from .dog, compiled with confidence/timeframe/trigger
-- [x] Dogfood verified: spec-platform + Commander.js
+- [x] Dogfood verified: dotdog + Commander.js
 - [x] Spec the dog widget: face-only, bone in mouth, feed/pet/fetch (V/C/P keys)
 
 ## Phase 2: Distribution
@@ -72,7 +72,7 @@
 - [x] `dotdog search` — cosine similarity semantic search across specs
 - [x] Zero dependencies. Local. $0.
 - [x] JSON .idx file stored alongside .dag
-- [x] spec-platform: 54 sections, 549 terms indexed
+- [x] dotdog: 54 sections, 549 terms indexed
 
 ## Phase 5: Graph Traversal Engine
 
