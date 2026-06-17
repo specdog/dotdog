@@ -229,6 +229,21 @@ function parseBlocks(lines: string[], start: number, end: number): BlockNode[] {
       }
     }
 
+    // Plain fenced blocks are prose. Consume them so parser loops always advance.
+    if (lines[i].startsWith('```')) {
+      let fenceEnd = i + 1;
+      while (fenceEnd < end && !lines[fenceEnd].startsWith('```')) fenceEnd++;
+      const blockEnd = fenceEnd < end ? fenceEnd + 1 : end;
+      blocks.push({
+        kind: 'prose',
+        content: lines.slice(i, blockEnd).join('\n').trim(),
+        lineStart: i + 1,
+        lineEnd: blockEnd,
+      });
+      i = blockEnd;
+      continue;
+    }
+
     // Collect prose
     const proseStart = i;
     while (i < end && !isBlockStart(lines[i]) && !lines[i].startsWith('```')) {

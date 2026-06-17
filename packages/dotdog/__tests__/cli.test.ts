@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { $, which } from 'bun';
-import { mkdirSync, writeFileSync, rmSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync, rmSync } from 'fs';
+import { tmpdir } from 'os';
 import { join } from 'path';
 
 const BUN = which('bun') || process.execPath;
@@ -20,6 +21,36 @@ describe('CLI', () => {
   test('list shows spec-platform', async () => {
     const out = await $`${BUN} packages/dotdog/src/cli.ts list`.text();
     expect(out).toContain('spec-platform');
+  });
+
+  test('kit init creates valid projects for built-in kits', async () => {
+    const kitsDir = join(ROOT, 'packages', 'dotdog', 'kits');
+    const kits = readdirSync(kitsDir, { withFileTypes: true })
+      .filter(entry => entry.isDirectory())
+      .map(entry => entry.name)
+      .sort();
+
+    expect(kits).toContain('erc20');
+    expect(kits).toContain('defi');
+    expect(kits).toContain('nft');
+    expect(kits).toContain('hackathon');
+
+    for (const kit of kits) {
+      const dir = mkdtempSync(join(tmpdir(), `dotdog-kit-${kit}-`));
+      try {
+        await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts kit init ${kit}`.quiet();
+        const projectDir = join(dir, 'specs', kit);
+
+        expect(existsSync(join(projectDir, 'SPEC.dog'))).toBe(true);
+        expect(existsSync(join(projectDir, 'constitution.dog'))).toBe(true);
+        expect(existsSync(join(projectDir, 'data-model.dog'))).toBe(true);
+
+        const result = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts validate`.quiet();
+        expect(result.exitCode).toBe(0);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    }
   });
 
   test('visualize snapshot', async () => {

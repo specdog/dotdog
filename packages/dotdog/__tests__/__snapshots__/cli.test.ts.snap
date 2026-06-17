@@ -24,35 +24,5 @@ graph LR
     DAG -->|produces| Compile
 \`\`\`
 
-\`\`\`mermaid
-graph LR
-    Room[Room]
-    Wall[Wall]
-    Obstacle[Obstacle]
-    Cabinet[Cabinet]
-    Material[Material]
-    Door[Door]
-    Interior[Interior]
-    MeasurementSource[MeasurementSource]
-    wall.measured[wall.measured]
-    cabinet.placed[cabinet.placed]
-    material.backordered[material.backordered]
-    layout.validated[layout.validated]
-    Room -->|contains| Wall
-    Wall -->|contains| Room
-    Wall -->|has| Obstacle
-    Wall -->|holds| Cabinet
-    Wall -->|documented_by| MeasurementSource
-    Obstacle -->|has| Wall
-    Cabinet -->|holds| Wall
-    Cabinet -->|uses| Material
-    Cabinet -->|has| Door
-    Cabinet -->|contains| Interior
-    Material -->|uses| Cabinet
-    Door -->|has| Cabinet
-    Interior -->|contains| Cabinet
-    MeasurementSource -->|documented_by| Wall
-\`\`\`
-
 "
 `;

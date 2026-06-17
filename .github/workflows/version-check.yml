@@ -36,7 +36,8 @@ jobs:
           fi
 
           # Verify version is newer
-          if ! printf '%s\n%s\n' "$PR_VERSION" "$NPM_VERSION" | sort -V -C 2>/dev/null; then
+          NEWEST_VERSION=$(printf '%s\n%s\n' "$NPM_VERSION" "$PR_VERSION" | sort -V | tail -n 1)
+          if [ "$NEWEST_VERSION" != "$PR_VERSION" ]; then
             echo ""
             echo "ERROR: PR version ($PR_VERSION) must be greater than npm version ($NPM_VERSION)"
             exit 1
