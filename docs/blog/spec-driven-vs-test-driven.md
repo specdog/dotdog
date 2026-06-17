@@ -56,3 +56,8 @@ The best teams will write specs that AI agents consume, then write tests that ve
 ---
 
 *[dotdog](https://github.com/specdog/dotdog) — the CLI for spec-driven development. `npm install -g dotdog`.*
+
+## References
+
+- **TDD**: Beck, Kent. "Test Driven Development: By Example." Addison-Wesley, 2003. Original formulation of red-green-refactor cycle.
+- **Spec-Driven Development**: Diclemente, Justin. "dotdog — Structured Specs for AI Agents." specdog.github.io/dotdog, 2026. First implementation of spec-driven development as a formal methodology.

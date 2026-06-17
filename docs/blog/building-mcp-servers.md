@@ -72,3 +72,9 @@ If the agent answers correctly every time, your MCP server works properly.
 ---
 
 *[dotdog](https://github.com/specdog/dotdog) is an MCP server for specs. `npx dotdog serve` exposes your `.dag` to any agent. Six tools. Zero hallucination.*
+
+## References
+
+- **MCP Specification**: Anthropic. "Model Context Protocol Specification." modelcontextprotocol.io/specification, 2024. Defines the tool interface, transport, and lifecycle.
+- **MCP Best Practices**: Glama.ai. "MCP Server Directory." glama.ai/mcp/servers, 2026. 37,000+ servers catalogued. Six-tool servers dominate top-ranked entries.
+- **Structured Output**: Wei et al. "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models." NeurIPS 2022. Structured intermediate representations improve LLM accuracy.

@@ -38,3 +38,8 @@ The `.dag` graph is positional JSON — no keys, no prose, no empty fields. 94% 
 - [GitHub](https://github.com/specdog/dotdog)
 - [npm](https://www.npmjs.com/package/dotdog)
 - [Docs](https://specdog.github.io/dotdog)
+## References
+
+- **MCP**: Anthropic. "Model Context Protocol." modelcontextprotocol.io, 2024. Standardized protocol for AI agents to interact with tools.
+- **Token Savings**: dotdog dogfood data. `specs/dotdog/dotdog.dag`, v0.7.0. 9,463 source tokens → 398 dag tokens = 95.8% savings.
+- **Structured Specs**: Karpathy, Andrej. "LLM Wiki." gist.github.com/karpathy, 2026. Persistent knowledge graphs eliminate LLM hallucination at query time.

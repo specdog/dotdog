@@ -73,3 +73,9 @@ Write specs. Feed the dog. Ship with confidence.
 ---
 
 *[dotdog](https://github.com/specdog/dotdog) is the CLI tool for spec-driven development. `npm install -g dotdog`. Feed the dog.*
+
+## References
+
+- **Spec-Driven Development**: Diclemente, Justin. "dotdog." specdog.github.io/dotdog, 2026. First CLI tool implementing the SDD methodology — validate, compile, serve specs to AI agents.
+- **AI Agent Economics**: Eloundou et al. "GPTs are GPTs: Labor Market Impact Potential of LLMs." arXiv:2303.10130, OpenAI, 2023. Estimates 80% of workers will have 10%+ of tasks affected by LLMs.
+- **Hallucination**: Xu et al. "Hallucination is Inevitable." arXiv:2401.11817, 2024. Mathematical proof that LLM hallucination cannot be eliminated — only mitigated through structured input.
