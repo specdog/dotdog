@@ -187,6 +187,26 @@ function parseBlocks(lines: string[], start: number, end: number, errors?: Parse
           i = yamlEnd + 1;
           continue;
         }
+        if (Array.isArray(yaml.relationships)) {
+          for (const item of yaml.relationships as Record<string, unknown>[]) {
+            blocks.push({
+              kind: 'relationship',
+              source: (item.from as string) || (item.source as string) || '',
+              target: (item.to as string) || (item.target as string) || '',
+              verb: (item.verb as string) || 'connects',
+              description: (item.description as string) || '',
+              cardinality: (item.cardinality as string) || 'N:M',
+              required: item.required === true,
+              cascade: (item.cascade as string) || 'none',
+              invariants: [],
+              yaml: item,
+              lineStart: i + 1,
+              lineEnd: yamlEnd,
+            });
+          }
+          i = yamlEnd + 1;
+          continue;
+        }
         if (yaml.event) {
           blocks.push({
             kind: 'event',
@@ -227,7 +247,7 @@ function parseBlocks(lines: string[], start: number, end: number, errors?: Parse
           i = yamlEnd + 1;
           continue;
         }
-        const key = yaml.prediction ? 'prediction' : yaml.entity ? 'entity' : yaml.event ? 'event' : (yaml.relationship || yaml.verb) ? 'relationship' : null;
+        const key = yaml.prediction ? 'prediction' : yaml.entity ? 'entity' : yaml.event ? 'event' : (yaml.relationship || yaml.verb) ? 'relationship' : Array.isArray(yaml.relationships) ? 'relationship_list' : null;
         if (key) {
           if (key === 'prediction') {
             blocks.push({ kind: 'prediction', statement: (yaml.prediction as string) || '', description: (yaml.description as string) || '', trigger: (yaml.trigger as string) || '', timeframe: (yaml.timeframe as string) || '', confidence: (yaml.confidence as number) || 0, measurement: (yaml.measurement as string) || '', status: (yaml.status as string) || 'pending', yaml, lineStart: i + 1, lineEnd: yamlEnd });
@@ -237,6 +257,10 @@ function parseBlocks(lines: string[], start: number, end: number, errors?: Parse
             blocks.push({ kind: 'event', name: (yaml.event as string) || '', trigger: (yaml.trigger as string) || '', payload: {}, preconditions: [], postconditions: [], sideEffects: [], probability: null, yaml, lineStart: i + 1, lineEnd: yamlEnd });
           } else if (key === 'relationship') {
             blocks.push({ kind: 'relationship', source: (yaml.source as string) || '', target: (yaml.target as string) || '', verb: (yaml.verb as string) || 'connects', description: (yaml.description as string) || '', cardinality: (yaml.cardinality as string) || 'N:M', required: false, cascade: 'none', invariants: [], yaml, lineStart: i + 1, lineEnd: yamlEnd });
+          } else if (key === 'relationship_list') {
+            for (const item of yaml.relationships as Record<string, unknown>[]) {
+              blocks.push({ kind: 'relationship', source: (item.from as string) || (item.source as string) || '', target: (item.to as string) || (item.target as string) || '', verb: (item.verb as string) || 'connects', description: (item.description as string) || '', cardinality: (item.cardinality as string) || 'N:M', required: item.required === true, cascade: (item.cascade as string) || 'none', invariants: [], yaml: item, lineStart: i + 1, lineEnd: yamlEnd });
+            }
           }
           i = yamlEnd + 1;
           continue;
@@ -377,13 +401,19 @@ function buildEntityNode(name: string, description: string, yaml: Record<string,
   const rawProps = yaml.properties as Record<string, Record<string, unknown>> | undefined;
   if (rawProps) {
     for (const [key, val] of Object.entries(rawProps)) {
-      if (typeof val === 'object' && val !== null) {
+      // Support compact inline YAML: role: {type: string, required: true}
+      let resolved = val;
+      if (typeof val === 'string' && val.startsWith('{') && val.endsWith('}')) {
+        const inline = parseInlineObject(val);
+        if (inline) resolved = inline;
+      }
+      if (typeof resolved === 'object' && resolved !== null) {
         properties[key] = {
-          type: (val.type as string) || 'string',
-          required: val.required !== false,
-          default: val.default,
-          constraints: val.constraints as string | undefined,
-          example: val.example as string | undefined,
+          type: (resolved.type as string) || 'string',
+          required: resolved.required !== false,
+          default: resolved.default,
+          constraints: resolved.constraints as string | undefined,
+          example: resolved.example as string | undefined,
         };
       }
     }
@@ -513,9 +543,14 @@ function parseSimpleYAML(lines: string[]): Record<string, unknown> {
     // Top-level key: value
     const topMatch = line.match(/^(\w[\w_]*):\s*(.+)?$/);
     if (topMatch && !line.startsWith('  ') && !line.startsWith('\t')) {
-      // Flush nested object
+      // Flush nested object (or list)
       if (inNested && currentKey) {
-        result[currentKey] = currentObj;
+        if (Array.isArray(currentObj.__list) && currentObj.__list.length > 0) {
+          result[currentKey] = currentObj.__list;
+          delete currentObj.__list;
+        } else {
+          result[currentKey] = currentObj;
+        }
         inNested = false;
         currentObj = {};
       }
@@ -562,6 +597,28 @@ function parseSimpleYAML(lines: string[]): Record<string, unknown> {
       }
       continue;
     }
+
+    // List item:   - value or   - {inline} (inside a nested mapping like relationships:)
+    const listMatch = line.match(/^\s{2}-(?:\s+)?(.+)?$/);
+    if (listMatch && inNested && currentKey) {
+      const item = (listMatch[1] || '').trim();
+      if (!Array.isArray(currentObj.__list)) {
+        currentObj.__list = [];
+      }
+      if (item.startsWith('{') && item.endsWith('}')) {
+        const inline = parseInlineObject(item);
+        currentObj.__list.push(inline || item);
+      } else if (item === 'true') {
+        currentObj.__list.push(true);
+      } else if (item === 'false') {
+        currentObj.__list.push(false);
+      } else if (/^-?\d+(\.\d+)?$/.test(item)) {
+        currentObj.__list.push(parseFloat(item));
+      } else {
+        currentObj.__list.push(item);
+      }
+      continue;
+    }
     // Indented key after a scalar top-level value: treat as new top-level key
     // Allows:  relationship: User -> Order
     //            verb: places       ← treated as top-level
@@ -587,9 +644,14 @@ function parseSimpleYAML(lines: string[]): Record<string, unknown> {
     }
   }
 
-  // Flush last nested object
+  // Flush last nested object (or list)
   if (inNested && currentKey) {
-    result[currentKey] = currentObj;
+    if (Array.isArray(currentObj.__list) && currentObj.__list.length > 0) {
+      result[currentKey] = currentObj.__list;
+      delete currentObj.__list;
+    } else {
+      result[currentKey] = currentObj;
+    }
   }
 
   return result;
