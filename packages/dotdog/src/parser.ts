@@ -94,31 +94,109 @@ function parseBlocks(lines: string[], start: number, end: number): BlockNode[] {
     const line = lines[i];
 
     // Entity block?
-    const entityMatch = line.match(/^###\s+Entity:\s*(.+)/);
+    const entityMatch = line.match(/^#{3,5}\s+Entity:\s*(.+)/);
     if (entityMatch) {
       const result = parseStructuredBlock(lines, i, end, 'entity', entityMatch[1]);
       if (result) { blocks.push(result.node); i = result.nextLine; continue; }
     }
 
     // Relationship block?
-    const relMatch = line.match(/^###\s+Relationship:\s*(.+)/);
+    const relMatch = line.match(/^#{3,5}\s+Relationship:\s*(.+)/);
     if (relMatch) {
       const result = parseStructuredBlock(lines, i, end, 'relationship', relMatch[1]);
       if (result) { blocks.push(result.node); i = result.nextLine; continue; }
     }
 
     // Event block?
-    const eventMatch = line.match(/^###\s+Event:\s*(.+)/);
+    const eventMatch = line.match(/^#{3,5}\s+Event:\s*(.+)/);
     if (eventMatch) {
       const result = parseStructuredBlock(lines, i, end, 'event', eventMatch[1]);
       if (result) { blocks.push(result.node); i = result.nextLine; continue; }
     }
 
     // Prediction block?
-    const predMatch = line.match(/^###\s+Prediction:\s*(.+)/);
+    const predMatch = line.match(/^#{3,5}\s+Prediction:\s*(.+)/);
     if (predMatch) {
       const result = parseStructuredBlock(lines, i, end, 'prediction', predMatch[1]);
       if (result) { blocks.push(result.node); i = result.nextLine; continue; }
+    }
+
+    // YAML block with prediction/entity/relationship/event key (container sections)
+    if (lines[i].startsWith('```')) {
+      let yamlEnd = i + 1;
+      while (yamlEnd < end && !lines[yamlEnd].startsWith('```')) yamlEnd++;
+      if (yamlEnd < end) {
+        const yamlContent = lines.slice(i + 1, yamlEnd);
+        const yaml = parseSimpleYAML(yamlContent);
+        if (yaml.prediction) {
+          blocks.push({
+            kind: 'prediction',
+            statement: (yaml.prediction as string) || '',
+            description: (yaml.description as string) || '',
+            trigger: (yaml.trigger as string) || '',
+            timeframe: (yaml.timeframe as string) || '',
+            confidence: (yaml.confidence as number) || 0,
+            measurement: (yaml.measurement as string) || '',
+            status: (yaml.status as string) || 'pending',
+            yaml,
+            lineStart: i + 1,
+            lineEnd: yamlEnd,
+          });
+          i = yamlEnd + 1;
+          continue;
+        }
+        if (yaml.entity) {
+          blocks.push({
+            kind: 'entity',
+            name: (yaml.entity as string) || '',
+            description: (yaml.description as string) || '',
+            type: (yaml.type as string) || 'node',
+            properties: {},
+            states: Array.isArray(yaml.states) ? yaml.states as string[] : [],
+            lifecycle: [],
+            yaml,
+            lineStart: i + 1,
+            lineEnd: yamlEnd,
+          });
+          i = yamlEnd + 1;
+          continue;
+        }
+        if (yaml.relationship || yaml.verb) {
+          blocks.push({
+            kind: 'relationship',
+            source: (yaml.source as string) || '',
+            target: (yaml.target as string) || '',
+            verb: (yaml.verb as string) || 'connects',
+            description: (yaml.description as string) || '',
+            cardinality: (yaml.cardinality as string) || 'N:M',
+            required: false,
+            cascade: 'none',
+            invariants: [],
+            yaml,
+            lineStart: i + 1,
+            lineEnd: yamlEnd,
+          });
+          i = yamlEnd + 1;
+          continue;
+        }
+        if (yaml.event) {
+          blocks.push({
+            kind: 'event',
+            name: (yaml.event as string) || '',
+            trigger: (yaml.trigger as string) || '',
+            payload: {},
+            preconditions: [],
+            postconditions: [],
+            sideEffects: [],
+            probability: null,
+            yaml,
+            lineStart: i + 1,
+            lineEnd: yamlEnd,
+          });
+          i = yamlEnd + 1;
+          continue;
+        }
+      }
     }
 
     // Table?
@@ -127,9 +205,33 @@ function parseBlocks(lines: string[], start: number, end: number): BlockNode[] {
       if (table) { blocks.push(table); i = table.lineEnd; continue; }
     }
 
+    // Check for YAML blocks with structured keys (container sections)
+    if (lines[i].startsWith('```')) {
+      let yamlEnd = i + 1;
+      while (yamlEnd < end && !lines[yamlEnd].startsWith('```')) yamlEnd++;
+      if (yamlEnd < end && yamlEnd > i + 1) {
+        const yamlContent = lines.slice(i + 1, yamlEnd);
+        const yaml = parseSimpleYAML(yamlContent);
+        const key = yaml.prediction ? 'prediction' : yaml.entity ? 'entity' : yaml.event ? 'event' : (yaml.relationship || yaml.verb) ? 'relationship' : null;
+        if (key) {
+          if (key === 'prediction') {
+            blocks.push({ kind: 'prediction', statement: (yaml.prediction as string) || '', description: (yaml.description as string) || '', trigger: (yaml.trigger as string) || '', timeframe: (yaml.timeframe as string) || '', confidence: (yaml.confidence as number) || 0, measurement: (yaml.measurement as string) || '', status: (yaml.status as string) || 'pending', yaml, lineStart: i + 1, lineEnd: yamlEnd });
+          } else if (key === 'entity') {
+            blocks.push({ kind: 'entity', name: (yaml.entity as string) || '', description: (yaml.description as string) || '', type: (yaml.type as string) || 'node', properties: {}, states: Array.isArray(yaml.states) ? yaml.states as string[] : [], lifecycle: [], yaml, lineStart: i + 1, lineEnd: yamlEnd });
+          } else if (key === 'event') {
+            blocks.push({ kind: 'event', name: (yaml.event as string) || '', trigger: (yaml.trigger as string) || '', payload: {}, preconditions: [], postconditions: [], sideEffects: [], probability: null, yaml, lineStart: i + 1, lineEnd: yamlEnd });
+          } else if (key === 'relationship') {
+            blocks.push({ kind: 'relationship', source: (yaml.source as string) || '', target: (yaml.target as string) || '', verb: (yaml.verb as string) || 'connects', description: (yaml.description as string) || '', cardinality: (yaml.cardinality as string) || 'N:M', required: false, cascade: 'none', invariants: [], yaml, lineStart: i + 1, lineEnd: yamlEnd });
+          }
+          i = yamlEnd + 1;
+          continue;
+        }
+      }
+    }
+
     // Collect prose
     const proseStart = i;
-    while (i < end && !isBlockStart(lines[i])) {
+    while (i < end && !isBlockStart(lines[i]) && !lines[i].startsWith('```')) {
       i++;
     }
     const proseLines = lines.slice(proseStart, i).filter(l => l.trim() !== '' || i === proseStart + 1);
@@ -147,7 +249,7 @@ function parseBlocks(lines: string[], start: number, end: number): BlockNode[] {
 }
 
 function isBlockStart(line: string): boolean {
-  return /^###\s+(Entity|Relationship|Event|Prediction):/.test(line) || /^\|.+\|/.test(line);
+  return /^#{3,5}\s+(Entity|Relationship|Event|Prediction):/.test(line) || /^\|.+\|/.test(line);
 }
 
 // --- Structured block parser ---
