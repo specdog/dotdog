@@ -43,4 +43,14 @@ jobs:
             exit 1
           fi
 
+          
+          # Block 1.0.0 without explicit approval
+          MAJOR=$(echo "$PR_VERSION" | cut -d. -f1)
+          if [ "$MAJOR" -ge 1 ] && [ "$NPM_VERSION" != "0.0.0" ]; then
+            echo ""
+            echo "ERROR: 1.x.x releases require manual approval."
+            echo "  Do not bump to $PR_VERSION in a PR."
+            exit 1
+          fi
+
           echo "✓ Version bumped: $NPM_VERSION → $PR_VERSION"

@@ -27,3 +27,12 @@
 - Every PR must update specs before code.
 - `spec validate` must pass before merge.
 - Predictions are reviewed at project milestones. Wrong predictions are not failures — they are data.
+
+## Invariant: No 1.0.0 without users
+
+dotdog must not ship 1.0.0 until there is evidence of external adoption:
+- GitHub stars > 0
+- External contributors merged
+- npm downloads trend established
+
+Breaking this invariant requires Justin approval.
