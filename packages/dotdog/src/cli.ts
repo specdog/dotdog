@@ -70,10 +70,10 @@ program.command('validate [dir]').action((d='.') => {
       const files = existsSync(pd) ? readdirSync(pd).filter(f=>f.endsWith('.dog')) : [];
       const missing = ['SPEC.dog','constitution.dog','data-model.dog'].filter(f=>!files.includes(f));
       const optional = ['COPY.dog','plan.dog','DESIGN-SYSTEM.dog','INDEX.dog'].filter(f=>!files.includes(f));
-      console.log(chalk.bold(`\n  ${p} : ${files.length} .dog files, ${100-Math.round((missing.length*3+optional.length)/20*100)}% complete`));
+      console.log(chalk.bold(`\n  ${p} : ${files.length} .dog files, ${Math.max(0, 100-Math.round(missing.length*3/20*100))}% complete`));
       for (const f of files) console.log(chalk.gray(`    ${f}`));
       if (missing.length) { console.log(chalk.red(`  Missing required: ${missing.join(', ')}`)); hasErrors = true; }
-      if (optional.length) console.log(chalk.yellow(`  Missing optional: ${optional.join(', ')}`));
+      if (optional.length) console.log(chalk.gray(`  Optional: ${optional.join(', ')} — not required for 100%`));
     }
   }
   if (!found) console.log(chalk.yellow('No projects found. Run: spec init <project>'));
@@ -435,7 +435,7 @@ program.command('analyze [dir]').description('Analyze a spec project : score, ga
       }
       const gaps: string[] = [];
       for (const f of missingReq) gaps.push(`🔴 ${f}: Missing required file`);
-      for (const f of missingOpt) gaps.push(`🟡 ${f}: Missing optional file`);
+      for (const f of missingOpt) gaps.push(`ℹ️ ${f}: Optional file not present`);
       const entityNames = new Set(allEntities.map(e => e.name));
       for (const e of allEntities) {
         if (!e.description || e.description.length < 10) gaps.push(`🟡 ${e.name}: No description`);
