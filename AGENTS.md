@@ -4,6 +4,13 @@
 
 ## Quick Start (read this first)
 
+**NEVER read .dog files directly.** Query the .dag via MCP. The .dog is human format. The .dag is agent format.
+
+- **.md**: read for context (README, docs, blog) but NOT for entity/relationship/project structure
+- **.dog**: NEVER read. Human writes it. Agent never touches it.
+- **.dag**: ALWAYS query via MCP. This is your source of truth for project structure.
+- **If .dag doesn't have it**: report "unverified" — never fall back to .dog
+
 **MCP**: `npx dotdog serve` (6 tools: getEntity, traverse, search, schema, summary, listProjects)
 
 ## Commands (when modifying dotdog source)
