@@ -944,8 +944,16 @@ program.command('resolve <name>').description('Mark a prediction as correct, wro
               const b = block as any;
               if ((b.statement || b.name || '').toLowerCase().includes(name.toLowerCase())) {
                 // Find prediction YAML block by heading or statement
-                const searchFor = `### Prediction: ${b.statement || b.name}`;
-                const headingIdx = content.indexOf(searchFor);
+                // Search for prediction heading at any level (both ### Prediction: Name and ### Name formats)
+                let headingIdx = -1;
+                const stmt = b.statement || b.name || '';
+                for (const prefix of ['###', '####', '#####']) {
+                  for (const fmt of [`${prefix} Prediction: ${stmt}`, `${prefix} ${stmt}`]) {
+                    const idx = content.indexOf(fmt);
+                    if (idx >= 0) { headingIdx = idx; break; }
+                  }
+                  if (headingIdx >= 0) break;
+                }
                 if (headingIdx >= 0) {
                   const blockStart = content.indexOf('```yaml', headingIdx);
                   const blockEnd = content.indexOf('```', blockStart + 7);
