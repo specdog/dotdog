@@ -1051,11 +1051,13 @@ program.command('badge [dir]')
         if (!existsSync(join(pd,'SPEC.dog'))) continue;
         if (!existsSync(dagFile)) { console.log(chalk.red(`  No .dag for ${p}. Run dotdog compile first.`)); continue; }
         const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
-        const savings = dag.tk && dag.tk.sv ? Math.round(dag.tk.sv) : 0;
+        const saved = dag.tk && dag.tk.saved ? dag.tk.saved : 0;
+        const fmt = saved >= 1000 ? `${(saved/1000).toFixed(1)}K` : `${saved}`;
         
         const label = 'dotdog';
-        const value = `${savings}%`;
-        const color = savings > 90 ? '#4c1' : savings > 70 ? '#dfb317' : '#e05d44';
+        const value = `${fmt} tokens saved`;
+        const pct = dag.tk && dag.tk.sv ? dag.tk.sv : 0;
+        const color = pct > 90 ? '#4c1' : pct > 70 ? '#dfb317' : '#e05d44';
         
         const labelLen = Math.round(label.length * 7.2);
         const valueLen = Math.round(value.length * 7.2);
