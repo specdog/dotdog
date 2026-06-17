@@ -84,4 +84,4 @@ AI agents: read the [for agents](https://specdog.github.io/agents) page before w
 
 ---
 
-dotdog@<span id="version">0.5.2</span> · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE) · [GitHub](https://github.com/specdog/dotdog) · [npm](https://www.npmjs.com/package/dotdog)
+dotdog@<span id="version">0.8.1</span> · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE) · [GitHub](https://github.com/specdog/dotdog) · [npm](https://www.npmjs.com/package/dotdog)

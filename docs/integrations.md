@@ -30,7 +30,7 @@ Restart Claude Code. Verify:
 
 ```
 > List the projects available via dotdog
-> What entities are in the spec-platform project?
+> What entities are defined in this project?
 ```
 
 ## Claude Desktop
