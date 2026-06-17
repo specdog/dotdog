@@ -16,9 +16,13 @@ dotdog fixes this. You write your spec in readable `.dog` files — entities, pr
 
 ## Install
 
+```bash
+npm install -g dotdog    # npm
+brew install dotdog       # Homebrew
+bun add -g dotdog         # bun
 ```
-npm install -g dotdog
-```
+
+Requires Node.js >= 20 or Bun >= 1.3.
 
 ## See it work
 
