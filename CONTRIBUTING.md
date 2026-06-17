@@ -60,6 +60,31 @@ docs/                      Website (GitHub Pages)
 templates/                 Spec genome templates
 ```
 
+
+## Versioning
+
+dotdog follows **MAJOR.MINOR.PATCH** (semver).
+
+| Change | Bump | Example |
+|--------|------|---------|
+| Bug fix | PATCH | 0.5.0 → 0.5.1 |
+| New feature | MINOR | 0.5.1 → 0.6.0 |
+| Breaking change | MAJOR | 0.6.0 → 1.0.0 |
+
+**Every code change gets a version bump.** No accumulating changes across releases.
+
+### Docs
+
+Documentation-only changes follow their own cycle — no version bump required for website, README, or guide updates. Docs versioning is tracked separately via git history.
+
+### Release checklist
+
+1. Update version in `packages/dotdog/package.json`
+2. Update `CHANGELOG.md` with the new version entry
+3. Tag: `git tag vX.Y.Z`
+4. Push tag: `git push --tags`
+5. CI publishes to npm on `v*` tags
+
 ## Questions
 
 Open a discussion or issue. Happy to help.
