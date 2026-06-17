@@ -1053,7 +1053,7 @@ program.command('badge [dir]')
         const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
         const savings = dag.tk && dag.tk.sv ? Math.round(dag.tk.sv) : 0;
         
-        const label = 'spec savings';
+        const label = 'dotdog';
         const value = `${savings}%`;
         const color = savings > 90 ? '#4c1' : savings > 70 ? '#dfb317' : '#e05d44';
         
