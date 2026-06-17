@@ -41,7 +41,7 @@ function E(dag: any): any[] {
   const seen = new Set<string>();
   for (const node of N(dag)) {
     for (const e of nodeEdges(node)) {
-      const src = isV2(node) ? String(node[0]) : (node.i || node.id || '');
+      const src = nodeId(node);
       const key = `${src}→${e.t}:${e.v}`;
       if (!seen.has(key)) {
         seen.add(key);
@@ -52,7 +52,12 @@ function E(dag: any): any[] {
   return edges;
 }
 const P = (dag: any) => dag.p || dag.project || '';
-const ni = (n: any) => isV2(n) ? String(n[0]) : (n.i || n.id || '');
+const nodeId = (n: any) => isV2(n) ? String(n[0]) : (n.i || n.id || '');
+const nodeName = (n: any) => isV2(n) ? (n[1] || String(n[0])) : (n.i || n.id || n.name || '');
+function nodeMatches(n: any, value: string): boolean {
+  const q = (value || '').toLowerCase();
+  return nodeId(n).toLowerCase() === q || nodeName(n).toLowerCase() === q;
+}
 const nt = (n: any) => isV2(n) ? (n[2] || '') : (n.t || n.type || '');
 const nd = (n: any) => isV2(n) ? (n[3] || '') : (n.d || n.description || '');
 function np(n: any): any {
@@ -140,13 +145,14 @@ export function serve(dir: string = '.'): void {
       if (name === 'getEntity') {
         const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const node = N(dag).find((n: any) => ni(n).toLowerCase() === (args.name || '').toLowerCase());
+        const node = N(dag).find((n: any) => nodeMatches(n, args.name || ''));
         if (!node) return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: '{}' }] } };
+        const idForEdges = nodeId(node);
         const edges = E(dag).filter((e: any) =>
-          es(e).toLowerCase() === ni(node).toLowerCase() ||
-          et(e).toLowerCase() === ni(node).toLowerCase()
+          es(e).toLowerCase() === idForEdges.toLowerCase() ||
+          et(e).toLowerCase() === idForEdges.toLowerCase()
         );
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(isV2(node) ? { id: String(node[0]), name: node[1]||'', type: node[2]||'', description: node[3]||'', properties: np(node), states: ns(node), edges } : { ...node, edges }) }] } };
+        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(isV2(node) ? { id: nodeId(node), name: nodeName(node), type: nt(node), description: nd(node), properties: np(node), states: ns(node), edges } : { ...node, edges }) }] } };
       }
 
       if (name === 'traverse') {
@@ -156,15 +162,17 @@ export function serve(dir: string = '.'): void {
         const visitedNodes = new Set<string>();
         const visitedEdges = new Set<string>();
         const subgraph: { nodes: any[], edges: any[] } = { nodes: [], edges: [] };
-        const queue = [{ id: args.from, depth: 0 }];
+        const start = N(dag).find((n: any) => nodeMatches(n, args.from || ''));
+        const queue = [{ id: start ? nodeId(start) : args.from, depth: 0 }];
         while (queue.length > 0) {
           const curr = queue.shift()!;
-          if (visitedNodes.has(curr.id) || curr.depth > depth) continue;
-          visitedNodes.add(curr.id);
-          const node = N(dag).find((n: any) => ni(n).toLowerCase() === curr.id.toLowerCase());
-          if (node) subgraph.nodes.push(isV2(node) ? { id: String(node[0]), name: node[1]||'', type: node[2]||'', description: node[3]||'', properties: np(node), states: ns(node), edges: nodeEdges(node) } : node);
+          const node = N(dag).find((n: any) => nodeMatches(n, curr.id));
+          const currId = node ? nodeId(node) : curr.id;
+          if (visitedNodes.has(currId) || curr.depth > depth) continue;
+          visitedNodes.add(currId);
+          if (node) subgraph.nodes.push(isV2(node) ? { id: nodeId(node), name: nodeName(node), type: nt(node), description: nd(node), properties: np(node), states: ns(node), edges: nodeEdges(node) } : node);
           const edges = E(dag).filter((e: any) =>
-            es(e).toLowerCase() === curr.id.toLowerCase() || et(e).toLowerCase() === curr.id.toLowerCase()
+            es(e).toLowerCase() === currId.toLowerCase() || et(e).toLowerCase() === currId.toLowerCase()
           );
           for (const e of edges) {
             const edgeKey = `${es(e)}→${et(e)}`;
@@ -172,7 +180,7 @@ export function serve(dir: string = '.'): void {
               visitedEdges.add(edgeKey);
               subgraph.edges.push(e);
             }
-            const next = es(e).toLowerCase() === curr.id.toLowerCase() ? et(e) : es(e);
+            const next = es(e).toLowerCase() === currId.toLowerCase() ? et(e) : es(e);
             if (!visitedNodes.has(next)) queue.push({ id: next, depth: curr.depth + 1 });
           }
         }
@@ -185,7 +193,8 @@ export function serve(dir: string = '.'): void {
         const q = (args.q || '').toLowerCase();
         const type = (args.type || '').toLowerCase();
         const results = N(dag).filter((n: any) =>
-          ni(n).toLowerCase().includes(q) && (!type || nt(n).toLowerCase().includes(type))
+          (nodeName(n).toLowerCase().includes(q) || nodeId(n).toLowerCase().includes(q) || nt(n).toLowerCase().includes(q)) &&
+          (!type || nt(n).toLowerCase().includes(type))
         );
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(results) }] } };
       }
@@ -210,10 +219,10 @@ export function serve(dir: string = '.'): void {
       if (name === 'schema') {
         const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const node = N(dag).find((n: any) => ni(n).toLowerCase() === (args.entity || '').toLowerCase());
+        const node = N(dag).find((n: any) => nodeMatches(n, args.entity || ''));
         if (!node) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Entity not found' } };
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
-          entity: ni(node),
+          entity: nodeName(node),
           properties: np(node),
           states: ns(node),
           lifecycle: nl(node),
