@@ -1,0 +1,314 @@
+{
+  "v": 2,
+  "p": "spec-platform",
+  "n": [
+    [
+      0,
+      "Node",
+      "entity",
+      "A typed node in the spec knowledge graph. Every entity, task, prediction, and concept is a Node.",
+      [
+        "id",
+        "s!",
+        "type",
+        "e!",
+        "name",
+        "s!",
+        "description",
+        "s!",
+        "properties",
+        "j!"
+      ],
+      [
+        "created",
+        "updated",
+        "archived"
+      ],
+      [
+        [
+          0,
+          "connects",
+          "N:M"
+        ],
+        [
+          4,
+          "embeds",
+          "1:1",
+          1
+        ]
+      ]
+    ],
+    [
+      1,
+      "Edge",
+      "relationship",
+      "A typed connection between two Nodes. Directional (source → target) with cardinality, cascade behavior, and invariants.",
+      [
+        "id",
+        "s!",
+        "source_id",
+        "s!",
+        "target_id",
+        "s!",
+        "verb",
+        "e!",
+        "cardinality",
+        "e!",
+        "required",
+        "b!",
+        "cascade",
+        "e!",
+        "invariants",
+        "s!"
+      ],
+      [
+        "active",
+        "deprecated"
+      ],
+      []
+    ],
+    [
+      2,
+      "Task",
+      "entity",
+      "A unit of work. Has dependencies, assignment, effort estimates, and a computed completion probability.",
+      [
+        "id",
+        "s!",
+        "name",
+        "s!",
+        "status",
+        "e!",
+        "priority",
+        "e!",
+        "estimated_hours",
+        "n!",
+        "actual_hours",
+        "n!",
+        "depends_on",
+        "s!",
+        "assigned_to",
+        "s!",
+        "completion_probability",
+        "n!"
+      ],
+      [
+        "specified",
+        "building",
+        "built",
+        "verified",
+        "shipped"
+      ],
+      [
+        [
+          2,
+          "depends_on",
+          "N:M"
+        ],
+        [
+          3,
+          "measures",
+          "1:N"
+        ]
+      ]
+    ],
+    [
+      3,
+      "Prediction",
+      "prediction",
+      "A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes.",
+      [
+        "id",
+        "s!",
+        "statement",
+        "s!",
+        "trigger",
+        "s!",
+        "timeframe",
+        "s!",
+        "confidence",
+        "n!",
+        "measurement",
+        "s!",
+        "actual_outcome",
+        "e!"
+      ],
+      [
+        "pending",
+        "resolved"
+      ],
+      [
+        [
+          2,
+          "measures",
+          "1:N"
+        ]
+      ]
+    ],
+    [
+      4,
+      "Vector",
+      "vector",
+      "A semantic embedding of a spec section. Used for similarity search, contradiction detection, and staleness checks.",
+      [
+        "id",
+        "s!",
+        "node_id",
+        "s!",
+        "content",
+        "s!",
+        "embedding",
+        "f!",
+        "model",
+        "e!"
+      ],
+      [
+        "active",
+        "stale"
+      ],
+      [
+        [
+          0,
+          "embeds",
+          "1:1",
+          1
+        ]
+      ]
+    ],
+    [
+      5,
+      "Event",
+      "event",
+      "A state-changing occurrence. Has a trigger, payload, preconditions, and postconditions.",
+      [
+        "id",
+        "s!",
+        "name",
+        "s!",
+        "trigger",
+        "s!",
+        "payload",
+        "j!",
+        "preconditions",
+        "s!",
+        "postconditions",
+        "s!",
+        "probability",
+        "n!"
+      ],
+      [
+        "specified",
+        "modeled",
+        "verified"
+      ],
+      []
+    ],
+    [
+      6,
+      "Compile",
+      "event",
+      "The compilation process. Reads all .dog files, parses entities and relationships, outputs a .dag graph with integrity hash and token savings report.",
+      [
+        "source_files",
+        "n!",
+        "output_hash",
+        "s!",
+        "token_savings_pct",
+        "n!"
+      ],
+      [
+        "running",
+        "completed",
+        "failed"
+      ],
+      [
+        [
+          7,
+          "produces",
+          "1:1"
+        ]
+      ]
+    ],
+    [
+      7,
+      "DAG",
+      "entity",
+      "The compiled graph output. A deterministic JSON structure with typed nodes, edges, integrity metadata, and provable token savings. Queryable by AI agents via MCP.",
+      [
+        "version",
+        "s!",
+        "sha256",
+        "s!",
+        "source_files",
+        "n!",
+        "token_savings_pct",
+        "n!"
+      ],
+      [
+        "current",
+        "stale"
+      ],
+      [
+        [
+          6,
+          "produces",
+          "1:1"
+        ]
+      ]
+    ],
+    [
+      8,
+      "dotdog will reach 200 PRs by July 2026",
+      "prediction",
+      "",
+      [],
+      [],
+      [],
+      [
+        0.8,
+        "2026-07-31",
+        "PR count exceeds 190",
+        "github.com/specdog/dotdog/pulls count"
+      ]
+    ],
+    [
+      9,
+      ".dag token savings will exceed 90% for spec-platform",
+      "prediction",
+      "",
+      [],
+      [],
+      [],
+      [
+        0.9,
+        "2026-08-01",
+        "spec-platform SPEC.dog grows past 15KB",
+        "dotdog tokens command on spec-platform"
+      ]
+    ],
+    [
+      10,
+      "First external user will adopt dotdog",
+      "prediction",
+      "",
+      [],
+      [],
+      [],
+      [
+        0.5,
+        "2026-09-01",
+        "GitHub star count exceeds 10",
+        "github.com/specdog/dotgod stargazers > 1 non-team member"
+      ]
+    ]
+  ],
+  "tk": {
+    "m": "chars/4",
+    "st": 9463,
+    "ct": 9453,
+    "dt": 739,
+    "sv": 92.2,
+    "cs": 92.2,
+    "saved": 8724
+  }
+}
