@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.2 — 2026-06-17
+
+- Fix parser hang on plain fenced code blocks in `.dog` prose
+- Add `kit init` coverage for built-in kits
+- Add missing SaaS kit constitution so generated kit projects validate
+
 ## 0.5.1 — 2026-06-17
 
 - Fix predictions parser: accept container format (### Predictions / ##### name) and any heading level (###/####/#####)

@@ -46,6 +46,21 @@ describe('parser', () => {
     expect(ast.kind).toBe('document');
   });
 
+  test('plain fenced blocks parse as prose', () => {
+    const ast = parse([
+      '## Product',
+      '',
+      '```bash',
+      'dotdog validate',
+      '```',
+      '',
+      'After validation, compile the graph.',
+    ].join('\n'));
+    const prose = ast.sections.flatMap(s => s.blocks.filter(b => b.kind === 'prose'));
+    expect(prose.length).toBeGreaterThan(0);
+    expect(prose.some(block => (block as any).content.includes('dotdog validate'))).toBe(true);
+  });
+
   test('parseToJSON', () => {
     const json = parseToJSON('### Entity: Test\n');
     const parsed = JSON.parse(json);

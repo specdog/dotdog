@@ -1,0 +1,8 @@
+# SaaS Platform Constitution
+
+## Core Rules
+
+1. Organizations own their workspace data.
+2. Users access data only through organization membership.
+3. Plan limits must be enforced before billable usage is accepted.
+4. Subscription state controls access to paid features.
