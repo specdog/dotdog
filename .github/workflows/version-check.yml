@@ -1,0 +1,45 @@
+name: Version Check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/dotdog/src/**'
+      - 'packages/dotdog/package.json'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check version bump
+        run: |
+          PR_VERSION=$(node -p "require('./packages/dotdog/package.json').version")
+          NPM_VERSION=$(npm view dotdog version 2>/dev/null || echo "0.0.0")
+
+          echo "PR version:  $PR_VERSION"
+          echo "npm version: $NPM_VERSION"
+
+          if [ "$PR_VERSION" = "$NPM_VERSION" ]; then
+            echo ""
+            echo "ERROR: version must be bumped in packages/dotdog/package.json"
+            echo "  Current npm: $NPM_VERSION"
+            echo "  PR version:  $PR_VERSION"
+            echo ""
+            echo "  Bug fix    → PATCH bump:  $NPM_VERSION → $(echo $NPM_VERSION | awk -F. '{print $1"."$2"."$3+1}')"
+            echo "  Feature    → MINOR bump:  $NPM_VERSION → $(echo $NPM_VERSION | awk -F. '{print $1"."$2+1".0"}')"
+            echo "  Breaking   → MAJOR bump:  $NPM_VERSION → $(echo $NPM_VERSION | awk -F. '{print $1+1".0.0"}')"
+            exit 1
+          fi
+
+          # Verify version is newer
+          if ! printf '%s\n%s\n' "$PR_VERSION" "$NPM_VERSION" | sort -V -C 2>/dev/null; then
+            echo ""
+            echo "ERROR: PR version ($PR_VERSION) must be greater than npm version ($NPM_VERSION)"
+            exit 1
+          fi
+
+          echo "✓ Version bumped: $NPM_VERSION → $PR_VERSION"
