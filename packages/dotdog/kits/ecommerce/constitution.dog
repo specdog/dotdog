@@ -1,0 +1,9 @@
+# E-Commerce Platform — Constitution
+
+## Core Rules
+
+- Inventory is source of truth — never oversell
+- Prices are immutable once an order is placed
+- Payment is atomic — charge and fulfill or refund
+- Customer data is encrypted at rest
+- Orders flow through defined state machine

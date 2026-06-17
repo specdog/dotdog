@@ -1,0 +1,98 @@
+# SaaS Platform — Data Model
+
+## Entities
+
+### Entity: Organization
+
+A workspace that contains projects and members.
+
+```yaml
+entity: Organization
+type: entity
+properties:
+  id:
+    type: string
+    required: true
+  name:
+    type: string
+    required: true
+  plan:
+    type: enum
+    required: true
+    values: [free, pro, enterprise]
+  seats:
+    type: number
+    required: true
+    default: 1
+states: [active, suspended, deleted]
+lifecycle: active → suspended → deleted
+```
+
+### Entity: User
+
+A person with access to one or more organizations.
+
+```yaml
+entity: User
+type: entity
+properties:
+  id:
+    type: string
+    required: true
+  email:
+    type: string
+    required: true
+  name:
+    type: string
+    required: true
+  role:
+    type: enum
+    required: true
+    values: [owner, admin, member]
+states: [active, invited, suspended]
+lifecycle: invited → active → suspended
+```
+
+### Entity: Subscription
+
+Billing plan for an organization.
+
+```yaml
+entity: Subscription
+type: entity
+properties:
+  id:
+    type: string
+    required: true
+  plan:
+    type: enum
+    required: true
+    values: [free, pro, enterprise]
+  price_cents:
+    type: number
+    required: true
+  billing_cycle:
+    type: enum
+    required: true
+    values: [monthly, annual]
+states: [active, past_due, canceled]
+lifecycle: active → past_due → canceled
+```
+
+### Relationship: Organization → User
+
+```yaml
+relationship: Organization → User
+verb: has_member
+cardinality: N:N
+required: true
+```
+
+### Relationship: Organization → Subscription
+
+```yaml
+relationship: Organization → Subscription
+verb: has
+cardinality: 1:1
+required: true
+```
