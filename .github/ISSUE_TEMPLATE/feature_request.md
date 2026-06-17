@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea for dotdog
+about: Suggest an improvement
 title: ''
 labels: enhancement
 assignees: ''
@@ -8,16 +8,16 @@ assignees: ''
 
 ## Problem
 
-A clear description of the problem this feature would solve.
+What problem does this solve?
 
-## Proposed solution
+## Proposal
 
-What you'd like to see.
+How should it work?
 
 ## Use case
 
-How you would use this.
+How would you use this?
 
-## Alternatives considered
+## Alternatives
 
-Other approaches you've thought about.
+Other approaches considered?
