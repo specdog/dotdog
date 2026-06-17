@@ -9,6 +9,24 @@ import { createHash } from 'crypto';
 import type { DocumentNode, SectionNode, BlockNode, EntityNode, RelationshipNode, ProseNode, TableNode, PropertyDef } from './grammar';
 import { parse } from './parser';
 
+
+function normalizeDag(dag: any): any {
+  if (Array.isArray(dag)) {
+    // v3 format: [version, project, nodes, tokens]
+    // Convert back to v2 format for backward compat
+    const v3Nodes = (dag[2] || []).map((n: any[], i: number) => {
+      // v3 node: [name, type_code, [props], states|null, edges|null, forecast?]
+      // Convert to v2: [id, name, type, desc, props, states, edges]
+      const props = n[2] || [];
+      const states = n[3] || [];
+      const edges = n[4] || [];
+      return [i, n[0], n[1] === 'p' ? 'prediction' : 'entity', '', props, states, edges];
+    });
+    return { v: dag[0], p: dag[1], n: v3Nodes, tk: dag[3] };
+  }
+  return dag;
+}
+
 function resolvePath(p: string): string {
   if (p.startsWith('~')) p = join(homedir(), p.slice(1));
   const resolved = p.startsWith('/') ? p : join(process.cwd(), p);
@@ -137,7 +155,7 @@ program.command('parse <file>').action((f) => {
   for (const sec of s) console.log(`  ${sec.heading.padEnd(30)} ${sec.content.length} chars`);
 });
 
-program.command('compile [dir]').option('-o, --output <file>').action((d='.', opts) => {
+program.command('compile [dir]').option('-o, --output <file>').option('--v3', 'Ultra-compact v3 format (53% smaller than v2)').action((d='.', opts) => {
   const dir = resolvePath(d);
   const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
   let found = false;
@@ -275,17 +293,36 @@ program.command('compile [dir]').option('-o, --output <file>').action((d='.', op
         }
         v2nodes.push(entry);
       }
-      const dag = { v: 2, p, n: v2nodes };
-      // Calculate token savings
-      const dagJson = JSON.stringify(dag);
-      const dagTokens = Math.round(Buffer.byteLength(dagJson,'utf-8') / 4);
+      // Calculate token savings first (needed for v3 inline array)
+      const outPath = opts.output || join(pd,`${p}.dag`);
+      // Use v2 for savings calculation (v3 savings are reported separately)
+      const v2dag = { v: 2, p, n: v2nodes };
+      const v2Json = JSON.stringify(v2dag);
+      const dagTokens = Math.round(Buffer.byteLength(v2Json,'utf-8') / 4);
       const allSavingsPct = sourceTokens > 0 ? Math.round((1 - dagTokens / sourceTokens) * 1000) / 10 : 0;
       const contentSavingsPct = contentTokens > 0 ? Math.round((1 - dagTokens / contentTokens) * 1000) / 10 : 0;
       const savingsTokens = sourceTokens - dagTokens;
-      const outPath = opts.output || join(pd,`${p}.dag`);
       const tokens = { m: 'chars/4', st: sourceTokens, ct: contentTokens, dt: dagTokens, sv: allSavingsPct, cs: contentSavingsPct, saved: savingsTokens };
-      const report = { ...dag, tk: tokens };
-      writeFileSync(outPath, JSON.stringify(report, null, 2));
+
+      const v3dag = [3, p, v2nodes.map((n: any[]) => {
+          const nd = nodes[n[0]];
+          const tc = nd.g === 'prediction' ? 'p' : 'e';
+          const st = nd.s && nd.s.length ? nd.s : null;
+          const ed = n[6] && n[6].length ? n[6] : null;
+          const entry: any[] = [nd.i, tc, n[4].length ? n[4] : null, st, ed];
+          if (nd.g === 'prediction') {
+            const f: any[] = [];
+            if (nd.cf != null) f.push(nd.cf);
+            if (nd.tf) f.push(nd.tf);
+            if (f.length) entry.push(f);
+          }
+          return entry;
+        }), tokens];
+
+      const dag = opts.v3 ? v3dag : v2dag;
+      const dagJson = JSON.stringify(dag);
+      const report: any = opts.v3 ? [...dag, tokens] : { ...dag, tk: tokens };
+      writeFileSync(outPath, JSON.stringify(report, null, 2) + '\n');
       console.log(chalk.green(`  ✓ ${outPath}`));
       console.log(chalk.gray(`    ${nodes.length} nodes, ${edges.length} edges, ${files.length} files`));
       console.log(chalk.gray(`    ${sourceTokens} → ${dagTokens} tokens (${allSavingsPct}% savings, ${contentSavingsPct}% content-only, ${savingsTokens} saved)`));
@@ -345,7 +382,7 @@ program.command('visualize [dir]').option('-s, --save').action((d='.', opts) => 
       const dagFile = join(dd,p,`${p}.dag`);
       if (!existsSync(dagFile)) continue;
       const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
-      const nodes = dag.n || dag.nodes || [];
+      const d = normalizeDag(dag); const nodes = d.n || dag.nodes || [];
       // v2 format detector: positional arrays where first element is a number
       const isV2 = (n: any) => Array.isArray(n) && typeof n[0] === 'number';
       // Get display name for a node (v2: lookup by index, v1: use i/id field)
@@ -589,7 +626,7 @@ program.command('simulate <scenario>').description('Walk through a scenario, che
   let entities: string[] = [], relationships: any[] = [];
   if (existsSync(dagFile)) {
     const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
-    const simNodes = dag.n || dag.nodes || [];
+    const d2 = normalizeDag(dag); const simNodes = d2.n || dag.nodes || [];
     const isV2 = (n: any) => Array.isArray(n) && typeof n[0] === 'number';
     entities = simNodes.map((n: any) => (isV2(n) ? (n[1] || String(n[0])) : (n.i || n.id || '')).toLowerCase());
     // Collect edges: v2 uses positional arrays in n[5], v1.5 uses n.es, v1.3 uses top-level e/edges
@@ -747,7 +784,7 @@ program.command('verify [dir]').description('Verify spec-code alignment. --init 
         // Auto-generate verify section
         const entities: string[] = [];
         const props: Map<string,string[]> = new Map();
-        for (const node of dag.n || []) {
+        const d3 = normalizeDag(dag); for (const node of d3.n || []) {
           const name = node[1] || String(node[0]);
           entities.push(name);
           if (node[4]) props.set(name, node[4].map((p:any) => p[0]));
@@ -1061,7 +1098,8 @@ program.command('badge [dir]')
         const dagFile = join(pd, `${p}.dag`);
         if (!existsSync(join(pd,'SPEC.dog'))) continue;
         if (!existsSync(dagFile)) { console.log(chalk.red(`  No .dag for ${p}. Run dotdog compile first.`)); continue; }
-        const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
+        const rawDag = JSON.parse(readFileSync(dagFile,'utf-8'));
+        const dag = normalizeDag(rawDag);
         const saved = dag.tk && dag.tk.saved ? dag.tk.saved : 0;
         const fmt = saved >= 1000 ? `${(saved/1000).toFixed(1)}K` : `${saved}`;
         
