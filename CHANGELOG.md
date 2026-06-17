@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0 — 2026-06-17
+
+- verify command: auto-generate spec-code mappings, detect drift
+- kit list command: show available templates
+- MCP entity name lookup: support dashed names, schema, traverse tools
+- SaaS and e-commerce kits
+- Adoption guide by @WilliamK112
+- 20 labels, improved templates, injection scanner
+
 ## 0.4.1 — 2026-06-16
 
 - Expanded docs: tutorial, FAQ, integrations, use cases
