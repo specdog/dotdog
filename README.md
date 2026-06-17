@@ -2,6 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/dotdog)](https://www.npmjs.com/package/dotdog)
 [![npm downloads](https://img.shields.io/npm/dm/dotdog)](https://www.npmjs.com/package/dotdog)
+[![spec savings](https://raw.githubusercontent.com/specdog/dotdog/main/dotdog-badge.svg)](https://github.com/specdog/dotdog)
 [![License: MIT](https://img.shields.io/npm/l/dotdog)](https://github.com/specdog/dotdog/blob/main/LICENSE)
 [![CI](https://github.com/specdog/dotdog/actions/workflows/test.yml/badge.svg)](https://github.com/specdog/dotdog/actions)
 

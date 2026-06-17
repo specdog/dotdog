@@ -1034,4 +1034,60 @@ kitCmd.command('init <kit>').description('Init a project from a kit').option('-p
   console.log(chalk.gray(`  Run: dotdog validate`));
 });
 
+
+
+program.command('badge [dir]')
+  .description('Generate dotdog-badge.svg (shields.io style) showing savings')
+  .action((d: string = '.') => {
+    const dir = resolvePath(d);
+    const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+    let found = false;
+    for (const dd of dirs) {
+      if (!existsSync(dd)) continue;
+      const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+      for (const p of projects) {
+        const pd = join(dd,p);
+        const dagFile = join(pd, `${p}.dag`);
+        if (!existsSync(join(pd,'SPEC.dog'))) continue;
+        if (!existsSync(dagFile)) { console.log(chalk.red(`  No .dag for ${p}. Run dotdog compile first.`)); continue; }
+        const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
+        const savings = dag.tk && dag.tk.sv ? Math.round(dag.tk.sv) : 0;
+        
+        const label = 'spec savings';
+        const value = `${savings}%`;
+        const color = savings > 90 ? '#4c1' : savings > 70 ? '#dfb317' : '#e05d44';
+        
+        const labelLen = Math.round(label.length * 7.2);
+        const valueLen = Math.round(value.length * 7.2);
+        const leftW = Math.max(labelLen + 10, 70);
+        const rightW = Math.max(valueLen + 10, 40);
+        const totalW = leftW + rightW;
+        const leftX = leftW / 2 * 10;
+        const rightX = (leftW + rightW / 2) * 10;
+        
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="20" role="img" aria-label="${label}: ${value}">
+  <title>${label}: ${value}</title>
+  <linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
+  <clipPath id="r"><rect width="${totalW}" height="20" rx="3" fill="#fff"/></clipPath>
+  <g clip-path="url(#r)">
+    <rect width="${leftW}" height="20" fill="#555"/>
+    <rect x="${leftW}" width="${rightW}" height="20" fill="${color}"/>
+    <rect width="${totalW}" height="20" fill="url(#s)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="110">
+    <g transform="scale(.1)">
+      <text x="${leftX}" y="140" textLength="${labelLen * 10}">${label}</text>
+      <text x="${rightX}" y="140" textLength="${valueLen * 10}">${value}</text>
+    </g>
+  </g>
+</svg>`;
+        writeFileSync(join(dir, 'dotdog-badge.svg'), svg);
+        console.log(chalk.green(`  \u2713 dotdog-badge.svg  (${label}: ${value})`));
+        found = true;
+      }
+    }
+    if (!found) console.log(chalk.yellow('No projects found. Run dotdog init first.'));
+  });
+
+
 program.parse();
