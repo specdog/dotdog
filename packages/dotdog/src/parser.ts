@@ -4,15 +4,16 @@
 import type {
   ASTNode, DocumentNode, SectionNode, BlockNode,
   EntityNode, RelationshipNode, EventNode, PredictionNode,
-  PropertyDef, ProseNode, TableNode,
+  PropertyDef, ProseNode, TableNode, ParseError,
 } from './grammar';
 
 // --- Main entry ---
 
 export function parse(source: string): DocumentNode {
   const lines = source.split('\n');
-  const sections = parseSections(lines);
-  return { kind: 'document', sections };
+  const errors: ParseError[] = [];
+  const sections = parseSections(lines, errors);
+  return { kind: 'document', sections, errors };
 }
 
 export function parseToJSON(source: string): string {
@@ -22,7 +23,7 @@ export function parseToJSON(source: string): string {
 
 // --- Section parser ---
 
-function parseSections(lines: string[]): SectionNode[] {
+function parseSections(lines: string[], errors: ParseError[]): SectionNode[] {
   const sections: SectionNode[] = [];
   let i = 0;
 
@@ -31,7 +32,7 @@ function parseSections(lines: string[]): SectionNode[] {
   for (let j = 0; j < lines.length; j++) {
     if (/^##\s/.test(lines[j])) { firstHeading = j; break; }
   }
-  const rootBlocks = parseBlocks(lines, 0, firstHeading);
+  const rootBlocks = parseBlocks(lines, 0, firstHeading, errors);
   if (rootBlocks.length > 0) {
     sections.push({
       kind: 'section',
@@ -57,7 +58,7 @@ function parseSections(lines: string[]): SectionNode[] {
 
       // Find end of section (next heading of same or higher level)
       const end = findSectionEnd(lines, i, level);
-      const blocks = parseBlocks(lines, sectionStart, end);
+      const blocks = parseBlocks(lines, sectionStart, end, errors);
       
       sections.push({
         kind: 'section',
@@ -86,7 +87,7 @@ function findSectionEnd(lines: string[], start: number, currentLevel: number): n
 
 // --- Block parser ---
 
-function parseBlocks(lines: string[], start: number, end: number): BlockNode[] {
+function parseBlocks(lines: string[], start: number, end: number, errors?: ParseError[]): BlockNode[] {
   const blocks: BlockNode[] = [];
   let i = start;
 
@@ -127,7 +128,14 @@ function parseBlocks(lines: string[], start: number, end: number): BlockNode[] {
       while (yamlEnd < end && !lines[yamlEnd].startsWith('```')) yamlEnd++;
       if (yamlEnd < end) {
         const yamlContent = lines.slice(i + 1, yamlEnd);
-        const yaml = parseSimpleYAML(yamlContent);
+        let yaml: Record<string, unknown>;
+        try {
+          yaml = parseSimpleYAML(yamlContent);
+        } catch (e: any) {
+          if (errors) errors.push({ message: `YAML parse error: ${e.message}`, line: i + 1, context: lines[i-1]?.trim() || '(unknown)' });
+          i = yamlEnd + 1;
+          continue;
+        }
         if (yaml.prediction) {
           blocks.push({
             kind: 'prediction',
@@ -211,7 +219,14 @@ function parseBlocks(lines: string[], start: number, end: number): BlockNode[] {
       while (yamlEnd < end && !lines[yamlEnd].startsWith('```')) yamlEnd++;
       if (yamlEnd < end && yamlEnd > i + 1) {
         const yamlContent = lines.slice(i + 1, yamlEnd);
-        const yaml = parseSimpleYAML(yamlContent);
+        let yaml: Record<string, unknown>;
+        try {
+          yaml = parseSimpleYAML(yamlContent);
+        } catch (e: any) {
+          if (errors) errors.push({ message: `YAML parse error: ${e.message}`, line: i + 1, context: lines[i-1]?.trim() || '(unknown)' });
+          i = yamlEnd + 1;
+          continue;
+        }
         const key = yaml.prediction ? 'prediction' : yaml.entity ? 'entity' : yaml.event ? 'event' : (yaml.relationship || yaml.verb) ? 'relationship' : null;
         if (key) {
           if (key === 'prediction') {
@@ -311,7 +326,17 @@ function parseStructuredBlock(
   }
   i++; // skip closing ```
 
-  const yaml = parseSimpleYAML(yamlLines);
+  let yaml: Record<string, unknown> = {};
+  try {
+    yaml = parseSimpleYAML(yamlLines);
+  } catch (e: any) {
+    if (errors) errors.push({ message: `YAML parse error: ${e.message}`, line: start + 1, context: `${kind}: ${headerRest}` });
+    // Return a minimal node so parsing continues
+    return {
+      node: { kind: 'entity', name: headerRest, description, type: 'node', properties: {}, states: [], lifecycle: [], yaml: {}, lineStart: start + 1, lineEnd: i },
+      nextLine: i,
+    };
+  }
 
   // Build the appropriate node
   if (kind === 'entity') {
