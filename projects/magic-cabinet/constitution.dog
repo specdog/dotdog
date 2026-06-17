@@ -1,0 +1,40 @@
+# Magic Cabinet — Constitution
+
+> Predictive kitchen cabinet layout engine. Given room measurements and customer preferences, generates buildable layouts, material assignments, and installer-facing build sheets. The spec IS the prediction engine.
+
+## Core Principles
+
+1. **The spec is the prediction engine.** Every entity, relationship, and constraint is encoded at sufficient granularity that an AI can simulate outcomes: will this layout fit? Will the installer find it buildable? Will the customer understand it?
+2. **Constraints are physical, not arbitrary.** Cabinet widths are discrete (50mm increments). Obstacles block placement. Wall length is finite. These are not business rules — they're physics. The spec encodes physics.
+3. **Uncertainty is explicit.** Every assumption has a confidence, basis, falsifiability condition, and consequence-if-wrong. Every prediction has a trigger, timeframe, and measurement. Wrong predictions are data — they improve the model.
+4. **The installer is the final validator.** No matter how good the layout engine, the installer on-site is ground truth. The system must accept installer corrections gracefully: re-plan affected walls, not whole rooms.
+5. **Local-first, $0 MVP.** SQLite via bun:sqlite. MCP via stdio. No cloud dependency for core features. Cloud is for teams.
+6. **Material is a first-class entity.** Lead times, stock levels, discontinuation risk — these affect layout feasibility. The spec models supply chain, not just geometry.
+
+## Scope
+
+| IN | OUT |
+|----|-----|
+| Measurement input | Pricing |
+| Constraint validation | Ordering |
+| Layout generation | 3D rendering |
+| Material assignment | Customer portal |
+| Installer-facing build sheet | Authentication |
+
+## Tech Constraints
+
+| Area | Constraint | Reason |
+|------|-----------|--------|
+| Runtime | Bun ≥ 1.3 | TypeScript-native, built-in SQLite. One tool. |
+| Database | bun:sqlite (embedded) | Zero dependencies. Upgrades to Postgres for cloud. |
+| MCP | stdio transport | $0 hosting. AI agents connect locally. |
+| Language | TypeScript strict | One language. No context switching. |
+| Package manager | Bun (built-in) | No npm, no pnpm, no yarn. |
+
+## Governance
+
+- Spec files in `projects/magic-cabinet/` define this product.
+- Every PR must update specs before code.
+- `dotdog validate` must pass before merge.
+- Predictions are scored at project milestones. Wrong predictions are not failures — they are data.
+- Layout engine must be testable without hardware: pure functions, deterministic outputs.

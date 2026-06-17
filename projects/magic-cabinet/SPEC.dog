@@ -1,0 +1,379 @@
+# SPEC — Magic Cabinet (the product)
+
+> A predictive kitchen cabinet layout engine. Customers measure their kitchen. The layout engine generates buildable cabinet placements. Installers receive build sheets. AI agents query via MCP.
+
+---
+
+## Product
+
+Homeowners and contractors measure kitchen dimensions. The Magic Cabinet engine validates constraints, generates cabinet layouts, assigns materials, and produces installer-facing build sheets. Wrong predictions make the model better. The installer on-site is the final validator.
+
+### Flow 1: Customer measures kitchen
+
+```
+Customer measures kitchen with laser tool
+  → Creates Room "My Kitchen" → room.state = draft
+  → Adds 4 Walls with length and height → wall.state = measured
+  → Marks obstacles: windows, doors, range, sink → wall.state = has_obstacles
+  → Requests layout: style=modern, budget=standard
+  → Layout engine generates cabinet placements
+  → Customer reviews, confirms → cabinets.state = confirmed → room.state = locked
+```
+
+### Flow 2: Installer receives build sheet
+
+```
+Room is locked, all cabinets confirmed, materials assigned
+  → Build sheet generated: wall-by-wall cabinet list with positions
+  → Material list: quantities, lead times, stock status
+  → Installer arrives on site
+  → If obstacle missed → reports via app → layout re-plans affected wall only
+  → Cabinets installed → cabinet.state = installed
+```
+
+### Flow 3: AI agent queries specs (MCP)
+
+```
+Developer: "Add 800mm base cabinet option"
+  → AI Agent queries MCP: getEntity("Cabinet")
+  → Sees width constraint: 150-1200, step 50
+  → 800mm is not in the set
+  → AI Agent: "Constraint violation: 800mm is not a valid step. Nearest: 750mm or 850mm."
+```
+
+---
+
+## Capabilities
+
+### Capability: generate-layout
+
+Given a room with measured walls, place cabinets automatically following design rules.
+
+```yaml
+capability: generate-layout
+actor: Layout Engine (system)
+inputs:
+  room_id: string (required)
+  style_preference: enum[modern, traditional, transitional, farmhouse] (required)
+  budget_tier: enum[economy, standard, premium] (required)
+outputs:
+  walls: Wall[] (with cabinet placements)
+  unfilled_gaps: {wall_id: string, gap_mm: number}[] (spaces too small for standard cabinets)
+preconditions:
+  - room.state >= measured
+  - All walls have length and height
+  - At least one material exists per budget tier
+postconditions:
+  - Every wall has cabinets placed OR is flagged as unfillable
+  - Every cabinet has a valid material
+  - No obstacles are covered
+  - Cabinet-to-cabinet gaps <= 50mm
+error_states:
+  - room_too_small: room total linear length < 1500mm
+  - no_materials: no material matches style + budget
+  - impossible_layout: walls have obstacles preventing any valid placement
+```
+
+### Capability: re-plan-wall
+
+Re-plan a single wall after installer discovers missed obstacle. Does not affect other walls.
+
+```yaml
+capability: re-plan-wall
+actor: Layout Engine (system)
+inputs:
+  wall_id: string (required)
+  new_obstacle_id: string (required)
+outputs:
+  updated_cabinets: Cabinet[]
+  removed_cabinets: Cabinet[]
+  new_gaps: {gap_mm: number}[]
+preconditions:
+  - room.state === locked
+  - new obstacle does not overlap existing obstacles
+postconditions:
+  - Affected wall has valid cabinet placement
+  - Removed cabinets flagged for reorder if already manufactured
+error_states:
+  - unfillable_wall: no valid cabinet placement possible with new obstacle
+```
+
+---
+
+## Constraints
+
+```yaml
+constraint: cabinet-widths-discrete
+  type: invariant
+  statement: Cabinet widths MUST be from the predefined set in 50mm increments (150, 200, 250, ..., 1200)
+  enforcement: strict
+  violation_consequence: Layout rejected. No custom widths.
+
+constraint: no-obstacle-overlap
+  type: invariant
+  statement: No cabinet may overlap any obstacle on its wall. Cabinet position + width must not intersect obstacle position + width.
+  enforcement: strict
+  violation_consequence: Layout rejected. Physically impossible.
+
+constraint: total-fill
+  type: business_rule
+  statement: Total cabinet width on a wall MUST <= wall.length. Unfilled space is acceptable but must be reported.
+  enforcement: strict
+  violation_consequence: Layout rejected. Cabinets cannot extend beyond wall.
+
+constraint: material-availability
+  type: business_rule
+  statement: Cabinets may use available or backordered materials. Discontinued materials are blocked.
+  enforcement: strict
+  violation_consequence: Cabinet placement blocked until material reassigned.
+
+constraint: sink-base-position
+  type: business_rule
+  statement: A sink-base cabinet MUST be placed where a sink obstacle exists on the wall, centered on the obstacle.
+  enforcement: soft (warn if violated, allow override)
+  violation_consequence: Warning shown. Installer will flag during build.
+
+constraint: measurement-confidence
+  type: invariant
+  statement: Layout acceptance probability MUST be weighted by measurement method. Laser > tape > photo_estimate > unknown.
+  enforcement: soft
+  violation_consequence: Layout generated but flagged with confidence warning for photo_estimate or unknown methods.
+```
+
+---
+
+## Uncertainty
+
+### Assumptions
+
+```yaml
+assumption: Installers can handle gaps <= 50mm with filler strips
+  confidence: high
+  basis: Industry standard. All cabinet manufacturers produce filler strips in 25mm increments.
+  falsifiable: true
+  test: Survey 50 installers: "Can you handle 50mm gap with standard filler?"
+  if_wrong: Maximum allowable gap drops to 25mm. Layout engine must fit cabinets more tightly.
+
+assumption: Users measure room dimensions within +/- 5mm accuracy
+  confidence: medium
+  basis: Consumer laser measures are common. No data on our userbase yet.
+  falsifiable: true
+  test: Compare first 100 submitted measurements to on-site installer verification.
+  if_wrong: Add 10mm tolerance buffer to all constraints. Or require professional measurement.
+
+assumption: Material lead times from supplier are accurate within +/- 2 days
+  confidence: low
+  basis: Supplier claims 14-day lead time. No order history to verify.
+  falsifiable: true
+  test: Track actual delivery dates for first 50 orders.
+  if_wrong: Add buffer to project timeline. Flag supplier as unreliable. Source backup material.
+
+assumption: Customers understand the difference between base/wall/tall cabinet types
+  confidence: speculative
+  basis: None. We haven't tested customer comprehension.
+  falsifiable: true
+  test: Show 10 customers a layout. Ask them to identify base vs wall cabinets.
+  if_wrong: Add visual labels to layout view. Remove jargon from customer-facing output.
+```
+
+### Outcome Sets (Probabilistic Branches)
+
+```yaml
+outcome_set: installer-revision-rate
+  description: Probability that an installer must modify a layout on-site
+  branches:
+    no_changes: 0.40
+    minor_filler_adjustment: 0.35
+    cabinet_resized: 0.15
+    layout_rejected: 0.10
+  basis: Industry benchmark from NKBA installer survey
+  sensitivity: Most affected by measurement accuracy assumption. If measurement error >5mm, layout_rejected doubles.
+
+outcome_set: material-delay-impact
+  description: How material backorders affect project completion
+  branches:
+    on_time: 0.70
+    delayed_1_week: 0.15
+    delayed_2_weeks: 0.10
+    delayed_4_plus_weeks: 0.05
+  basis: Supplier SLA data, adjusted for industry trends
+  sensitivity: If in-stock rate drops below 85%, on_time drops to 0.40.
+
+outcome_set: first-layout-acceptance
+  description: Will the customer accept the first auto-generated layout?
+  branches:
+    accept_as_is: 0.25
+    accept_with_minor_changes: 0.45
+    reject_wants_redesign: 0.20
+    reject_switches_to_competitor: 0.10
+  basis: Competitor benchmarks (IKEA planner: 55% first-acceptance, ProKitchen: 70%)
+  sensitivity: Most affected by style-preference accuracy.
+```
+
+---
+
+## Failure Modes
+
+```yaml
+failure: wall-measurement-wrong
+  description: Customer submits measurements off by >50mm
+  cause: Using tape measure instead of laser, measuring to trim instead of drywall, transposing digits
+  probability: 0.15 (per project)
+  impact: high
+  detection: Installer reports discrepancy at site visit. Layout validation doesn't catch this (measurement IS the input).
+  recovery: Re-plan layout with corrected measurements. Cabinet order may need revision.
+  prevention: Require photo upload of laser measure reading. Add "measure twice" prompt. Offer professional measurement.
+
+failure: material-discontinued-mid-project
+  description: Material becomes discontinued after layout is locked
+  cause: Supplier discontinues SKU without notice
+  probability: 0.01 (per material per month)
+  impact: high
+  detection: Weekly supplier catalog sync. Layout engine flags affected cabinets.
+  recovery: Suggest nearest-match alternative material. Auto-reassign if customer approves.
+  prevention: Prefer materials with >2 year track record. Flag materials <6 months old as "new — risk of discontinuation."
+
+failure: obstacle-missed
+  description: Installer finds an obstacle not in the original measurements
+  cause: Customer missed outlet, pipe behind drywall, appliance dimensions wrong
+  probability: 0.20 (per project)
+  impact: medium
+  detection: Installer reports on site. Must re-plan affected wall.
+  recovery: Installer marks new obstacle in app. Layout engine re-generates for affected wall only.
+  prevention: Checklist of common hidden obstacles. Require photo of each wall before layout lock.
+```
+
+### Edge Cases
+
+```yaml
+edge_case: corner-cabinet-on-both-walls
+  description: Two corner cabinets placed where walls meet — they conflict for the corner space
+  expected_behavior: Corner space allocated to one cabinet. Second cabinet starts after corner depth.
+  test: Place corner cabinet on wall A. Place second corner cabinet on adjacent wall B. Verify no overlap.
+
+edge_case: window-height-conflict
+  description: Wall cabinet placed where window exists — cabinet bottom is below window top
+  expected_behavior: Cabinet blocked. Windows occupy full vertical space from sill to top of wall.
+  test: Place wall cabinet at position overlapping window. Verify rejection.
+
+edge_case: zero-length-wall
+  description: Room has wall with length 0mm (data entry error or genuinely no wall)
+  expected_behavior: Wall rejected at validation. Must have length > 0.
+  test: Submit room with wall length 0. Verify validation error.
+
+edge_case: all-discontinued-materials
+  description: All materials in the system are discontinued. No valid material exists for cabinet assignment.
+  expected_behavior: Layout generation fails with clear error. Admin must add materials.
+  test: Set all materials to discontinued. Try to generate layout. Verify error message.
+```
+
+---
+
+## Scenarios
+
+### Scenario: first-time-user-measures-kitchen
+
+New user measures their L-shaped kitchen and submits for layout.
+
+```
+Initial: Room is draft, no walls, no measurements
+
+Steps:
+  1. User creates Room "My Kitchen" → room.state = draft
+  2. User adds Wall "North" (laser-measured, 3600mm) → wall.state = measured
+  3. User adds Wall "East" (laser-measured, 2400mm) → wall.state = measured
+  4. User adds Obstacle "Sink Window" on North at 800mm, width 1200mm → wall.state = has_obstacles
+  5. User adds Obstacle "Range" on East at 600mm, width 900mm → wall.state = has_obstacles
+  6. User requests layout: style=modern, budget=standard
+  7. Engine places: sink-base at North[200mm], base cabinets flanking window, corner at east junction,
+     base cabinets left of range, tall pantry right of range
+
+Predicted outcome: Valid layout with 85% wall coverage. 50mm filler gap on North, 100mm on East. 8-10 cabinets.
+Failure conditions: Layout rejected due to obstacle placement. Total fill < 60%. Corner conflict.
+```
+
+### Scenario: material-backorder-during-project
+
+Material goes backordered after layout is locked.
+
+```
+Initial: Room locked, all cabinets assigned "white-shaker-oak", project scheduled for 14-day install
+
+Steps:
+  1. event material.backordered fires for "white-shaker-oak" with new lead time 28 days
+  2. All cabinets using this material flagged
+  3. Project timeline extended by 14 days (28 - original 14)
+  4. Customer notified of delay
+  5. Option A: customer accepts delay → project rescheduled
+  6. Option B: customer switches to "white-shaker-maple" (lead time 7 days) → material reassigned
+
+Predicted outcome: 60% accept delay. 40% switch materials.
+Failure conditions: No alternative material in same style/price tier. Customer cancels.
+```
+
+### Scenario: installer-finds-missed-obstacle
+
+Installer discovers a pipe not in original measurements.
+
+```
+Initial: Room locked, all cabinets ordered, installer on site
+
+Steps:
+  1. Installer discovers 150mm pipe at 2400mm on North wall
+  2. Installer reports obstacle via app → new Obstacle created, wall.state = has_obstacles
+  3. Layout engine re-runs for affected wall only
+  4. Cabinet at 2300-2900mm conflicts with pipe at 2400-2550mm
+  5. Engine removes conflicting cabinet, fills remaining space with smaller cabinets if possible
+  6. If gap > 300mm after re-plan, installer gets authorization to use filler
+
+Predicted outcome: 70% resolved same-day with filler. 25% require new cabinet order (1-2 week delay). 5% full wall re-plan.
+Failure conditions: Multiple missed obstacles on same wall. No valid replacement cabinet widths available.
+```
+
+---
+
+## Predictions
+
+```yaml
+prediction: First 50 customer layouts average 2.3 revision cycles before acceptance
+  trigger: Product launch
+  timeframe: 90 days post-launch
+  confidence: 0.65
+  measurement: Average revision count per project in database
+  basis: IKEA planner average 2.8 revisions. We expect slightly better due to constraint engine.
+
+prediction: Material lead time variance will exceed supplier claims by 40%
+  trigger: First 50 material orders placed
+  timeframe: 180 days post-launch
+  confidence: 0.55
+  measurement: Compare actual delivery date to quoted lead time
+  basis: Every supplier we've talked to has optimistic lead times. Industry standard is 30-50% variance.
+
+prediction: Obstacle-missed rate will drop from 20% to 8% after photo-upload requirement
+  trigger: Photo upload feature released
+  timeframe: 90 days after feature launch
+  confidence: 0.50
+  measurement: Compare installer-reported missed-obstacle rate before vs after feature
+  basis: Assumes users actually upload photos. Adoption rate of photo feature is unknown.
+```
+
+---
+
+## Open Questions
+
+| Question | Importance | Owner | Deadline |
+|----------|-----------|-------|----------|
+| What is the actual measurement accuracy of our user base? | blocking | Justin | 2026-07-01 |
+| Can we source a backup material supplier with <14 day lead time? | high | Eric | 2026-08-01 |
+| Will installers adopt the in-app obstacle reporting flow or just call the office? | medium | Justin | 2026-09-01 |
+
+---
+
+## Version
+
+```yaml
+version: 0.1.0
+date: 2026-06-12
+source: 5fa3bbf (original Magic Cabinet spec, 2020 design)
+converted: 2026-06-16 (to .dog format)
+```
