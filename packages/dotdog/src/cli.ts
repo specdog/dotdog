@@ -1141,4 +1141,26 @@ program.command('badge [dir]')
   });
 
 
+
+program.command('convert <file>')
+  .description('Convert an .md file to .dog — rename + validate')
+  .action((f: string) => {
+    const { existsSync, renameSync, readFileSync, writeFileSync } = require('fs');
+    const { join, dirname, basename } = require('path');
+    const path = resolvePath(f);
+    if (!existsSync(path)) { console.log(chalk.red(`File not found: ${f}`)); return; }
+    if (!path.endsWith('.md')) { console.log(chalk.yellow(`Only .md files can be converted.`)); return; }
+    const dogPath = path.replace(/\.md$/, '.dog');
+    if (existsSync(dogPath)) { console.log(chalk.yellow(`${dogPath} already exists.`)); return; }
+    const content = readFileSync(path, 'utf-8');
+    renameSync(path, dogPath);
+    // Ensure at least one ## heading for format compliance
+    if (!content.match(/^##\s/m)) {
+      const stub = '## Product\n\n(Describe your product here)\n';
+      writeFileSync(dogPath, stub + content);
+    }
+    console.log(chalk.green(`  \u2713 ${basename(path)} \u2192 ${basename(dogPath)}`));
+    console.log(chalk.gray('  Run: dotdog validate'));
+  });
+
 program.parse();
