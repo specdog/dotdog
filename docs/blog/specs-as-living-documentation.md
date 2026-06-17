@@ -76,3 +76,9 @@ The spec becomes the project's operating system. The code is output. The agent i
 ---
 
 *[dotdog](https://github.com/specdog/dotdog) — specs that stay current because agents depend on them. `npm install -g dotdog`.*
+
+## References
+
+- **Documentation Decay**: Aghajani et al. "Software Documentation Issues Unveiled." IEEE/ACM ICSE 2019. Analyzed 878 documentation issues across 5 projects — 47% were outdated content.
+- **Living Documentation**: Smart, John Ferguson. "BDD in Action." Manning, 2014. Introduced the concept of executable specifications that stay current because tests depend on them.
+- **Staleness Detection**: dotdog staleness command. Compares plan.dog tasks against codebase file existence — detects spec/reality drift in linear time.

@@ -84,3 +84,9 @@ Spec-driven development gives agents the same deterministic foundation that comp
 ---
 
 *[dotdog](https://github.com/specdog/dotdog) — write specs, compile graphs, serve to agents. `npm install -g dotdog`.*
+
+## References
+
+- **MCP Protocol**: Anthropic. "Model Context Protocol." modelcontextprotocol.io, 2024. Open standard for AI agent tool integration.
+- **Agent Hallucination**: Xu et al. "Hallucination is Inevitable: An Innate Limitation of Large Language Models." arXiv:2401.11817, 2024. Proves hallucination is a mathematical inevitability in LLMs.
+- **Karpathy LLM Wiki**: Karpathy, Andrej. "LLM Wiki." gist.github.com/karpathy, 2026. Architecture for persistent, queryable agent knowledge bases.

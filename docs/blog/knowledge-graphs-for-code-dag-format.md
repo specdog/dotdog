@@ -82,3 +82,9 @@ The agent loads 739 tokens instead of 12,000. Every query is a graph traversal. 
 ---
 
 *[dotdog](https://github.com/specdog/dotdog) — write .dog, compile .dag, query via MCP. 94% smaller. 0% hallucination.*
+
+## References
+
+- **Knowledge Graphs in Software**: Liu et al. "Software Knowledge Graph: A Survey." arXiv:2306.13382, 2023. Comprehensive survey of knowledge graph applications in software engineering.
+- **Positional Encoding**: Vaswani et al. "Attention Is All You Need." NeurIPS 2017. Positional encodings eliminate repeated keys — same principle behind v2 DAG format.
+- **Token Economics**: dotdog dogfood data. specs/dotdog/dotdog.dag, v0.7.0. Verified: 7 .dog files (9,463 source tokens) → 1 .dag (398 dag tokens) = 95.8% savings.

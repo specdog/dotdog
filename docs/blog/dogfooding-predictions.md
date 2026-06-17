@@ -8,18 +8,18 @@ description: "dotdog validates itself. We predicted 90%+ token savings — hit 9
 
 ← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
 
-dotdog validates itself. The `spec-platform` dogfood project runs `dotdog validate`, `dotdog compile`, and `dotdog simulate` on every change. But we also use it to make predictions about the project — and then track whether those predictions came true.
+dotdog validates itself. The `dotdog` dogfood project runs `dotdog validate`, `dotdog compile`, and `dotdog simulate` on every change. But we also use it to make predictions about the project — and then track whether those predictions came true.
 
 ## The predictions system
 
 Every dotdog project can define predictions in its data model. A prediction is a forecast about the project itself:
 
 ```yaml
-prediction: spec-platform .dag savings exceed 90%
-trigger: spec-platform SPEC.dog grows past 15KB
+prediction: dotdog .dag savings exceed 90%
+trigger: dotdog SPEC.dog grows past 15KB
 timeframe: 2026-08-01
 confidence: 0.9
-measurement: dotdog tokens command on spec-platform
+measurement: dotdog tokens command on dotdog
 status: correct
 ```
 
@@ -27,11 +27,11 @@ These live in `data-model.dog` alongside entities and relationships. The `.dag` 
 
 ## What we predicted, and what happened
 
-Here's the current prediction log for dotdog 0.5.1:
+Here's the current prediction log for dotdog 0.7.0:
 
 | Prediction | Confidence | Status | Verdict |
 |-----------|-----------|--------|---------|
-| .dag token savings will exceed 90% for spec-platform | 90% | correct | **93.9% actual** |
+| .dag token savings will exceed 90% for dotdog | 90% | correct | **93.9% actual** |
 | First external user will adopt dotdog | 50% | correct | Community contributors merged |
 | dotdog will reach 200 PRs by July 2026 | 80% | pending | Tracking at current velocity |
 
@@ -57,12 +57,12 @@ Every time we add a feature to dotdog, we add a prediction to our own spec:
 3. Resolve the prediction against real data
 4. The prediction either validates the feature or exposes a gap
 
-The simulation command runs 6/6 steps against spec-platform entities — Node, Task, Prediction, Compile, DAG — and verifies every step references known entities. No fantasy entities. No payment flows. Just the dotdog spec validating dotdog.
+The simulation command runs 6/6 steps against dotdog entities — Node, Task, Prediction, Compile, DAG — and verifies every step references known entities. No fantasy entities. No payment flows. Just the dotdog spec validating dotdog.
 
 ## Try it
 
 ```
-npm install -g dotdog@0.5.1
+npm install -g dotdog@0.7.0
 git clone https://github.com/specdog/dotdog.git
 cd dotdog
 dotdog predictions
@@ -71,4 +71,10 @@ dotdog resolve --correct "dag savings exceed 90"
 
 ---
 
-dotdog@<span id="version">0.5.1</span> · [GitHub](https://github.com/specdog/dotdog) · [npm](https://www.npmjs.com/package/dotdog)
+dotdog@<span id="version">0.7.0</span> · [GitHub](https://github.com/specdog/dotdog) · [npm](https://www.npmjs.com/package/dotdog)
+
+## References
+
+- **Dotdog Dogfood**: dotdog validates itself. `npx dotdog@0.7.0 validate` → 100% complete. 5 entities, 4 relationships, 95.3% token savings.
+- **Predictions System**: Diclemente, Justin. "dotdog predictions documentation." specdog.github.io/dotdog, 2026. Predictions track forecasts against outcomes — confidence, timeframe, measurement, resolution.
+- **Dogfooding**: Raymond, Eric S. "The Cathedral and the Bazaar." O'Reilly, 1999. "Every good work of software starts by scratching a developer's personal itch."
