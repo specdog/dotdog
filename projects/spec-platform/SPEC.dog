@@ -13,9 +13,9 @@ One source of truth. Zero ambiguity. Ship with confidence.
 ### Flow 5: dotdog compiles specs (dogfood)
 
 ```
-[1/3] Developer writes .dog specs with entities like Node, Task, and Prediction
-[2/3] dotdog Compile parses entities and relationships into a DAG graph
-[3/3] Compile produces DAG with token savings → AI agent queries via MCP
+1. Developer writes .dog specs with entities like Node, Task, and Prediction
+2. dotdog Compile parses entities and relationships into a DAG graph
+3. Compile produces DAG with token savings → AI agent queries via MCP
 ```
 
 ## What the User Sees
@@ -97,37 +97,38 @@ DASHBOARD
 ```
 ┌─ CLI ───────────────────────────────────────────────┐
 │                                                     │
-│  $ spec simulate demo --scenario "payment"      │
+│  $ dotdog simulate spec-platform --scenario "compile"│
 │                                                     │
-│  Scenario: Sender pays $1.00 to alice.eth            │
+│  Scenario: Node, Task, Prediction → Compile → DAG   │
 │                                                     │
-│  [1/6] User taps "$" button                         │
-│    → UI state: AmountSheet visible ✓                 │
-│    → Validation: recipient exists ✓                  │
+│  [1/6] Write Node, Task, and Prediction specs       │
+│    ✓ References entity: Node                        │
+│    ✓ References entity: Task                        │
+│    ✓ References entity: Prediction                  │
 │                                                     │
-│  [2/6] User types "1.00" and taps "Pay"             │
-│    → Amount parsed: 1.00 ✓                           │
-│    → POST /pay → 402 Payment Required ✓              │
+│  [2/6] Compile parses entities into a DAG graph     │
+│    ✓ References entity: Compile                     │
+│    ✓ References entity: DAG                         │
 │                                                     │
-│  [3/6] Face ID prompt appears                        │
-│    → PasskeySigner invoked ✓                          │
-│    → userVerification: required ✓                     │
+│  [3/6] DAG has token savings exceeding prediction   │
+│    ✓ References entity: DAG                         │
+│    ✓ References entity: Compile                     │
 │                                                     │
-│  [4/6] User authenticates                           │
-│    → EIP-3009 signature generated ✓                   │
-│    → POST /pay + PAYMENT-SIGNATURE ✓                  │
+│  [4/6] Validate Task and Node completeness at 100%  │
+│    ✓ References entity: Task                        │
+│    ✓ References entity: Node                        │
 │                                                     │
-│  [5/6] Facilitator settles USDC                      │
-│    → Base Sepolia: transfer confirmed ✓               │
-│    → tx_hash: 0xd4e5f6... ✓                           │
+│  [5/6] Prediction list shows forecasts with status  │
+│    ✓ References entity: Prediction                  │
+│    ✓ References entity: Task                        │
 │                                                     │
-│  [6/6] Payment receipt delivered                     │
-│    → PaymentReceipt encrypted (libsignal) ✓           │
-│    → Recipient sees "💰 bob sent $1.00" ✓             │
+│  [6/6] DAG served via MCP to AI agents              │
+│    ✓ References entity: DAG                         │
+│    ✓ References entity: Compile                     │
 │                                                     │
-│  RESULT: Success (6/6 steps passed)                  │
-│  Predicted: layout-revision-rate = 0.10              │
-│  Time estimate: 22 seconds (within 30s budget)       │
+│  RESULT: Success (6/6 steps passed)                 │
+│  All spec-platform entities verified                │
+│  Predictions: token-savings-90% → correct ✓         │
 │                                                     │
 └─────────────────────────────────────────────────────┘
 ```
