@@ -33,6 +33,7 @@ dotdog analyze             # deep analysis : gaps, suggestions, entity audit
 | `dotdog validate [dir]` | Score spec completeness. Checks file existence, entity descriptions, section counts. |
 | `dotdog compile [dir]` | Compile `.dog` files into a `.dag` graph (JSON). 94% smaller than source. |
 | `dotdog analyze [dir]` | Deep analysis. Detects domain, stack, gaps with severity, entity quality audit. |
+| `dotdog badge [dir]` | Generate a shields.io SVG badge showing token savings. |
 | `dotdog staleness [dir]` | Detect drift between spec and reality. Compares plan.dog tasks against code. |
 | `dotdog tokens [dir]` | Count tokens in `.dog` files and compare to compiled `.dag` savings. |
 | `dotdog index [dir]` | Build search index for semantic queries across compiled specs. |
