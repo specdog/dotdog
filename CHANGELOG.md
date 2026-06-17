@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0 — 2026-06-17
+
+- Add DAO governance kit template
+- Add community kit contribution guide
+- Add lint script (`bun run --check src/`)
+
 ## 0.5.2 — 2026-06-17
 
 - Fix parser hang on plain fenced code blocks in `.dog` prose

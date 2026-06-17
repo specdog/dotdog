@@ -75,6 +75,7 @@ AI agents: read the [for agents](https://specdog.github.io/agents) page before w
 
 - [Spec-Driven Development guide](https://specdog.github.io/handbook) — the methodology behind the tool
 - [Tutorial: Build a spec-driven project](tutorial)
+- [Contributing Kits](contributing-kits)
 - [FAQ](faq)
 
 ---

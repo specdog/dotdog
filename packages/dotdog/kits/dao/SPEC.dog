@@ -1,0 +1,39 @@
+# DAO Governance
+
+> Community governance starter. Members create proposals, vote, and execute approved treasury actions.
+
+## Product
+
+A DAO governance workspace. Members join with voting power, submit proposals, cast votes, and execute passed proposals against a shared treasury.
+
+## What the User Sees
+
+### Screen: Proposal List
+
++------------------------------------------+
+|  DAO Proposals                 [New]     |
+|------------------------------------------|
+|  Upgrade Grants Program        Active    |
+|  Fund Security Audit           Passed    |
+|  Sponsor Builder Event         Draft     |
++------------------------------------------+
+
+### Screen: Proposal Detail
+
++------------------------------------------+
+|  Upgrade Grants Program                  |
+|------------------------------------------|
+|  Status: Active                          |
+|  For: 62%   Against: 18%   Abstain: 20% |
+|                                          |
+|  [Vote For] [Vote Against] [Abstain]     |
++------------------------------------------+
+
+## User Stories
+
+| ID | Story | Pri | Acceptance |
+|----|-------|-----|------------|
+| US-01 | Member creates a proposal | P0 | Proposal appears as draft |
+| US-02 | Member casts a vote | P0 | Vote is counted once |
+| US-03 | Proposal reaches quorum | P0 | Status becomes passed or rejected |
+| US-04 | Approved proposal executes | P1 | Treasury allocation is recorded |
