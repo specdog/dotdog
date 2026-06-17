@@ -4,6 +4,10 @@ title: "FAQ"
 description: "Frequently asked questions about dotdog."
 ---
 
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+
+
+
 ## What is a .dog file?
 
 A `.dog` file is a human-written spec combining Markdown prose with structured YAML blocks. It defines entities, relationships, events, screens, user stories, constraints, and predictions — everything needed to describe software completely.

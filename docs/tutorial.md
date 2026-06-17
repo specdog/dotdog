@@ -4,6 +4,10 @@ title: "Tutorial: Spec-Driven Development with dotdog"
 description: "Learn how to use dotdog for spec-driven development. Write specs, validate completeness, compile graphs, and expose to AI agents."
 ---
 
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+
+
+
 ## Overview
 
 This tutorial walks through building a spec-driven project with dotdog. By the end, you will have a validated spec genome and an MCP server that AI agents can query.

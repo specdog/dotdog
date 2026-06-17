@@ -4,6 +4,10 @@ title: "Use Cases"
 description: "How teams use dotdog for spec-driven development."
 ---
 
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+
+
+
 ## AI Agent Context
 
 Give AI coding agents structured context about your project. Instead of the agent reading a README and guessing, it queries your spec via MCP — exact entity names, properties, states, and relationships.
