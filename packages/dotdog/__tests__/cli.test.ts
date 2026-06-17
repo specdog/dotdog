@@ -31,6 +31,18 @@ describe('CLI', () => {
     }
   });
 
+  test('list --json outputs project names', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-list-json-'));
+    try {
+      const projectName = 'testproj';
+      setupTempProject(dir, projectName);
+      const out = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts list --json`.text();
+      expect(JSON.parse(out)).toEqual([projectName]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test('kit init creates valid projects for built-in kits', async () => {
     const kitsDir = join(ROOT, 'packages', 'dotdog', 'kits');
     const kits = readdirSync(kitsDir, { withFileTypes: true })
