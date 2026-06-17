@@ -23,7 +23,8 @@ Requires Node.js >= 20 or Bun >= 1.3.
 ```bash
 dotdog init my-project     # scaffold a spec genome
 dotdog validate            # score completeness (0-100%)
-dotdog analyze             # deep analysis : gaps, suggestions, entity audit
+dotdog compile             # build the .dag graph (94% smaller)
+dotdog badge               # generate savings badge for your README
 ```
 
 ## Commands
