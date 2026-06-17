@@ -7,27 +7,13 @@ description: "AI coding agents and tools that work with dotdog."
 ← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
 
 
+# Integrations
 
-## MCP Clients
+dotdog serves specs to any MCP-compatible agent. Six tools: `getEntity`, `traverse`, `search`, `schema`, `summary`, `listProjects`.
 
-Configure any MCP-compatible agent to query your specs:
+## Claude Code
 
-### Claude Desktop
-
-```json
-{
-  "mcpServers": {
-    "dotdog": {
-      "command": "npx",
-      "args": ["-y", "dotdog", "serve"]
-    }
-  }
-}
-```
-
-### Cursor
-
-Add to `.cursor/mcp.json`:
+Add to `.mcp.json` in your project root:
 
 ```json
 {
@@ -40,18 +26,97 @@ Add to `.cursor/mcp.json`:
 }
 ```
 
-### GitHub Copilot
+Restart Claude Code. Verify:
 
-See the [Copilot MCP documentation](https://docs.github.com/en/copilot) for setup.
+```
+> List the projects available via dotdog
+> What entities are in the spec-platform project?
+```
 
-## VS Code Extension
+## Claude Desktop
 
-Syntax highlighting for `.dog` files. Copy from `extensions/vscode` into your VS Code extensions directory.
+Add to Claude's MCP config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "dotdog": {
+      "command": "npx",
+      "args": ["-y", "dotdog", "serve"]
+    }
+  }
+}
+```
+
+Restart Claude Desktop. dotdog appears in the tools menu.
+
+## Cursor
+
+Create `.cursor/mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "dotdog": {
+      "command": "npx",
+      "args": ["-y", "dotdog", "serve"]
+    }
+  }
+}
+```
+
+Restart Cursor. Agent queries specs via Cmd+I.
+
+## GitHub Copilot
+
+Add to `.github/copilot-instructions.md` or VS Code MCP config:
+
+```json
+{
+  "mcpServers": {
+    "dotdog": {
+      "command": "npx",
+      "args": ["-y", "dotdog", "serve"]
+    }
+  }
+}
+```
+
+## Continue.dev
+
+Add to `~/.continue/config.json`:
+
+```json
+{
+  "experimental": {
+    "mcpServers": {
+      "dotdog": {
+        "command": "npx",
+        "args": ["-y", "dotdog", "serve"]
+      }
+    }
+  }
+}
+```
+
+## MCP Gateway
+
+Run dotdog behind an MCP gateway for multi-agent access:
+
+```yaml
+# mcp-gateway config
+servers:
+  dotdog:
+    command: npx
+    args: ["-y", "dotdog", "serve"]
+    env:
+      HOME: "/home/user"
+```
 
 ## Homebrew
 
 ```bash
-brew tap specdog/dotdog
+brew tap specdog/tap
 brew install dotdog
 ```
 
