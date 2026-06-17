@@ -53,9 +53,18 @@ export type ASTNode =
   | ProseNode
   | TableNode;
 
+
+// Parser error with line context
+export interface ParseError {
+  message: string;
+  line?: number;
+  context?: string; // the problematic line or section heading
+}
+
 export interface DocumentNode {
   kind: 'document';
   sections: SectionNode[];
+  errors: ParseError[];
 }
 
 export interface SectionNode {
