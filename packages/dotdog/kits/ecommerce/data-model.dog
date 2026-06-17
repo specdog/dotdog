@@ -1,0 +1,58 @@
+# E-Commerce — Data Model
+
+## Entities
+
+### Entity: Product
+
+An item available for purchase.
+
+```yaml
+entity: Product
+type: entity
+properties:
+  id:
+    type: string
+    required: true
+  name:
+    type: string
+    required: true
+  price_cents:
+    type: number
+    required: true
+  inventory:
+    type: number
+    required: true
+    default: 0
+states: [draft, published, archived, out_of_stock]
+lifecycle: draft → published → out_of_stock → archived
+```
+
+### Entity: Order
+
+A completed purchase.
+
+```yaml
+entity: Order
+type: entity
+properties:
+  id:
+    type: string
+    required: true
+  total_cents:
+    type: number
+    required: true
+  customer_email:
+    type: string
+    required: true
+states: [pending, confirmed, shipped, delivered, refunded]
+lifecycle: pending → confirmed → shipped → delivered
+```
+
+### Relationship: Order → Product
+
+```yaml
+relationship: Order → Product
+verb: contains
+cardinality: N:N
+required: true
+```

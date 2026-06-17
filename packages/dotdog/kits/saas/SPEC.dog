@@ -1,0 +1,37 @@
+# SaaS Platform
+
+## Product
+
+A multi-tenant SaaS platform. Organizations sign up, invite team members, manage subscriptions, and use the product.
+
+## What the User Sees
+
+### Screen: Dashboard
+
++------------------------------------------+
+|  Dashboard                    [Settings] |
+|------------------------------------------|
+|  Welcome back, Alex                      |
+|                                          |
+|  [Projects: 12]  [Team: 5]  [Usage: 67%]|
++------------------------------------------+
+
+### Screen: Billing
+
++------------------------------------------+
+|  Billing                       [Upgrade] |
+|------------------------------------------|
+|  Plan: Pro — $29/mo                      |
+|  Next invoice: Jun 30 — $29.00           |
+|                                          |
+|  Payment method: Visa ****4242           |
++------------------------------------------+
+
+## User Stories
+
+| ID | Story | Pri | Acceptance |
+|----|-------|-----|------------|
+| US-01 | User creates an organization | P0 | Org appears in workspace selector |
+| US-02 | User invites team member | P0 | Invitee receives email, joins org |
+| US-03 | Org upgrades subscription | P1 | Plan changes, invoice generated |
+| US-04 | Admin views usage report | P2 | Usage metrics displayed by project |

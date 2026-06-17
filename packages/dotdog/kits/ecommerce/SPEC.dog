@@ -1,0 +1,43 @@
+# E-Commerce Platform
+
+## Product
+
+An online store. Customers browse products, add to cart, checkout, and track orders.
+
+## What the User Sees
+
+### Screen: Product Page
+
++------------------------------------------+
+|  [Logo]  Shop  Categories  Cart(3)       |
+|------------------------------------------|
+|                                          |
+|  [Product Image]                         |
+|                                          |
+|  Wireless Headphones               $79   |
+|  4.2 stars (128 reviews)                 |
+|  [Add to Cart]                           |
++------------------------------------------+
+
+### Screen: Checkout
+
++------------------------------------------+
+|  Checkout                                |
+|------------------------------------------|
+|  Shipping: Alex Smith                    |
+|  123 Main St, NY 10001                   |
+|                                          |
+|  Payment: Visa ****4242                  |
+|                                          |
+|  Order total: $79.00                     |
+|  [Place Order]                           |
++------------------------------------------+
+
+## User Stories
+
+| ID | Story | Pri | Acceptance |
+|----|-------|-----|------------|
+| US-01 | Customer adds product to cart | P0 | Cart count updates |
+| US-02 | Customer checks out | P0 | Order created, inventory reduced |
+| US-03 | Customer tracks order | P1 | Status and tracking number visible |
+| US-04 | Customer leaves a review | P2 | Review appears on product page |
