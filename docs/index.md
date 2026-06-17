@@ -55,6 +55,7 @@ dotdog serve                        # expose to AI agents via MCP
 
 [Tutorial: Build a spec-driven project](tutorial.md)  
 [Why dotdog? Compare with alternatives](why-dotdog.md)  
+[Handbook: Spec-Driven Development](handbook.md)  
 [FAQ](faq.md)  
 [Integrations](integrations.md)  
 [Use Cases](use-cases.md)
