@@ -6,7 +6,7 @@ author: Justin Diclemente
 description: "Give Copilot access to your project specs via MCP. Stop hallucinated entity names and wrong relationships."
 ---
 
-← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents · dogfood](https://specdog.github.io/agents)
 
 
 # How to Use dotdog with GitHub Copilot

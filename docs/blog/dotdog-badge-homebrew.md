@@ -6,7 +6,7 @@ author: Justin Diclemente
 description: "dotdog v0.8.0 ships with a savings badge command, Homebrew install, and community contributions."
 ---
 
-← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents · dogfood](https://specdog.github.io/agents)
 
 
 # dotdog now has badges and Homebrew

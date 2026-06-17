@@ -6,7 +6,7 @@ author: Justin Diclemente
 description: "Documentation rots. Specs that compile into graphs stay current because AI agents depend on them."
 ---
 
-← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents · dogfood](https://specdog.github.io/agents)
 
 
 # Specs as Living Documentation

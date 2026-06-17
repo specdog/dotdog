@@ -6,7 +6,7 @@ author: Justin Diclemente
 description: "MCP servers are the bridge between AI agents and your code. Here's how to build one that doesn't fall over."
 ---
 
-← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents · dogfood](https://specdog.github.io/agents)
 
 
 # Building MCP Servers That Actually Work

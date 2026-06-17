@@ -6,7 +6,7 @@ author: Justin Diclemente
 description: "Write specs first. Validate them. Compile them into graphs. Give AI agents ground truth. Zero hallucination."
 ---
 
-← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents · dogfood](https://specdog.github.io/agents)
 
 
 # What Is Spec-Driven Development?

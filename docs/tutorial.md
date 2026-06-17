@@ -4,7 +4,7 @@ title: "Tutorial: Spec-Driven Development with dotdog"
 description: "Learn how to use dotdog for spec-driven development. Write specs, validate completeness, compile graphs, and expose to AI agents."
 ---
 
-← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents · dogfood](https://specdog.github.io/agents)
 
 
 

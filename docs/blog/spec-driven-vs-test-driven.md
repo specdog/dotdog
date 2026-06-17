@@ -6,7 +6,7 @@ author: Justin Diclemente
 description: "TDD verifies code works. SDD tells AI agents what to build. You need both."
 ---
 
-← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents · dogfood](https://specdog.github.io/agents)
 
 
 # Spec-Driven vs Test-Driven Development
