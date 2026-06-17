@@ -4,7 +4,7 @@ title: "dotdog — Spec-driven development CLI"
 description: "Write structured specs. Validate completeness. Compile to graphs. AI agents query via MCP. No hallucination."
 ---
 
-← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents · dogfood](https://specdog.github.io/agents)
 
 # dotdog
 
@@ -73,7 +73,7 @@ Six MCP tools for structured queries — no scanning, no guessing:
 }
 ```
 
-AI agents: read the [for agents](https://specdog.github.io/agents) page before working with dotdog projects.
+AI agents: read the [for agents · dogfood](https://specdog.github.io/agents) page before working with dotdog projects.
 
 ## Learn more
 
