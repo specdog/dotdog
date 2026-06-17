@@ -162,7 +162,7 @@ Agent: summary("spec-platform")
 
 ---
 
-dotdog@0.4.0 · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE)
+dotdog@0.5.0 · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE)
 
 
 <script type="application/ld+json">
