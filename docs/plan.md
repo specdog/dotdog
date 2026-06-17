@@ -4,7 +4,7 @@
 
 ## State
 
-spec-platform dogfoods dotdog: 5 entities (Node, Task, Prediction, Compile, DAG). Validates at 95%+. Compiles to .dag. Simulates successfully.
+dotdog dogfoods itself: 5 entities (Node, Task, Prediction, Compile, DAG). Validates at 95%+. Compiles to .dag. Simulates successfully.
 
 ## Phase 1 — Predictive milestones (0.6.0)
 
@@ -28,4 +28,4 @@ Spec-platform has `Prediction[measures](1:N)Task`. This is a production-ready fo
 
 ---
 
-dotdog@<span id="version">0.5.2</span>
+dotdog@<span id="version">0.8.1</span>
