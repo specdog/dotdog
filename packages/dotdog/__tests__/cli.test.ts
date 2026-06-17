@@ -43,6 +43,24 @@ describe('CLI', () => {
     }
   });
 
+  test('init creates a valid project', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-init-'));
+    try {
+      const projectName = 'my-test-project';
+      await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts init ${projectName}`.quiet();
+      const projectDir = join(dir, 'specs', projectName);
+
+      expect(existsSync(join(projectDir, 'SPEC.dog'))).toBe(true);
+      expect(existsSync(join(projectDir, 'constitution.dog'))).toBe(true);
+      expect(existsSync(join(projectDir, 'data-model.dog'))).toBe(true);
+
+      const result = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts validate`.quiet();
+      expect(result.exitCode).toBe(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test('kit init creates valid projects for built-in kits', async () => {
     const kitsDir = join(ROOT, 'packages', 'dotdog', 'kits');
     const kits = readdirSync(kitsDir, { withFileTypes: true })
