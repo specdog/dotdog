@@ -23,7 +23,7 @@
 
 ## Governance
 
-- The spec files in `projects/spec-platform/specs/` define this product.
+- The spec files in `specs/dotdog/` define this product.
 - Every PR must update specs before code.
 - `spec validate` must pass before merge.
 - Predictions are reviewed at project milestones. Wrong predictions are not failures — they are data.

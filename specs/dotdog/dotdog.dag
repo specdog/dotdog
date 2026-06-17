@@ -4,6 +4,51 @@
   "n": [
     [
       0,
+      "dotdog reaches 200 PRs",
+      "prediction",
+      "",
+      [],
+      [],
+      [],
+      [
+        0.8,
+        "2026-07-31",
+        "PR count exceeds 190",
+        "github.com/specdog/dotdog/pulls count"
+      ]
+    ],
+    [
+      1,
+      "dotdog .dag savings exceed 90%",
+      "prediction",
+      "",
+      [],
+      [],
+      [],
+      [
+        0.9,
+        "2026-08-01",
+        "dotdog SPEC.dog grows past 15KB",
+        "dotdog tokens command on dotdog"
+      ]
+    ],
+    [
+      2,
+      "first external dotdog adopter",
+      "prediction",
+      "",
+      [],
+      [],
+      [],
+      [
+        0.5,
+        "2026-09-01",
+        "GitHub star count exceeds 10",
+        "github.com/specdog/dotdog stargazers > 1 non-team member"
+      ]
+    ],
+    [
+      3,
       "Node",
       "entity",
       "A typed node in the spec knowledge graph. Every entity, task, prediction, and concept is a Node.",
@@ -26,14 +71,14 @@
       ],
       [
         [
-          0,
+          3,
           "connects",
           "N:M"
         ]
       ]
     ],
     [
-      1,
+      4,
       "Task",
       "entity",
       "A unit of work. Has dependencies, assignment, effort estimates, and a computed completion probability.",
@@ -66,19 +111,19 @@
       ],
       [
         [
-          1,
+          4,
           "depends_on",
           "N:M"
         ],
         [
-          2,
+          5,
           "measures",
           "1:N"
         ]
       ]
     ],
     [
-      2,
+      5,
       "Prediction",
       "prediction",
       "A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes.",
@@ -104,14 +149,14 @@
       ],
       [
         [
-          1,
+          4,
           "measures",
           "1:N"
         ]
       ]
     ],
     [
-      3,
+      6,
       "Compile",
       "event",
       "The compilation process. Reads all .dog files, parses entities and relationships, outputs a .dag graph with integrity hash and token savings report.",
@@ -130,14 +175,14 @@
       ],
       [
         [
-          4,
+          7,
           "produces",
           "1:1"
         ]
       ]
     ],
     [
-      4,
+      7,
       "DAG",
       "entity",
       "The compiled graph output. A deterministic JSON structure with typed nodes, edges, integrity metadata, and provable token savings. Queryable by AI agents via MCP.",
@@ -157,7 +202,7 @@
       ],
       [
         [
-          3,
+          6,
           "produces",
           "1:1"
         ]
@@ -168,9 +213,9 @@
     "m": "chars/4",
     "st": 8499,
     "ct": 8489,
-    "dt": 398,
-    "sv": 95.3,
-    "cs": 95.3,
-    "saved": 8101
+    "dt": 512,
+    "sv": 94,
+    "cs": 94,
+    "saved": 7987
   }
 }

@@ -26,5 +26,5 @@ Important notes:
 ## Optional
 
 - [npm page](https://www.npmjs.com/package/dotdog): npm registry listing
-- [Example project specs](https://github.com/specdog/dotdog/tree/main/projects/spec-platform/specs): The platform's own `.dog` files : real-world example
+- [Example project specs](https://github.com/specdog/dotdog/tree/main/specs/dotdog): The platform's own `.dog` files : real-world example
 - [Contributing](https://github.com/specdog/dotdog/blob/main/CONTRIBUTING.md): How to contribute
