@@ -12,7 +12,8 @@
 
 ```bash
 npm install -g dotdog    # npm
-bun add -g dotdog        # bun
+brew install dotdog       # Homebrew
+bun add -g dotdog         # bun
 ```
 
 Requires Node.js >= 20 or Bun >= 1.3.
