@@ -1,12 +1,18 @@
 ---
 layout: default
 title: "dotdog — Spec-driven development CLI"
-description: "Write structured specs. Validate completeness. Compile to graphs. AI agents query via MCP."
+description: "Write structured specs. Validate completeness. Compile to graphs. AI agents query via MCP. No hallucination."
 ---
+
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
 
 # dotdog
 
-> Write specs, validate completeness, compile to graphs, let AI agents query them.
+> The CLI tool that gives AI coding agents a brain.
+
+AI agents are everywhere now — in your editor, your terminal, your CI pipeline. They know every framework and every API. But they do not know *your* project. They hallucinate entity names, invent relationships, and miss required fields because they are reading prose and guessing.
+
+dotdog fixes this. You write your spec in readable `.dog` files — entities, properties, states, lifecycles, relationships. dotdog compiles them into a `.dag` graph that is 94% smaller than the source. The agent loads the graph instead of scanning 600 lines of prose. It queries exact data instead of interpreting English. Hallucination drops to near zero.
 
 ## Install
 
@@ -16,32 +22,44 @@ npm install -g dotdog
 
 ## See it work
 
-dotdog validates itself. This is real output from the tool checking its own spec:
+dotdog validates itself. This is real output from running the tool on its own spec:
 
 ```
 $ dotdog validate
   spec-platform : 7 .dog files, 100% complete
+      COPY.dog
+      DESIGN-SYSTEM.dog
+      INDEX.dog
+      SPEC.dog
+      constitution.dog
+      data-model.dog
+      plan.dog
 
 $ dotdog compile
   ✓ spec-platform.dag
-  11 nodes, 5 edges, 7 files
-  12,110 → 739 tokens (93.9% savings)
+    11 nodes, 5 edges, 7 files
+    12110 → 739 tokens (93.9% savings)
 ```
 
-**100% complete** means every required file exists, every entity has properties, and no gaps were found. The `.dag` graph is 93.9% smaller than the source `.dog` files — AI agents load exact data instead of prose.
+**100% complete.** Eleven entities, five relationships, seven spec files. Compiled to 739 tokens — the agent loads the full entity graph in one shot instead of scanning twelve thousand tokens of prose. The DAG does not replace reading; it replaces scanning.
 
-## What each command does
+## How it works
 
-| Command | What it does |
-|---------|-------------|
-| `dotdog init` | Scaffold a spec genome — SPEC.dog, data-model.dog, and optional files |
-| `dotdog validate` | Score completeness. Find missing entities, empty descriptions, broken relationships |
-| `dotdog compile` | Build a positional .dag graph. 94% smaller than source, optimized for LLM context |
-| `dotdog serve` | Start MCP server. AI agents query via getEntity, traverse, search, and more |
-| `dotdog verify` | Map entities to code files. Detect when properties change or disappear |
-| `dotdog staleness` | Check plan.dog task completion. Catch unaddressed work |
+You write specs before code. Five minutes to set up. Zero configuration.
 
-## AI Agent Setup
+| Step | Command | What happens |
+|------|---------|-------------|
+| Scaffold | `dotdog init` | Creates SPEC.dog, data-model.dog, and supporting files |
+| Describe | edit `.dog` files | Define entities, properties, states, lifecycles, relationships |
+| Validate | `dotdog validate` | Score completeness. Find missing entities and broken links |
+| Compile | `dotdog compile` | Build a positional DAG graph — 94% smaller, optimized for LLM context |
+| Expose | `dotdog serve` | Start an MCP server. AI agents query via six structured tools |
+
+## For AI agents
+
+Six MCP tools for structured queries — no scanning, no guessing:
+
+`getEntity` · `traverse` · `search` · `schema` · `summary` · `listProjects`
 
 ```json
 {
@@ -54,11 +72,11 @@ $ dotdog compile
 }
 ```
 
-Six MCP tools: `getEntity`, `traverse`, `search`, `schema`, `summary`, `listProjects`.
+AI agents: read the [for agents](https://specdog.github.io/agents) page before working with dotdog projects.
 
-## More
+## Learn more
 
-- [Handbook: Spec-Driven Development](handbook)
+- [Spec-Driven Development guide](https://specdog.github.io/handbook) — the methodology behind the tool
 - [Tutorial: Build a spec-driven project](tutorial)
 - [FAQ](faq)
 
