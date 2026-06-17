@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.1 — 2026-06-17
+
+- Fix predictions parser: accept container format (### Predictions / ##### name) and any heading level (###/####/#####)
+- Fix resolve command: find predictions regardless of heading format
+- Same heading-level fix applied to Entity, Relationship, Event blocks
+- Add CLAUDE.md as agent entry point (adopted by TypeScript, React, Jest)
+- Rewrite dotdog landing page as marketing page with real dogfood output
+- Full 18-command reference in README (tokens, index, search, predictions, resolve, kit, woof)
+- Add back-nav to all docs subpages and blog
+- CI version-check: enforce semver bumps on PRs touching src/
+- CONTRIBUTING.md: document versioning rules and release checklist
+- Add AI agents reference to specdog.github.io homepage
+
 ## 0.5.0 — 2026-06-17
 
 - verify command: auto-generate spec-code mappings, detect drift
