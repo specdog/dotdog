@@ -104,17 +104,28 @@ program.command('init <project>').option('-m, --minimal', 'Only SPEC.dog + data-
   console.log(chalk.bold(`\nProject "${p}" initialized. Fill in SPEC.dog then run spec validate.`));
 });
 
-program.command('list').action(() => {
+program.command('list').option('--json', 'Output project names as JSON').action((opts: { json?: boolean }) => {
+  const entries: Array<{ root: string; name: string; dogFiles: number }> = [];
   for (const d of ['projects','specs']) {
     const dd = join(process.cwd(),d);
     if (!existsSync(dd)) continue;
     const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
-    if (!projects.length) continue;
-    console.log(chalk.bold(`\n${d}/`));
     for (const p of projects) {
       const sp = join(dd,p);
       const n = existsSync(sp) ? readdirSync(sp).filter(f=>f.endsWith('.dog')).length : 0;
-      console.log(`  ${chalk.cyan(p)} : ${n} .dog files`);
+      entries.push({ root: d, name: p, dogFiles: n });
+    }
+  }
+  if (opts.json) {
+    console.log(JSON.stringify(entries.map(e => e.name)));
+    return;
+  }
+  for (const d of ['projects','specs']) {
+    const projects = entries.filter(e => e.root === d);
+    if (!projects.length) continue;
+    console.log(chalk.bold(`\n${d}/`));
+    for (const p of projects) {
+      console.log(`  ${chalk.cyan(p.name)} : ${p.dogFiles} .dog files`);
     }
   }
 });
