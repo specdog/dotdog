@@ -4,6 +4,10 @@ title: "Spec-Driven Development"
 description: "Write specs first. Validate. Compile. Let AI agents query them. No hallucination."
 ---
 
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+
+
+
 # Spec-Driven Development
 
 Write specs before code. Validate completeness. Compile to a graph AI agents can query. No hallucination.

@@ -28,17 +28,24 @@ dotdog analyze             # deep analysis : gaps, suggestions, entity audit
 
 | Command | Description |
 |---------|-------------|
-| `dotdog validate [dir]` | Score spec completeness. Checks file existence, entity descriptions, section counts. |
-| `dotdog analyze [dir]` | Deep analysis. Detects domain, stack, gaps with severity, entity quality audit. |
-| `dotdog parse <file>` | Parse a `.dog` file into sections. |
-| `dotdog compile [dir]` | Compile `.dog` files into a `.dag` graph (JSON). |
-| `dotdog visualize [dir]` | Output Mermaid graph from `.dag`. `--save` writes `.md` for GitHub rendering. |
-| `dotdog serve [dir]` | Start MCP server over stdio. AI agents query specs without hallucination. |
-| `dotdog staleness [dir]` | Detect drift between spec and reality. Compares plan.dog tasks against code. |
-| `dotdog generate [dir]` | Generate missing spec files from SPEC.dog (data-model, COPY, INDEX). |
-| `dotdog simulate <scenario>` | Run a simulation scenario. Reads SPEC.dog scenarios, checks pre/postconditions. |
 | `dotdog init <project>` | Scaffold a new spec genome project with templates. |
+| `dotdog validate [dir]` | Score spec completeness. Checks file existence, entity descriptions, section counts. |
+| `dotdog compile [dir]` | Compile `.dog` files into a `.dag` graph (JSON). 94% smaller than source. |
+| `dotdog analyze [dir]` | Deep analysis. Detects domain, stack, gaps with severity, entity quality audit. |
+| `dotdog staleness [dir]` | Detect drift between spec and reality. Compares plan.dog tasks against code. |
+| `dotdog tokens [dir]` | Count tokens in `.dog` files and compare to compiled `.dag` savings. |
+| `dotdog index [dir]` | Build search index for semantic queries across compiled specs. |
+| `dotdog search <query>` | Semantic search across compiled specs using the search index. |
+| `dotdog serve [dir]` | Start MCP server over stdio. AI agents query specs without hallucination. |
+| `dotdog simulate <scenario>` | Walk through a scenario. Reads SPEC.dog scenarios, checks pre/postconditions. |
+| `dotdog predictions [dir]` | List all predictions with status (pending, correct, wrong, partial). |
+| `dotdog resolve <name>` | Mark a prediction as correct, wrong, or partial with evidence. |
+| `dotdog visualize [dir]` | Output Mermaid graph from `.dag`. `--save` writes `.md` for GitHub rendering. |
+| `dotdog generate [dir]` | Generate missing spec files from SPEC.dog (data-model, COPY, INDEX). |
+| `dotdog parse <file>` | Parse a `.dog` file into sections (entities, relationships, copy). |
+| `dotdog kit` | List, init, or manage spec kits (starter templates). |
 | `dotdog list` | List all projects and their `.dog` file counts. |
+| `dotdog woof` | Prints "woof" because every good CLI deserves an easter egg. |
 
 ## File Formats
 

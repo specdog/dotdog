@@ -6,6 +6,10 @@ author: Justin Diclemente
 description: "Write specs in .dog files. Validate, compile, and serve them to AI agents via MCP. Zero hallucination."
 ---
 
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+
+
+
 Specs rot. They live in wikis, Google Docs, or Notion — written once, never read again. AI agents read prose and guess. Hallucinations compound.
 
 ## What dotdog does

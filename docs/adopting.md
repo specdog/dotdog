@@ -4,6 +4,10 @@ title: "Adding dotdog to an existing project"
 description: "A practical adoption guide for adding dotdog specs, validation, compilation, and MCP access to an existing codebase."
 ---
 
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+
+
+
 # Adding dotdog to an existing project
 
 Already have a product, app, or package? Add dotdog next to the codebase so the spec can grow with the implementation.

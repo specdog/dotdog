@@ -4,6 +4,10 @@ title: "Why dotdog"
 description: "Compare dotdog with traditional approaches to software specifications."
 ---
 
+← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
+
+
+
 ## The problem with traditional specs
 
 | Approach | Problem |
