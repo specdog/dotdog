@@ -82,8 +82,8 @@ function getConstitution(project: string): string | null {
 // --- Server ---
 
 const server = new McpServer({
-  name: 'spec-platform',
-  version: '0.1.0',
+  name: 'dotdog',
+  version: '0.4.1',
 });
 
 server.tool(

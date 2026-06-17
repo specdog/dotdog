@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/specdog/dotdog/discussions
+    about: Ask questions and share ideas
+  - name: 📖 Docs
+    url: https://specdog.github.io/dotdog
+    about: Read the documentation
