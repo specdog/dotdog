@@ -4,24 +4,9 @@ exports[`CLI visualize snapshot 1`] = `
 "\`\`\`mermaid
 graph LR
     Node[Node]
-    Edge[Edge]
     Task[Task]
-    Prediction[Prediction]
-    Vector[Vector]
-    Event[Event]
-    Compile[Compile]
-    DAG[DAG]
-    dotdog_will_reach_200_PRs_by_July_2026[dotdog will reach 200 PRs by July 2026]
-    n_dag_token_savings_will_exceed_90%_for_spec-platform[.dag token savings will exceed 90% for spec-platform]
-    First_external_user_will_adopt_dotdog[First external user will adopt dotdog]
-    Node -->|connects| Node
-    Node -->|embeds| Vector
-    Task -->|depends_on| Task
-    Task -->|measures| Prediction
-    Prediction -->|measures| Task
-    Vector -->|embeds| Node
-    Compile -->|produces| DAG
-    DAG -->|produces| Compile
+    Node -->|contains| Task
+    Task -->|contains| Node
 \`\`\`
 
 "

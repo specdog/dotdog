@@ -1,16 +1,12 @@
 # AGENTS.md — dotdog
 
-> This repo uses dotdog for structured specs. Read .dag for entity graph. Run MCP for live queries.
+> This repo is the dotdog CLI tool. For spec graphs, use `npx dotdog serve` (MCP) or `dotdog compile`.
 
 ## Quick Start (read this first)
 
-**Before any task**, load the spec graph:
-- File: `projects/spec-platform/spec-platform.dag` (11 entities, 5 relationships, v2 positional format, ~740 tokens)
-- MCP: `npx dotdog serve` (6 tools: getEntity, traverse, search, schema, summary, listProjects)
+**MCP**: `npx dotdog serve` (6 tools: getEntity, traverse, search, schema, summary, listProjects)
 
-The .dag is 94% smaller than raw .dog files (v2 positional format). One file. All structure.
-
-## Commands (when modifying specs)
+## Commands (when modifying dotdog source)
 
 ```
 dotdog validate     → check completeness (run before commits)
@@ -23,8 +19,7 @@ dotdog staleness    → detect spec/reality drift
 
 ## Key Rules
 
-1. Load .dag before writing code
-2. Run `dotdog validate` before committing spec changes
-3. Score must not decrease
-4. Use conventional commits (feat:, fix:, docs:, chore:)
-5. Never commit dist/ — .dag files are committed for agent efficiency
+1. Use conventional commits (feat:, fix:, docs:, chore:)
+2. Never commit dist/
+3. Every code change touching `packages/dotdog/src/` or `package.json` must bump version
+4. Dogfood: test against `npx dotdog@latest validate` before shipping

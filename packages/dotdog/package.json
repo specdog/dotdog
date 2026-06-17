@@ -47,5 +47,8 @@
   "homepage": "https://specdog.github.io/dotdog",
   "bugs": {
     "url": "https://github.com/specdog/dotdog/issues"
+  },
+  "scripts": {
+    "lint": "bun run --check src/"
   }
 }

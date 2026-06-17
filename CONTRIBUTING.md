@@ -57,7 +57,7 @@ packages/dotdog/          Published npm package
   src/parser.ts            .dog file parser
   src/grammar.ts           TypeScript types
   __tests__/               Test suite
-projects/spec-platform/    Dogfood spec (the tool validates itself)
+__tests__/fixtures/        Test fixture specs
 docs/                      Website (GitHub Pages)
 templates/                 Spec genome templates
 ```
