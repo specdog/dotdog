@@ -155,6 +155,51 @@ program.command('parse <file>').action((f) => {
   for (const sec of s) console.log(`  ${sec.heading.padEnd(30)} ${sec.content.length} chars`);
 });
 
+// Compact injection helpers — produce token-optimized text for collar's DAG context
+const COMPACT_CARD: Record<string,string> = {'1:1':'11','1:N':'1m','1:many':'1m','N:1':'m1','many:1':'m1','N:M':'mm','many:many':'mm'};
+function compactCard(c: string): string { return COMPACT_CARD[c] || (c.length <= 3 ? c : c.slice(0,4)); }
+function abbrevVerb(v: string): string {
+  if (v.length <= 5) return v;
+  const abbr: Record<string,string> = {references:'refer',implements:'imple',routes_through:'route',
+    produces:'produ',refreshes:'refre',validates:'valid',triggers:'trig',complements:'compl',
+    executes:'execu',queries:'queri',wired_through:'wired',polls:'polls'};
+  return abbr[v] || v.slice(0,5);
+}
+function abbrevDag(name: string): string {
+  const parts = name.replace(/[-_]/g,' ').split(/\s+/);
+  return parts.length >= 2 ? parts.slice(0,2).map(p=>p[0]).join('') : name.slice(0,3);
+}
+function buildCompactText(project: string, v2nodes: any[][]): string {
+  // Build entity→edges with compact formatting, sorted by edge count, capped at 20
+  const entities: {name:string; edges:string[]; count:number}[] = [];
+  const skipTypes = new Set(['prediction','state']);
+  for (const n of v2nodes) {
+    const name = n[1] || '';
+    const type = n[2] || '';
+    if (!name || skipTypes.has(type)) continue;
+    const rawEdges: any[] = n[6] || [];
+    if (!rawEdges.length) continue;
+    const edgeStrs: string[] = [];
+    for (const e of rawEdges) {
+      const tgtId = e[0];
+      const verb = abbrevVerb(e[1] || '');
+      const card = compactCard(e[2] || '1:1');
+      // Resolve target ID to name
+      const tgtNode = v2nodes[tgtId];
+      const tgtName = tgtNode ? (tgtNode[1] || String(tgtId)) : String(tgtId);
+      edgeStrs.push(`${tgtName}:${verb}(${card})`);
+    }
+    entities.push({name, edges: edgeStrs, count: edgeStrs.length});
+  }
+  entities.sort((a,b) => b.count - a.count);
+  const top = entities.slice(0, 20);
+  const lines = [`[${abbrevDag(project)}]`];
+  for (const e of top) {
+    lines.push(`${e.name}→${e.edges.join('>')}`);
+  }
+  return lines.join('\n');
+}
+
 program.command('compile [dir]').option('-o, --output <file>').option('--v3', 'Ultra-compact v3 format (53% smaller than v2)').action((d='.', opts) => {
   const dir = resolvePath(d);
   const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
@@ -189,19 +234,15 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v3', 'U
         for (const section of ast.sections) {
           for (const block of section.blocks) {
             if (block.kind === 'entity' || block.kind === 'event') {
-              // Compact property schema: s=string, n=number, b=boolean, e=enum, j=json, !=required
+              // Store property defaults in .dag (key: default_value)
+              // For endpoint entities, preserve raw yaml defaults (parser may lose nested values)
+              const rawYaml = (block as any).yaml?.properties || {};
               const compactProps: Record<string, string> = {};
-              for (const [key, val] of Object.entries(block.properties || {})) {
-                let enc = '';
-                const t = val.type || 'string';
-                if (t === 'string') enc = 's';
-                else if (t === 'number') enc = 'n';
-                else if (t === 'boolean') enc = 'b';
-                else if (t === 'enum') enc = 'e';
-                else if (t === 'json') enc = 'j';
-                else enc = t[0]; // fallback: first char
-                if (val.required) enc += '!';
-                compactProps[key] = enc;
+              for (const [key, val] of Object.entries(rawYaml as Record<string, any>)) {
+                if (val && typeof val === 'object' && 'default' in val) {
+                  const def = val.default;
+                  compactProps[key] = typeof def === 'object' ? JSON.stringify(def) : String(def);
+                }
               }
               nodes.push({
                 i: (block as any).name || '',
@@ -236,6 +277,81 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v3', 'U
                 d: block.description || '',
                 c: block.cardinality,
                 r: block.required,
+              });
+            }
+          }
+        }
+      }
+      // Extract infrastructure resources — they become infra nodes with edges to entities
+      for (const f of files) {
+        const ast = parse(sources[f]);
+        for (const section of ast.sections) {
+          if (!section.heading.toLowerCase().includes('infrastructure')) continue;
+          for (const block of section.blocks) {
+            if (block.kind !== 'prose') continue;
+            const c = (block as any).content as string;
+            if (!c.includes('resources:') && !c.includes('provider:')) continue;
+            // Strip markdown code fences
+            const clean = c.replace(/^```(yaml)?\n?/gm, '').replace(/```$/gm, '');
+            const lines = clean.split('\n');
+            // Quick YAML inline parse for compile (same as verify.ts parseSimpleYAML)
+            const infraItems: any[] = [];
+            let inInfraList = false;
+            let currentObj: Record<string, string> | null = null;
+            for (const raw of lines) {
+              const t = raw.trimEnd();
+              if (!t || t.startsWith('#') || t.startsWith('```')) continue;
+              const ts = t.trimStart();
+              if (ts.startsWith('- ') && ts.match(/^-\s+(\w[\w_-]*):/)) {
+                // New list item
+                if (currentObj) { infraItems.push(currentObj); currentObj = null; }
+                inInfraList = true;
+                const kv = ts.slice(2).match(/^(\w[\w_-]*):\s*(.*)/);
+                if (kv) {
+                  currentObj = {};
+                  currentObj[kv[1]] = kv[2].trim().replace(/^['"]|['"]$/g, '');
+                }
+              } else if (inInfraList && currentObj && raw.trimStart() !== raw && ts.match(/^(\w[\w_-]*):/)) {
+                const kv = ts.match(/^(\w[\w_-]*):\s*(.*)/);
+                if (kv) {
+                  const val = kv[2].trim().replace(/^['"]|['"]$/g, '');
+                  if (kv[1] === 'tables' && val.startsWith('[') && val.endsWith(']')) {
+                    currentObj[kv[1]] = val.slice(1, -1).split(',').map((s: string) => s.trim()).join(',');
+                  } else {
+                    currentObj[kv[1]] = val;
+                  }
+                }
+              } else if (ts.match(/^(\w[\w_-]*):/) && !inInfraList) {
+                // top-level key like resources:, skip
+              }
+            }
+            if (currentObj) infraItems.push(currentObj);
+            // Create infra nodes + edges
+            for (const item of infraItems) {
+              const provider = item.provider || '';
+              const res = item.resource || '';
+              const entity = item.entity || '';
+              const region = item.region || '';
+              const tables = item.tables || '';
+              if (!provider || !res || !entity) continue;
+              const nodeName = `${provider}:${res}`;
+              nodes.push({
+                i: nodeName,
+                t: 'infra',
+                g: 'resource',
+                d: `${provider} ${res}`,
+                p: { provider, resource: res, entity, region, tables },
+                s: [],
+                l: [],
+              });
+              // Edge from infra resource to spec entity
+              edges.push({
+                s: nodeName,
+                t: entity,
+                v: 'maps_to',
+                d: '',
+                c: '1:1',
+                r: true,
               });
             }
           }
@@ -304,6 +420,9 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v3', 'U
       const savingsTokens = sourceTokens - dagTokens;
       const tokens = { m: 'chars/4', st: sourceTokens, ct: contentTokens, dt: dagTokens, sv: allSavingsPct, cs: contentSavingsPct, saved: savingsTokens };
 
+      // Build compact injection text for collar's DAG-first context
+      const compact = buildCompactText(p, v2nodes);
+
       const v3dag = [3, p, v2nodes.map((n: any[]) => {
           const nd = nodes[n[0]];
           const tc = nd.g === 'prediction' ? 'p' : 'e';
@@ -321,7 +440,7 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v3', 'U
 
       const dag = opts.v3 ? v3dag : v2dag;
       const dagJson = JSON.stringify(dag);
-      const report: any = opts.v3 ? [...dag, tokens] : { ...dag, tk: tokens };
+      const report: any = opts.v3 ? [...dag, tokens] : { ...dag, tk: tokens, compact };
       writeFileSync(outPath, JSON.stringify(report, null, 2) + '\n');
       console.log(chalk.green(`  ✓ ${outPath}`));
       console.log(chalk.gray(`    ${nodes.length} nodes, ${edges.length} edges, ${files.length} files`));
@@ -1235,58 +1354,126 @@ program.command('convert <file>')
   });
 
 program.command('live [entity]')
-  .description('Test live endpoints defined in .dog specs')
+  .description('Test live endpoints or infrastructure defined in .dog specs')
   .option('--exit-code', 'Return non-zero on drift/unreachable')
   .option('--timeout <s>', 'Per-request timeout in seconds', '10')
-  .action(async (entityFilter: string | undefined, opts: { exitCode?: boolean; timeout?: string }) => {
-    const { readFileSync, existsSync } = require('fs');
+  .option('--type <type>', 'endpoint, infra, or all (default: all)')
+  .action(async (entityFilter: string | undefined, opts: { exitCode?: boolean; timeout?: string; type?: string }) => {
+    const { readFileSync, existsSync, readdirSync, statSync } = require('fs');
     const { join, dirname } = require('path');
     const timeout = parseInt(opts.timeout || '10') * 1000;
+    const checkType = (opts.type || 'all').toLowerCase();
 
-    // Find all .dog files in the project
     const dir = resolvePath('.');
-    const files: string[] = [];
-    function scan(d: string) {
-      const { readdirSync } = require('fs');
-      for (const entry of readdirSync(d, { withFileTypes: true })) {
-        if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
-        const p = join(d, entry.name);
-        if (entry.isDirectory()) scan(p);
-        else if (entry.name.endsWith('.dog')) files.push(p);
+    const endpoints: { name: string; url: string; backupUrl?: string; expectStatus: number; expectBody: any; file: string }[] = [];
+    let infraDagNodes: any[] = [];
+
+    // --- Try .dag first (token-efficient) ---
+    const dagDirs = [join(dir,'projects'),join(dir,'specs'),dir];
+    let dagLoaded = false;
+    const dagFiles: string[] = [];
+    for (const dd of dagDirs) {
+      if (!existsSync(dd)) continue;
+      // Check for .dag files directly in this directory
+      try {
+        for (const entry of readdirSync(dd)) {
+          if (entry.endsWith('.dag')) dagFiles.push(join(dd, entry));
+        }
+      } catch {}
+      // Also check subdirectories (projects/specs pattern)
+      let projects: string[] = [];
+      try { projects = readdirSync(dd, {withFileTypes:true}).filter((e: any) => e.isDirectory()).map((e: any) => e.name); } catch { continue; }
+      for (const p of projects) {
+        const dagFile = join(dd, p, `${p}.dag`);
+        if (existsSync(dagFile)) dagFiles.push(dagFile);
       }
     }
-    scan(dir);
-
-    // Find endpoint entities
-    const { parse } = require('./parser');
-    const endpoints: { name: string; url: string; backupUrl?: string; expectStatus: number; expectBody: any; file: string }[] = [];
-
-    for (const f of files) {
-      try {
-        const content = readFileSync(f, 'utf-8');
-        const ast = parse(content);
-        for (const section of ast.sections) {
-          for (const block of section.blocks) {
-            if (block.kind === 'entity' && block.type === 'endpoint') {
-              const url = block.properties?.url?.default as string;
-              if (!url) continue;
-              const name = block.name;
-              if (entityFilter && name !== entityFilter) continue;
-              endpoints.push({
-                name,
-                url,
-                backupUrl: block.properties?.backup_url?.default as string | undefined,
-                expectStatus: (block.properties?.expect_status?.default as number) || 200,
-                expectBody: block.properties?.expect_body?.default || null,
-                file: f,
-              });
-            }
+    for (const dagFile of dagFiles) {
+      let dag: any;
+      try { dag = JSON.parse(readFileSync(dagFile,'utf-8')); } catch { continue; }
+      dagLoaded = true;
+        const nodes = dag.n || [];
+        const isV2 = (n: any) => Array.isArray(n) && typeof n[0] === 'number';
+        const Nm = (n: any) => isV2(n) ? (n[1] || String(n[0])) : (n.i || n.id || n.name || '');
+        const Nt = (n: any) => isV2(n) ? (n[2] || '') : (n.t || n.type || '');
+        const Np = (n: any) => {
+          if (isV2(n)) {
+            const flat = n[4] || [];
+            const obj: Record<string,string> = {};
+            for (let i = 0; i < flat.length; i += 2) obj[flat[i]] = flat[i+1] || '';
+            return obj;
+          }
+          return n.p || n.properties || {};
+        };
+        for (const node of nodes) {
+          const t = Nt(node);
+          if (t === 'endpoint' && (checkType === 'endpoint' || checkType === 'all')) {
+            const props = Np(node);
+            const url = props.url || props.default_url || '';
+            if (!url) continue;
+            if (entityFilter && Nm(node) !== entityFilter) continue;
+            endpoints.push({
+              name: Nm(node),
+              url,
+              backupUrl: props.backup_url || props.backupUrl || undefined,
+              expectStatus: parseInt(props.expect_status || props.expectStatus || '200') || 200,
+              expectBody: (() => { try { return props.expect_body ? JSON.parse(props.expect_body) : null; } catch { return null; } })(),
+              file: dagFile,
+            });
+          }
+          if (t === 'infra' && (checkType === 'infra' || checkType === 'all')) {
+            const props = Np(node);
+            infraDagNodes.push({
+              entity: props.entity || '',
+              provider: props.provider || '',
+              resource: props.resource || '',
+              region: props.region || '',
+              tables: props.tables || '',
+            });
           }
         }
-      } catch { /* skip unparseable files */ }
     }
 
-    if (!endpoints.length) {
+    // --- Fall back to .dog scanning if no .dag ---
+    if (!dagLoaded && (checkType === 'endpoint' || checkType === 'all')) {
+      const files: string[] = [];
+      function scan(d: string) {
+        for (const entry of readdirSync(d, { withFileTypes: true })) {
+          if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+          const p = join(d, entry.name);
+          if (entry.isDirectory()) scan(p);
+          else if (entry.name.endsWith('.dog')) files.push(p);
+        }
+      }
+      scan(dir);
+      const { parse } = require('./parser');
+      for (const f of files) {
+        try {
+          const content = readFileSync(f, 'utf-8');
+          const ast = parse(content);
+          for (const section of ast.sections) {
+            for (const block of section.blocks) {
+              if (block.kind === 'entity' && block.type === 'endpoint') {
+                const url = block.properties?.url?.default as string;
+                if (!url) continue;
+                const name = block.name;
+                if (entityFilter && name !== entityFilter) continue;
+                endpoints.push({
+                  name, url,
+                  backupUrl: block.properties?.backup_url?.default as string | undefined,
+                  expectStatus: (block.properties?.expect_status?.default as number) || 200,
+                  expectBody: block.properties?.expect_body?.default || null,
+                  file: f,
+                });
+              }
+            }
+          }
+        } catch { /* skip unparseable files */ }
+      }
+    }
+
+    // Print endpoint section
+    if (!endpoints.length && checkType === 'endpoint') {
       console.log(chalk.yellow('No endpoint contracts found. Add an endpoint entity to a .dog file:\n'));
       console.log(chalk.gray('  ### Endpoint: my-api'));
       console.log(chalk.gray('  ```yaml'));
@@ -1305,9 +1492,7 @@ program.command('live [entity]')
     for (const ep of endpoints) {
       const urls = [ep.url];
       if (ep.backupUrl) urls.push(ep.backupUrl);
-      
-      let matched = false;
-      let usedBackup = false;
+      let matched = false, usedBackup = false;
 
       for (const u of urls) {
         const isBackup = u !== ep.url;
@@ -1316,12 +1501,10 @@ program.command('live [entity]')
           const timer = setTimeout(() => controller.abort(), timeout);
           const res = await fetch(u, { signal: controller.signal, headers: { 'Accept': 'application/json' } });
           clearTimeout(timer);
-
           if (res.status !== ep.expectStatus) {
-            if (!isBackup) continue; // try backup
+            if (!isBackup) continue;
             else { console.log(chalk.red(`  ✗ ${ep.name}: ${u} → status ${res.status} (expected ${ep.expectStatus})`)); unreachable++; break; }
           }
-
           const body = await res.json().catch(() => null);
           if (ep.expectBody && body) {
             const drift = diffBody(ep.expectBody, body);
@@ -1333,10 +1516,7 @@ program.command('live [entity]')
               console.log(chalk.yellow(`  ⚠ ${ep.name}: ${u} — new fields: ${drift.extra.join(', ')}`));
             }
           }
-
-          matched = true;
-          usedBackup = isBackup;
-          break;
+          matched = true; usedBackup = isBackup; break;
         } catch (e: any) {
           if (!isBackup) continue;
           else { console.log(chalk.red(`  ✗ ${ep.name}: ${u} — ${e.message}`)); unreachable++; break; }
@@ -1344,13 +1524,8 @@ program.command('live [entity]')
       }
 
       if (matched) {
-        if (usedBackup) {
-          console.log(chalk.yellow(`  ⚠ ${ep.name}: ${ep.backupUrl} (backup, primary failed)`));
-          degraded++;
-        } else {
-          console.log(chalk.green(`  ✓ ${ep.name}`));
-          passed++;
-        }
+        if (usedBackup) { console.log(chalk.yellow(`  ⚠ ${ep.name}: ${ep.backupUrl} (backup, primary failed)`)); degraded++; }
+        else { console.log(chalk.green(`  ✓ ${ep.name}`)); passed++; }
       } else {
         console.log(chalk.red(`  ✗ ${ep.name}: primary + backup unreachable`));
         unreachable++;
@@ -1358,13 +1533,80 @@ program.command('live [entity]')
     }
 
     const total = passed + degraded + failed + unreachable;
-    if (!total) return;
-    console.log(chalk.bold(`\n  ${total} endpoints: ${chalk.green(passed + ' passed')}${degraded ? chalk.yellow(', ' + degraded + ' degraded') : ''}${failed ? chalk.red(', ' + failed + ' failed') : ''}${unreachable ? chalk.red(', ' + unreachable + ' unreachable') : ''}`));
+
+    // --- Infrastructure verification (from .dag or fallback) ---
+    let infraResults: any[] = [];
+
+    if (checkType === 'infra' || checkType === 'all') {
+      if (infraDagNodes.length > 0) {
+        // Use .dag nodes — run provider checks directly
+        const { verifyInfra } = require('./infra/verify');
+        for (const node of infraDagNodes) {
+          if (entityFilter && node.entity !== entityFilter) continue;
+          const filtered = await verifyInfra({
+            dir,
+            providerFilter: node.provider,
+            entityFilter: node.entity,
+          });
+          infraResults.push(...filtered);
+        }
+      } else {
+        // Fall back to .dog scanning
+        const { verifyInfra } = require('./infra/verify');
+        infraResults = await verifyInfra({
+          dir,
+          entityFilter: entityFilter && checkType === 'infra' ? entityFilter : undefined,
+        });
+      }
+    }
+
+    // Print infra results
+    if (infraResults.length > 0 && (checkType === 'infra' || checkType === 'all')) {
+      const allSkip = infraResults.every((r: any) => r.status === 'skip');
+      if (allSkip) {
+        console.log(chalk.gray('\nInfrastructure — skipped (no provider tokens set)'));
+        for (const r of infraResults) {
+          console.log(chalk.gray(`  — ${r.entity.padEnd(14)} ${r.provider} ${r.resource}  ${r.message}`));
+        }
+      } else {
+        console.log(chalk.bold('\nInfrastructure'));
+        let infraPass = 0, infraFail = 0, infraWarn = 0;
+        for (const r of infraResults) {
+          const icon = r.status === 'pass' ? chalk.green('  ✓') :
+                       r.status === 'fail' ? chalk.red('  ✗') :
+                       r.status === 'warn' ? chalk.yellow('  ⚠') : chalk.gray('  —');
+          const label = r.entity ? `${r.entity.padEnd(14)} ${r.provider} ${r.resource}` : `${r.provider} ${r.resource}`;
+          console.log(`${icon} ${label.padEnd(48)} ${r.message}${r.detail ? chalk.gray(' (' + r.detail.slice(0, 80) + ')') : ''}`);
+          if (r.children) {
+            for (const c of r.children) {
+              const cIcon = c.status === 'pass' ? chalk.green('    ✓') :
+                            c.status === 'fail' ? chalk.red('    ✗') : chalk.gray('    —');
+              console.log(`${cIcon} ${c.resource.padEnd(44)} ${c.message}`);
+            }
+          }
+          if (r.status === 'pass') infraPass++;
+          else if (r.status === 'fail') infraFail++;
+          else if (r.status === 'warn') infraWarn++;
+        }
+        const infraTotal = infraPass + infraFail + infraWarn;
+        console.log(chalk.bold(`\n  ${infraTotal} resources: ${chalk.green(infraPass + ' verified')}${infraFail ? chalk.red(', ' + infraFail + ' missing') : ''}${infraWarn ? chalk.yellow(', ' + infraWarn + ' warn') : ''}`));
+      }
+    }
+
+    if (!endpoints.length && infraResults.length === 0 && checkType !== 'infra') {
+      console.log(chalk.yellow('No endpoint contracts or infrastructure resources found. Add to a .dog file:\n'));
+      console.log(chalk.gray('  Endpoint: ### Endpoint: my-api with type: endpoint'));
+      console.log(chalk.gray('  Infra:    ### Infrastructure with resources list'));
+      process.exit(0);
+    }
+    if (endpoints.length > 0) {
+      console.log(chalk.bold(`\n  ${total} endpoints: ${chalk.green(passed + ' passed')}${degraded ? chalk.yellow(', ' + degraded + ' degraded') : ''}${failed ? chalk.red(', ' + failed + ' failed') : ''}${unreachable ? chalk.red(', ' + unreachable + ' unreachable') : ''}`));
+    }
 
     if (opts.exitCode) {
-      if (failed > 0) process.exit(1);   // drift
-      if (unreachable > 0) process.exit(2); // unreachable
-      if (degraded > 0) process.exit(3);  // backup used (primary failed)
+      if (failed > 0) process.exit(1);
+      if (unreachable > 0) process.exit(2);
+      if (degraded > 0) process.exit(3);
     }
   });
 
