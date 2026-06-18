@@ -4,7 +4,6 @@ title: "Contributing Kits"
 description: "How to create, test, and submit dotdog kit templates."
 ---
 
-← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents · dogfood](https://specdog.github.io/agents)
 
 
 

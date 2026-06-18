@@ -4,7 +4,6 @@ title: "FAQ"
 description: "Frequently asked questions about dotdog."
 ---
 
-← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents · dogfood](https://specdog.github.io/agents)
 
 
 
