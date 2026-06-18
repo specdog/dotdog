@@ -17,6 +17,7 @@
 
 ```
 dotdog validate     → check completeness (run before commits)
+dotdog doctor       → baseline health check (run before commits)
 dotdog analyze      → gap detection + contradiction checking
 dotdog compile      → rebuild .dag from .dog files
 dotdog index        → build search index

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { existsSync, readdirSync, readFileSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, mkdirSync, writeFileSync, statSync } from 'fs';
 import { join, resolve } from 'path';
 import { buildIndex, searchIndex } from './index';
 import { homedir } from 'os';
@@ -1140,6 +1140,78 @@ program.command('badge [dir]')
     if (!found) console.log(chalk.yellow('No projects found. Run dotdog init first.'));
   });
 
+
+program.command('doctor')
+  .description('Baseline health check — validate specs, detect stale .dag')
+  .option('--json', 'Machine-readable JSON output')
+  .action((opts: { json?: boolean }) => {
+    const dir = resolvePath('.');
+    const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+    let found = false, passed = 0, failed = 0;
+    const results: Array<{project:string,status:string,error?:string}> = [];
+
+    for (const dd of dirs) {
+      if (!existsSync(dd)) continue;
+      const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+      for (const p of projects) {
+        const pd = join(dd,p);
+        if (!existsSync(join(pd,'SPEC.dog'))) continue;
+        found = true;
+        const dogFiles = readdirSync(pd).filter(f=>f.endsWith('.dog'));
+        // Check 1: validate completeness
+        const missing = ['SPEC.dog','constitution.dog','data-model.dog'].filter(f=>!dogFiles.includes(f));
+        if (missing.length) {
+          const msg = `missing ${missing.join(', ')}`;
+          if (opts.json) results.push({project:p,status:'fail',error:msg});
+          else console.log(chalk.red(`  ✗ ${p}: ${msg}`));
+          failed++;
+          continue;
+        }
+        // Check 2: stale .dag
+        const dagFile = join(pd,`${p}.dag`);
+        if (!existsSync(dagFile)) {
+          const msg = 'no .dag — run dotdog compile';
+          if (opts.json) results.push({project:p,status:'fail',error:msg});
+          else console.log(chalk.yellow(`  ✗ ${p}: ${msg}`));
+          failed++;
+          continue;
+        }
+        // Guard against corrupted .dag
+        let dagMtime: number;
+        try {
+          dagMtime = statSync(dagFile).mtimeMs;
+          JSON.parse(readFileSync(dagFile,'utf-8'));
+        } catch {
+          const msg = 'corrupted .dag — run dotdog compile';
+          if (opts.json) results.push({project:p,status:'fail',error:msg});
+          else console.log(chalk.red(`  ✗ ${p}: ${msg}`));
+          failed++;
+          continue;
+        }
+        const stale = dogFiles.filter(f => statSync(join(pd,f)).mtimeMs > dagMtime);
+        if (stale.length) {
+          const msg = `stale .dag (${stale.join(', ')} newer)`;
+          if (opts.json) results.push({project:p,status:'fail',error:msg});
+          else {
+            console.log(chalk.red(`  ✗ ${p}: ${msg}`));
+            console.log(chalk.gray(`     Run: dotdog compile`));
+          }
+          failed++;
+        } else {
+          if (opts.json) results.push({project:p,status:'pass'});
+          else console.log(chalk.green(`  ✓ ${p}`));
+          passed++;
+        }
+      }
+    }
+    if (opts.json) {
+      console.log(JSON.stringify({passed,failed,total:passed+failed,results}));
+    } else {
+      if (!found) console.log(chalk.yellow('No projects found. Run dotdog init first.'));
+      else console.log(chalk.bold(`\n  ${passed + failed} checks: ${passed} passed, ${failed} failed`));
+    }
+    if (failed) process.exit(1);
+  });
 
 
 program.command('convert <file>')
