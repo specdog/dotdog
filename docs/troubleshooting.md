@@ -4,7 +4,6 @@ title: "Troubleshooting"
 description: "Common dotdog error messages and how to fix them."
 ---
 
-← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents · dogfood](https://specdog.github.io/agents)
 
 
 

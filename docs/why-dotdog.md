@@ -4,7 +4,6 @@ title: "Why dotdog"
 description: "Compare dotdog with traditional approaches to software specifications."
 ---
 
-← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents · dogfood](https://specdog.github.io/agents)
 
 
 
