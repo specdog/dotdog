@@ -2,5 +2,19 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://specdog.github.io/dotdog/</loc></url>
   <url><loc>https://specdog.github.io/dotdog/adopting</loc></url>
+  <url><loc>https://specdog.github.io/dotdog/handbook</loc></url>
+  <url><loc>https://specdog.github.io/dotdog/tutorial</loc></url>
+  <url><loc>https://specdog.github.io/dotdog/faq</loc></url>
+  <url><loc>https://specdog.github.io/dotdog/integrations</loc></url>
+  <url><loc>https://specdog.github.io/dotdog/use-cases</loc></url>
+  <url><loc>https://specdog.github.io/dotdog/why-dotdog</loc></url>
+  <url><loc>https://specdog.github.io/dotdog/contributing-kits</loc></url>
+  <url><loc>https://specdog.github.io/dotdog/troubleshooting</loc></url>
   <url><loc>https://specdog.github.io/dotdog/blog/introducing-dotdog</loc></url>
+  <url><loc>https://specdog.github.io/</loc></url>
+  <url><loc>https://specdog.github.io/handbook</loc></url>
+  <url><loc>https://specdog.github.io/agents</loc></url>
+  <url><loc>https://specdog.github.io/dogfood</loc></url>
+  <url><loc>https://specdog.github.io/leash</loc></url>
+  <url><loc>https://specdog.github.io/homebrew</loc></url>
 </urlset>
