@@ -23,6 +23,11 @@ Important notes:
 - [Grammar types](https://github.com/specdog/dotdog/blob/main/packages/dotdog/src/grammar.ts): TypeScript type definitions (Entity, Relationship, Event, etc.)
 - [MCP server](https://github.com/specdog/dotdog/blob/main/packages/dotdog/src/serve.ts): MCP server implementation over stdio
 
+## Blog
+
+- [Google ARD announcement analysis](https://specdog.github.io/dotdog/blog/google-ard-dotdog): Agentic Resource Discovery — how it fits with MCP, A2A, llms.txt
+- [Karpathy's LLM OS needs a wiki brain](https://specdog.github.io/dotdog/blog/karpathy-wiki-brain): Why structured knowledge graphs beat flat files for agents
+
 ## Optional
 
 - [npm page](https://www.npmjs.com/package/dotdog): npm registry listing
