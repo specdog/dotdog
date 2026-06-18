@@ -1,0 +1,26 @@
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "dotdog",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "macOS, Windows, Linux",
+  "description": "CLI tool for structured software specs. Write .dog files, compile to .dag graphs, query via MCP. 94% token savings.",
+  "url": "https://specdog.github.io/dotdog",
+  "author": {
+    "@type": "Organization",
+    "name": "specdog",
+    "url": "https://github.com/specdog"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "featureList": [
+    "Structured .dog spec files with entity properties, states, and relationships",
+    "Compiled .dag graphs — 94% smaller than source prose",
+    "MCP server with 7 query tools for AI agents",
+    "Validate, compile, analyze, simulate — spec lifecycle management",
+    "Agent-first: zero hallucination risk vs scanning prose"
+  ]
+}
