@@ -12,3 +12,5 @@ credentials*
 *.idx
 
 *.tgz
+packages/dotdog/scripts/
+dev/
