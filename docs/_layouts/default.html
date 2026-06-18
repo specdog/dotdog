@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: 'en-US' }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ page.title | default: site.title }}</title>
+<meta name="description" content="{{ page.description | default: site.description }}">
+{% include head-custom.html %}
+</head>
+<body>
+<nav>
+  <a href="https://specdog.github.io/">specdog</a>
+  <a href="https://specdog.github.io/handbook">guide</a>
+  <a href="https://specdog.github.io/agents">for agents</a>
+  <a href="https://specdog.github.io/dogfood">dogfood</a>
+</nav>
+<style>
+  nav { display: flex; justify-content: center; gap: 24px; padding: 16px 0 32px; }
+  nav a { color: #6b7280; text-decoration: none; font-size: .9em; font-weight: 500; }
+  nav a:hover { color: #d97706; }
+</style>
+{{ content }}
+</body>
+</html>
