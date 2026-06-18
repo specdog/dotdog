@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.5 — 2026-06-18
+
+- Add `dotdog live` command — endpoint contract testing with backup failover
+- Add EndpointNode type to grammar and parser
+- Add live-endpoint-testing docs page and blog post
+
 ## 0.6.0 — 2026-06-17
 
 - Add DAO governance kit template

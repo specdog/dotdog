@@ -51,6 +51,7 @@ dotdog badge               # generate savings badge for your README
 | `dotdog kit` | List, init, or manage spec kits (starter templates). |
 | `dotdog list` | List all projects and their `.dog` file counts. |
 | `dotdog woof` | Prints "woof" because every good CLI deserves an easter egg. |
+| `dotdog live [entity]` | Test live endpoints against .dog contracts. Hits URLs, diffs responses, backup failover. |
 
 ## File Formats
 

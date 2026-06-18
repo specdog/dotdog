@@ -1,0 +1,19 @@
+# live-test — endpoint contract test fixture
+
+### Endpoint: httpbin-get
+
+```yaml
+entity: httpbin-get
+type: endpoint
+properties:
+  url:
+    type: string
+    default: https://httpbin.org/get
+  expect_status:
+    type: number
+    default: 200
+  expect_body:
+    type: json
+    default:
+      url: https://httpbin.org/get
+```
