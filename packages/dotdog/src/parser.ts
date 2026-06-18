@@ -115,6 +115,13 @@ function parseBlocks(lines: string[], start: number, end: number, errors?: Parse
       if (result) { blocks.push(result.node); i = result.nextLine; continue; }
     }
 
+    // Endpoint block? (contract testing)
+    const endpointMatch = line.match(/^#{3,5}\s+Endpoint:\s*(.+)/);
+    if (endpointMatch) {
+      const result = parseStructuredBlock(lines, i, end, 'endpoint', endpointMatch[1]);
+      if (result) { blocks.push(result.node); i = result.nextLine; continue; }
+    }
+
     // Prediction block?
     const predMatch = line.match(/^#{3,5}\s+Prediction:\s*(.+)/);
     if (predMatch) {

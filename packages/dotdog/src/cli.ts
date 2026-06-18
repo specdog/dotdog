@@ -1226,13 +1226,155 @@ program.command('convert <file>')
     if (existsSync(dogPath)) { console.log(chalk.yellow(`${dogPath} already exists.`)); return; }
     const content = readFileSync(path, 'utf-8');
     renameSync(path, dogPath);
-    // Ensure at least one ## heading for format compliance
     if (!content.match(/^##\s/m)) {
       const stub = '## Product\n\n(Describe your product here)\n';
       writeFileSync(dogPath, stub + content);
     }
-    console.log(chalk.green(`  \u2713 ${basename(path)} \u2192 ${basename(dogPath)}`));
+    console.log(chalk.green(`  ✓ ${basename(path)} → ${basename(dogPath)}`));
     console.log(chalk.gray('  Run: dotdog validate'));
   });
+
+program.command('live [entity]')
+  .description('Test live endpoints defined in .dog specs')
+  .option('--exit-code', 'Return non-zero on drift/unreachable')
+  .option('--timeout <s>', 'Per-request timeout in seconds', '10')
+  .action(async (entityFilter: string | undefined, opts: { exitCode?: boolean; timeout?: string }) => {
+    const { readFileSync, existsSync } = require('fs');
+    const { join, dirname } = require('path');
+    const timeout = parseInt(opts.timeout || '10') * 1000;
+
+    // Find all .dog files in the project
+    const dir = resolvePath('.');
+    const files: string[] = [];
+    function scan(d: string) {
+      const { readdirSync } = require('fs');
+      for (const entry of readdirSync(d, { withFileTypes: true })) {
+        if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+        const p = join(d, entry.name);
+        if (entry.isDirectory()) scan(p);
+        else if (entry.name.endsWith('.dog')) files.push(p);
+      }
+    }
+    scan(dir);
+
+    // Find endpoint entities
+    const { parse } = require('./parser');
+    const endpoints: { name: string; url: string; backupUrl?: string; expectStatus: number; expectBody: any; file: string }[] = [];
+
+    for (const f of files) {
+      try {
+        const content = readFileSync(f, 'utf-8');
+        const ast = parse(content);
+        for (const section of ast.sections) {
+          for (const block of section.blocks) {
+            if (block.kind === 'entity' && block.type === 'endpoint') {
+              const url = block.properties?.url?.default as string;
+              if (!url) continue;
+              const name = block.name;
+              if (entityFilter && name !== entityFilter) continue;
+              endpoints.push({
+                name,
+                url,
+                backupUrl: block.properties?.backup_url?.default as string | undefined,
+                expectStatus: (block.properties?.expect_status?.default as number) || 200,
+                expectBody: block.properties?.expect_body?.default || null,
+                file: f,
+              });
+            }
+          }
+        }
+      } catch { /* skip unparseable files */ }
+    }
+
+    if (!endpoints.length) {
+      console.log(chalk.yellow('No endpoint contracts found. Add an endpoint entity to a .dog file:\n'));
+      console.log(chalk.gray('  ### Endpoint: my-api'));
+      console.log(chalk.gray('  ```yaml'));
+      console.log(chalk.gray('  entity: my-api'));
+      console.log(chalk.gray('  type: endpoint'));
+      console.log(chalk.gray('  properties:'));
+      console.log(chalk.gray('    url: { type: string, default: "https://..." }'));
+      console.log(chalk.gray('    expect_body: { type: json, default: { ... } }'));
+      console.log(chalk.gray('  ```'));
+      process.exit(0);
+    }
+
+    // Hit each endpoint
+    let passed = 0, degraded = 0, failed = 0, unreachable = 0;
+
+    for (const ep of endpoints) {
+      const urls = [ep.url];
+      if (ep.backupUrl) urls.push(ep.backupUrl);
+      
+      let matched = false;
+      let usedBackup = false;
+
+      for (const u of urls) {
+        const isBackup = u !== ep.url;
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), timeout);
+          const res = await fetch(u, { signal: controller.signal, headers: { 'Accept': 'application/json' } });
+          clearTimeout(timer);
+
+          if (res.status !== ep.expectStatus) {
+            if (!isBackup) continue; // try backup
+            else { console.log(chalk.red(`  ✗ ${ep.name}: ${u} → status ${res.status} (expected ${ep.expectStatus})`)); unreachable++; break; }
+          }
+
+          const body = await res.json().catch(() => null);
+          if (ep.expectBody && body) {
+            const drift = diffBody(ep.expectBody, body);
+            if (drift.missing.length > 0) {
+              if (!isBackup) continue;
+              else { console.log(chalk.red(`  ✗ ${ep.name}: ${u} — missing fields: ${drift.missing.join(', ')}`)); failed++; break; }
+            }
+            if (drift.extra.length > 0) {
+              console.log(chalk.yellow(`  ⚠ ${ep.name}: ${u} — new fields: ${drift.extra.join(', ')}`));
+            }
+          }
+
+          matched = true;
+          usedBackup = isBackup;
+          break;
+        } catch (e: any) {
+          if (!isBackup) continue;
+          else { console.log(chalk.red(`  ✗ ${ep.name}: ${u} — ${e.message}`)); unreachable++; break; }
+        }
+      }
+
+      if (matched) {
+        if (usedBackup) {
+          console.log(chalk.yellow(`  ⚠ ${ep.name}: ${ep.backupUrl} (backup, primary failed)`));
+          degraded++;
+        } else {
+          console.log(chalk.green(`  ✓ ${ep.name}`));
+          passed++;
+        }
+      } else {
+        console.log(chalk.red(`  ✗ ${ep.name}: primary + backup unreachable`));
+        unreachable++;
+      }
+    }
+
+    const total = passed + degraded + failed + unreachable;
+    if (!total) return;
+    console.log(chalk.bold(`\n  ${total} endpoints: ${chalk.green(passed + ' passed')}${degraded ? chalk.yellow(', ' + degraded + ' degraded') : ''}${failed ? chalk.red(', ' + failed + ' failed') : ''}${unreachable ? chalk.red(', ' + unreachable + ' unreachable') : ''}`));
+
+    if (opts.exitCode) {
+      if (failed > 0) process.exit(1);   // drift
+      if (unreachable > 0) process.exit(2); // unreachable
+      if (degraded > 0) process.exit(3);  // backup used (primary failed)
+    }
+  });
+
+// Deep diff — returns missing and extra top-level keys
+function diffBody(expected: Record<string, unknown>, actual: Record<string, unknown>): { missing: string[]; extra: string[] } {
+  const expKeys = Object.keys(expected);
+  const actKeys = Object.keys(actual);
+  const missing = expKeys.filter(k => !(k in actual));
+  const extra = actKeys.filter(k => !(k in expected));
+  return { missing, extra };
+}
 
 program.parse();

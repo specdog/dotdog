@@ -1,0 +1,29 @@
+# Agent benchmark configuration
+# Add new agents by appending entries with run command + log path
+
+agents:
+  collar:
+    name: collar (DAG-first)
+    command: collar chat -q "{prompt}"
+    log_type: collar_insights
+    log_cmd: collar insights --days 1 --json
+    
+  claude:
+    name: Claude Code
+    command: claude "{prompt}" --print --output-format text
+    log_type: jsonl
+    log_path: ~/Library/Application Support/Claude/usage/*.jsonl
+    log_key: usage.total_tokens
+    
+  codex:
+    name: OpenAI Codex
+    command: codex exec "{prompt}"
+    log_type: jsonl
+    log_path: ~/.codex/usage/*.jsonl
+    log_key: usage.total_tokens
+
+settings:
+  warmup_runs: 1
+  measured_runs: 3
+  cooldown_seconds: 5
+  task_dir: ./tasks/

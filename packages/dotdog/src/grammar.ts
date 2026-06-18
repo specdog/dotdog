@@ -50,6 +50,7 @@ export type ASTNode =
   | RelationshipNode
   | EventNode
   | PredictionNode
+  | EndpointNode
   | ProseNode
   | TableNode;
 
@@ -76,7 +77,7 @@ export interface SectionNode {
   lineEnd: number;
 }
 
-export type BlockNode = EntityNode | RelationshipNode | EventNode | PredictionNode | ProseNode | TableNode;
+export type BlockNode = EntityNode | RelationshipNode | EventNode | PredictionNode | EndpointNode | ProseNode | TableNode;
 
 export interface EntityNode {
   kind: 'entity';
@@ -150,6 +151,20 @@ export interface TableNode {
   kind: 'table';
   headers: string[];
   rows: string[][];
+  lineStart: number;
+  lineEnd: number;
+}
+
+export interface EndpointNode {
+  kind: 'endpoint';
+  name: string;
+  url: string;
+  backup_url?: string;
+  method: string;
+  expect_status: number;
+  expect_body: Record<string, unknown> | null;
+  timeout: number;
+  yaml: Record<string, unknown>;
   lineStart: number;
   lineEnd: number;
 }
