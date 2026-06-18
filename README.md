@@ -6,6 +6,8 @@
 [![License: MIT](https://img.shields.io/npm/l/dotdog)](https://github.com/specdog/dotdog/blob/main/LICENSE)
 [![CI](https://github.com/specdog/dotdog/actions/workflows/test.yml/badge.svg)](https://github.com/specdog/dotdog/actions)
 
+<img width="700" alt="dotdog demo" src="https://vhs.charm.sh/vhs-3g4uEdsixykLRHyiWTVZFJ.gif">
+
 > **Feed the dog. Ship with specs.** Write .dog specs. Dog checks them. AI agents fetch them.
 
 ## Install
