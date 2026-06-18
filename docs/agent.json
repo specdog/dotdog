@@ -19,7 +19,7 @@
   "featureList": [
     "Structured .dog spec files with entity properties, states, and relationships",
     "Compiled .dag graphs — 94% smaller than source prose",
-    "MCP server with 7 query tools for AI agents",
+    "MCP server with 6 query tools for AI agents",
     "Validate, compile, analyze, simulate — spec lifecycle management",
     "Agent-first: zero hallucination risk vs scanning prose"
   ]
