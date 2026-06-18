@@ -5,6 +5,9 @@
 [![spec savings](https://raw.githubusercontent.com/specdog/dotdog/main/dotdog-badge.svg)](https://github.com/specdog/dotdog)
 [![License: MIT](https://img.shields.io/npm/l/dotdog)](https://github.com/specdog/dotdog/blob/main/LICENSE)
 [![CI](https://github.com/specdog/dotdog/actions/workflows/test.yml/badge.svg)](https://github.com/specdog/dotdog/actions)
+[![MCP Server](https://img.shields.io/badge/MCP-Server-6b4df0)](https://glama.ai/mcp/servers/specdog/dotdog)
+[![Install in VS Code](https://img.shields.io/badge/Install_in_VS_Code-0098FF?logo=visualstudiocode)](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522dotdog%2522%252C%2522command%2522%253A%2522npx%2522%252C%2522args%2522%253A%255B%2522-y%2522%252C%2522dotdog%2540latest%2522%252C%2522serve%2522%255D%257D)
+[![Install in Cursor](https://img.shields.io/badge/Install_in_Cursor-1a1a1a?logo=cursor)](https://cursor.com/install-mcp?name=dotdog&config=%7B%22command%22%3A%22npx%20-y%20dotdog%40latest%20serve%22%7D)
 
 
 > **Feed the dog. Ship with specs.** Write .dog specs. Dog checks them. AI agents fetch them.
@@ -45,6 +48,7 @@ dotdog badge               # generate savings badge for your README
 | `dotdog simulate <scenario>` | Walk through a scenario. Reads SPEC.dog scenarios, checks pre/postconditions. |
 | `dotdog predictions [dir]` | List all predictions with status (pending, correct, wrong, partial). |
 | `dotdog resolve <name>` | Mark a prediction as correct, wrong, or partial with evidence. |
+| `dotdog doctor` | Baseline health check. Validates specs, detects stale .dag. |
 | `dotdog visualize [dir]` | Output Mermaid graph from `.dag`. `--save` writes `.md` for GitHub rendering. |
 | `dotdog generate [dir]` | Generate missing spec files from SPEC.dog (data-model, COPY, INDEX). |
 | `dotdog parse <file>` | Parse a `.dog` file into sections (entities, relationships, copy). |

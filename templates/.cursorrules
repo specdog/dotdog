@@ -1,0 +1,59 @@
+# dotdog — spec-driven context for Cursor
+# Copy this file to your project root as .cursorrules
+# Cursor will auto-load dotdog MCP context on relevant tasks
+
+## Dotdog MCP Server
+
+This project uses dotdog for structured specifications. Before any
+coding task that touches entities or relationships, query the dotdog
+MCP server to load relevant context.
+
+### Quick commands for your agent:
+
+```
+# Start the MCP server (if not running)
+dotdog serve
+
+# Or add to your Cursor MCP config (~/.cursor/mcp.json):
+{
+  "mcpServers": {
+    "dotdog": {
+      "command": "npx",
+      "args": ["-y", "dotdog@latest", "serve"]
+    }
+  }
+}
+```
+
+### MCP tools available:
+
+- `getEntity` — Get entity properties, states, lifecycle
+- `traverse` — Walk the graph from any node, BFS to depth N
+- `search` — Find entities by name or type
+- `schema` — Property definitions, zero prose
+- `summary` — Node count, edge count, token savings
+- `listProjects` — List all spec projects
+
+### Workflow:
+
+1. `dotdog doctor` — verify specs are clean
+2. `listProjects` → find your project
+3. `getEntity` → understand an entity's properties and relationships
+4. `traverse` → explore connected entities
+5. Code with full context — no hallucinated APIs
+
+### When to query:
+
+- Before creating/editing any file that touches spec entities
+- Before suggesting API changes
+- When you need to understand relationships between concepts
+- When the user asks "how does X relate to Y?"
+
+### Spec files live in:
+
+```
+specs/<project>/SPEC.dog          # product spec
+specs/<project>/data-model.dog    # entities, relationships, states
+specs/<project>/constitution.dog  # rules, constraints
+specs/<project>/plan.dog          # phases, tasks, predictions
+```
