@@ -2,8 +2,9 @@
 // Exposes .dag graph to AI agents (supports v3, v2 positional, v1.5, v1.4, v1.3)
 
 import { existsSync, readdirSync, readFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { dirname, join, resolve } from 'path';
 import { homedir } from 'os';
+import { fileURLToPath } from 'url';
 import * as readline from 'readline';
 
 function resolvePath(p: string): string {
@@ -122,6 +123,7 @@ export function serve(dir: string = '.'): void {
             { name: 'listProjects', description: 'List all projects', inputSchema: { type: 'object', properties: {} } },
             { name: 'summary', description: 'Get project summary: node count, edge count, token savings', inputSchema: { type: 'object', properties: { project: { type:'string' } } } },
             { name: 'schema', description: 'Get full property schema for an entity', inputSchema: { type: 'object', properties: { project: { type:'string' }, entity: { type:'string' } }, required: ['entity'] } },
+            { name: 'listBlogs', description: 'List all blog posts with titles and descriptions', inputSchema: { type: 'object', properties: {} } },
           ]
         }
       };
@@ -227,6 +229,24 @@ export function serve(dir: string = '.'): void {
           states: ns(node),
           lifecycle: nl(node),
         }) }] } };
+      }
+
+      if (name === 'listBlogs') {
+        const blogDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'docs', 'blog');
+        const posts: any[] = [];
+        if (existsSync(blogDir)) {
+          for (const f of readdirSync(blogDir)) {
+            if (!f.endsWith('.md')) continue;
+            const raw = readFileSync(join(blogDir, f), 'utf-8');
+            const fm = raw.match(/^---\n([\s\S]*?)\n---/)?.[1] || '';
+            const title = fm.match(/title:\s*"([^"]+)"/)?.[1] || '';
+            const desc = fm.match(/description:\s*"([^"]+)"/)?.[1] || '';
+            const date = fm.match(/date:\s*(\S+)/)?.[1] || '';
+            const slug = f.replace('.md', '');
+            posts.push({ slug, title, description: desc, date, url: `https://specdog.github.io/dotdog/blog/${slug}` });
+          }
+        }
+        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(posts) }] } };
       }
 
       return { jsonrpc: '2.0', id, error: { code: 404, message: `Unknown tool: ${name}` } };
