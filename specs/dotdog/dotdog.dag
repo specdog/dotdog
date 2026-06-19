@@ -52,18 +52,7 @@
       "Node",
       "entity",
       "A typed node in the spec knowledge graph. Every entity, task, prediction, and concept is a Node.",
-      [
-        "id",
-        "s!",
-        "type",
-        "e!",
-        "name",
-        "s!",
-        "description",
-        "s!",
-        "properties",
-        "j!"
-      ],
+      [],
       [
         "created",
         "updated",
@@ -82,26 +71,7 @@
       "Task",
       "entity",
       "A unit of work. Has dependencies, assignment, effort estimates, and a computed completion probability.",
-      [
-        "id",
-        "s!",
-        "name",
-        "s!",
-        "status",
-        "e!",
-        "priority",
-        "e!",
-        "estimated_hours",
-        "n!",
-        "actual_hours",
-        "n!",
-        "depends_on",
-        "s!",
-        "assigned_to",
-        "s!",
-        "completion_probability",
-        "n!"
-      ],
+      [],
       [
         "specified",
         "building",
@@ -127,22 +97,7 @@
       "Prediction",
       "prediction",
       "A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes.",
-      [
-        "id",
-        "s!",
-        "statement",
-        "s!",
-        "trigger",
-        "s!",
-        "timeframe",
-        "s!",
-        "confidence",
-        "n!",
-        "measurement",
-        "s!",
-        "actual_outcome",
-        "e!"
-      ],
+      [],
       [
         "pending",
         "resolved"
@@ -160,14 +115,7 @@
       "Compile",
       "event",
       "The compilation process. Reads all .dog files, parses entities and relationships, outputs a .dag graph with integrity hash and token savings report.",
-      [
-        "source_files",
-        "n!",
-        "output_hash",
-        "s!",
-        "token_savings_pct",
-        "n!"
-      ],
+      [],
       [
         "running",
         "completed",
@@ -186,16 +134,7 @@
       "DAG",
       "entity",
       "The compiled graph output. A deterministic JSON structure with typed nodes, edges, integrity metadata, and provable token savings. Queryable by AI agents via MCP.",
-      [
-        "version",
-        "s!",
-        "sha256",
-        "s!",
-        "source_files",
-        "n!",
-        "token_savings_pct",
-        "n!"
-      ],
+      [],
       [
         "current",
         "stale"
@@ -205,17 +144,51 @@
           6,
           "produces",
           "1:1"
+        ],
+        [
+          8,
+          "maps_to",
+          "1:1",
+          1
+        ]
+      ]
+    ],
+    [
+      8,
+      "aws:s3:dotdog-assets",
+      "infra",
+      "aws s3:dotdog-assets",
+      [
+        "provider",
+        "aws",
+        "resource",
+        "s3:dotdog-assets",
+        "entity",
+        "DAG",
+        "region",
+        "us-east-1",
+        "tables",
+        ""
+      ],
+      [],
+      [
+        [
+          7,
+          "maps_to",
+          "1:1",
+          1
         ]
       ]
     ]
   ],
   "tk": {
     "m": "chars/4",
-    "st": 8563,
-    "ct": 8547,
-    "dt": 512,
-    "sv": 94,
-    "cs": 94,
-    "saved": 8051
-  }
+    "st": 8616,
+    "ct": 8600,
+    "dt": 442,
+    "sv": 94.9,
+    "cs": 94.9,
+    "saved": 8174
+  },
+  "compact": "[dot]\nTask→Task:depen(mm)>Prediction:measu(1m)\nDAG→Compile:produ(11)>aws:s3:dotdog-assets:maps_(11)\nNode→Node:conne(mm)\nCompile→DAG:produ(11)\naws:s3:dotdog-assets→DAG:maps_(11)"
 }
