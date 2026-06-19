@@ -1,44 +1,58 @@
-[
-  3,
-  "dotdog",
-  [
+{
+  "v": 2,
+  "p": "dotdog",
+  "n": [
     [
+      0,
       "dotdog reaches 200 PRs",
-      "p",
-      null,
-      null,
-      null,
+      "prediction",
+      "",
+      [],
+      [],
+      [],
       [
         0.8,
-        "2026-07-31"
+        "2026-07-31",
+        "PR count exceeds 190",
+        "github.com/specdog/dotdog/pulls count"
       ]
     ],
     [
+      1,
       "dotdog .dag savings exceed 90%",
-      "p",
-      null,
-      null,
-      null,
+      "prediction",
+      "",
+      [],
+      [],
+      [],
       [
         0.9,
-        "2026-08-01"
+        "2026-08-01",
+        "dotdog SPEC.dog grows past 15KB",
+        "dotdog tokens command on dotdog"
       ]
     ],
     [
+      2,
       "first external dotdog adopter",
-      "p",
-      null,
-      null,
-      null,
+      "prediction",
+      "",
+      [],
+      [],
+      [],
       [
         0.5,
-        "2026-09-01"
+        "2026-09-01",
+        "GitHub star count exceeds 10",
+        "github.com/specdog/dotdog stargazers > 1 non-team member"
       ]
     ],
     [
+      3,
       "Node",
-      "e",
-      null,
+      "entity",
+      "A typed node in the spec knowledge graph. Every entity, task, prediction, and concept is a Node.",
+      [],
       [
         "created",
         "updated",
@@ -53,9 +67,11 @@
       ]
     ],
     [
+      4,
       "Task",
-      "e",
-      null,
+      "entity",
+      "A unit of work. Has dependencies, assignment, effort estimates, and a computed completion probability.",
+      [],
       [
         "specified",
         "building",
@@ -68,13 +84,20 @@
           4,
           "depends_on",
           "N:M"
+        ],
+        [
+          5,
+          "measures",
+          "1:N"
         ]
       ]
     ],
     [
+      5,
       "Prediction",
-      "e",
-      null,
+      "prediction",
+      "A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes.",
+      [],
       [
         "pending",
         "resolved"
@@ -88,9 +111,11 @@
       ]
     ],
     [
+      6,
       "Compile",
-      "e",
-      null,
+      "event",
+      "The compilation process. Reads all .dog files, parses entities and relationships, outputs a .dag graph with integrity hash and token savings report.",
+      [],
       [
         "running",
         "completed",
@@ -105,18 +130,34 @@
       ]
     ],
     [
+      7,
       "DAG",
-      "e",
-      null,
+      "entity",
+      "The compiled graph output. A deterministic JSON structure with typed nodes, edges, integrity metadata, and provable token savings. Queryable by AI agents via MCP.",
+      [],
       [
         "current",
         "stale"
       ],
-      null
+      [
+        [
+          6,
+          "produces",
+          "1:1"
+        ],
+        [
+          8,
+          "maps_to",
+          "1:1",
+          1
+        ]
+      ]
     ],
     [
+      8,
       "aws:s3:dotdog-assets",
-      "i",
+      "infra",
+      "aws s3:dotdog-assets",
       [
         "provider",
         "aws",
@@ -126,9 +167,10 @@
         "DAG",
         "region",
         "us-east-1",
-        "tables"
+        "tables",
+        ""
       ],
-      null,
+      [],
       [
         [
           7,
@@ -139,22 +181,14 @@
       ]
     ]
   ],
-  {
+  "tk": {
     "m": "chars/4",
     "st": 8785,
     "ct": 8769,
-    "dt": 426,
-    "sv": 95.2,
-    "cs": 95.1,
-    "saved": 8359
+    "dt": 442,
+    "sv": 95,
+    "cs": 95,
+    "saved": 8343
   },
-  {
-    "m": "chars/4",
-    "st": 8785,
-    "ct": 8769,
-    "dt": 426,
-    "sv": 95.2,
-    "cs": 95.1,
-    "saved": 8359
-  }
-]
+  "compact": "[dot]\nTask→Task:depen(mm)>Prediction:measu(1m)\nDAG→Compile:produ(11)>aws:s3:dotdog-assets:maps_(11)\nNode→Node:conne(mm)\nCompile→DAG:produ(11)\naws:s3:dotdog-assets→DAG:maps_(11)"
+}

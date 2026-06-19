@@ -156,8 +156,8 @@ program.command('parse <file>').action((f) => {
 });
 
 // Compact injection helpers — produce token-optimized text for collar's DAG context
-const COMPACT_CARD: Record<string,string> = {'1:1':'11','1:N':'1m','1:many':'1m','N:1':'m1','many:1':'m1','N:M':'mm','many:many':'mm'};
-function compactCard(c: string): string { return COMPACT_CARD[c] || (c.length <= 3 ? c : c.slice(0,4)); }
+const COMPACT_CARD: Record<string,string> = {'1:1':'','1:N':'1m','1:many':'1m','N:1':'m1','many:1':'m1','N:M':'mm','many:many':'mm'};
+function compactCard(c: string): string { const v = COMPACT_CARD[c]; return v !== undefined ? v : (c.length <= 3 ? c : c.slice(0,4)); }
 function abbrevVerb(v: string): string {
   if (v.length <= 5) return v;
   const abbr: Record<string,string> = {references:'refer',implements:'imple',routes_through:'route',
@@ -187,7 +187,7 @@ function buildCompactText(project: string, v2nodes: any[][]): string {
       // Resolve target ID to name
       const tgtNode = v2nodes[tgtId];
       const tgtName = tgtNode ? (tgtNode[1] || String(tgtId)) : String(tgtId);
-      edgeStrs.push(`${tgtName}:${verb}(${card})`);
+      edgeStrs.push(card ? `${tgtName}:${verb}(${card})` : `${tgtName}:${verb}`);
     }
     entities.push({name, edges: edgeStrs, count: edgeStrs.length});
   }
