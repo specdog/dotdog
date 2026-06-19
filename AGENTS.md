@@ -11,7 +11,7 @@
 - **.dag**: ALWAYS query via MCP. This is your source of truth for project structure.
 - **If .dag doesn't have it**: report "unverified" — never fall back to .dog
 
-**MCP**: `npx dotdog serve` (6 tools: getEntity, traverse, search, schema, summary, listProjects)
+**MCP**: `npx dotdog serve` (7 tools: getEntity, traverse, search, schema, summary, listProjects, infraVerify)
 
 ## Commands (when modifying dotdog source)
 

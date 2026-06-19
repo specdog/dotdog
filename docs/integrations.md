@@ -124,3 +124,35 @@ brew install dotdog
 ```bash
 npm install -g dotdog
 ```
+
+---
+
+## Cloud Providers
+
+dotdog verifies your infrastructure against live cloud resources. No credentials stored — reads from environment variables.
+
+| Provider | Token env var | Setup |
+|----------|-------------|-------|
+| **Cloudflare** | `CLOUDFLARE_API_TOKEN` | [Create token](https://dash.cloudflare.com/profile/api-tokens) with R2/D1/Worker read permissions |
+| **Supabase** | `SUPABASE_ACCESS_TOKEN` | [Generate access token](https://supabase.com/dashboard/account/tokens) |
+| **Vercel** | `VERCEL_TOKEN` | [Create token](https://vercel.com/account/tokens) with read-only scope |
+| **Netlify** | `NETLIFY_AUTH_TOKEN` | [Personal access token](https://app.netlify.com/user/applications#personal-access-tokens) |
+| **Railway** | `RAILWAY_TOKEN` | [Generate token](https://railway.app/account/tokens) or use `railway login` |
+| **AWS** | `AWS_PROFILE` | Uses existing `~/.aws/credentials` — no additional setup |
+
+Define resources in an `### Infrastructure` block, run `dotdog compile`, then `dotdog live --type infra`.
+
+```yaml
+### Infrastructure
+```yaml
+resources:
+  - provider: cloudflare
+    resource: r2:my-bucket
+    entity: FileStorage
+  - provider: supabase
+    resource: project:abc123xyz
+    entity: Database
+```
+```
+
+[Full infrastructure verification docs →](/dotdog/live-endpoint-testing)

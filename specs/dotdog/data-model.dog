@@ -197,13 +197,28 @@ relationship: Task -> Task
 
 ### Relationship: Prediction → Task
 
+```yaml
+relationship: Prediction → Task
+verb: measures
+cardinality: 1:N
+required: false
+cascade: nullify
+invariants: prediction.trigger must be measurable from task completion
+example: Prediction "ships July 15" → measures → Task.completion_probability
 ```
-relationship: Prediction -> Task
-  verb: measures
-  cardinality: 1:N
-  required: false
-  cascade: nullify
-  invariants: prediction.trigger must be measurable from task completion
-  example: Prediction "ships July 15" → measures → Task.completion_probability
+
+---
+
+## Infrastructure
+
+> dotdog dogfoods its own infra-verify. Run `dotdog live --type infra` to check.
+
+```yaml
+resources:
+  - provider: aws
+    resource: s3:dotdog-assets
+    entity: DAG
+    region: us-east-1
 ```
+
 
