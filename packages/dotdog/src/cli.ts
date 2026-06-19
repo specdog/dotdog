@@ -603,7 +603,7 @@ program.command('visualize [dir]').option('-s, --save').action((d='.', opts) => 
 
 program.command('serve [dir]').description('MCP server : expose .dag graph to AI agents over stdio').action((d='.') => serve(resolvePath(d)));
 
-program.command('analyze [dir]').description('Analyze a spec project : score, gaps, suggestions').option('-p, --project <name>').action((d='.', opts) => {
+program.command('analyze [dir]').description('Analyze a spec project : score, gaps, suggestions').option('-p, --project <name>').option('--issues', 'Include GitHub issue drift summary').action((d='.', opts) => {
   const dir = resolvePath(d);
   const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
   console.log(chalk.bold('\nSpec Analysis\n'));
@@ -692,6 +692,21 @@ program.command('analyze [dir]').description('Analyze a spec project : score, ga
       if (gaps.length > 0) { console.log(chalk.bold(`\n  Gaps (${gaps.length})`)); for (const g of gaps) console.log(`  ${g}`); }
       else console.log(chalk.green('\n  No gaps found.'));
       if (gaps.length > 0) hasGaps = true;
+      if (opts.issues) {
+        const repo = githubRemote();
+        if (repo) {
+          const issues = ghIssues(repo);
+          const closed = issues.filter(i => i.state === 'CLOSED');
+          const drift = closed.filter(i => !allEntities.some(e => (i.title + ' ' + (i.body || '')).toLowerCase().includes(e.name.toLowerCase())));
+          if (drift.length) {
+            console.log(chalk.bold(`\n  Issue drift (${drift.length})`));
+            for (const i of drift.slice(0, 10)) console.log(`  ℹ ${i.number} ${i.title}`);
+            if (drift.length > 10) console.log(`  … and ${drift.length - 10} more`);
+          } else {
+            console.log(chalk.green('\n  No issue drift found.'));
+          }
+        }
+      }
     }
   }
   if (!found) console.log(chalk.yellow('No spec projects found. Run: dotdog init <project>'));
