@@ -84,11 +84,6 @@
           4,
           "depends_on",
           "N:M"
-        ],
-        [
-          5,
-          "measures",
-          "1:N"
         ]
       ]
     ],
@@ -139,19 +134,7 @@
         "current",
         "stale"
       ],
-      [
-        [
-          6,
-          "produces",
-          "1:1"
-        ],
-        [
-          8,
-          "maps_to",
-          "1:1",
-          1
-        ]
-      ]
+      []
     ],
     [
       8,
@@ -185,10 +168,10 @@
     "m": "chars/4",
     "st": 8785,
     "ct": 8769,
-    "dt": 442,
-    "sv": 95,
-    "cs": 95,
-    "saved": 8343
+    "dt": 426,
+    "sv": 95.2,
+    "cs": 95.1,
+    "saved": 8359
   },
-  "compact": "[dot]\nTask→Task:depen(mm)>Prediction:measu(1m)\nDAG→Compile:produ(11)>aws:s3:dotdog-assets:maps_(11)\nNode→Node:conne(mm)\nCompile→DAG:produ(11)\naws:s3:dotdog-assets→DAG:maps_(11)"
+  "compact": "[dot]\nNode→Node:conne(mm)\nTask→Task:depen(mm)\nCompile→DAG:produ(11)\naws:s3:dotdog-assets→DAG:maps_(11)"
 }
