@@ -95,7 +95,7 @@ function parseBlocks(lines: string[], start: number, end: number, errors?: Parse
     const line = lines[i];
 
     // Entity block?
-    const entityMatch = line.match(/^#{3,5}\s+Entity:\s*(.+)/);
+    const entityMatch = line.match(/^#{2,5}\s+[Ee]ntity:\s*(.+)/);
     if (entityMatch) {
       const result = parseStructuredBlock(lines, i, end, 'entity', entityMatch[1]);
       if (result) { blocks.push(result.node); i = result.nextLine; continue; }
@@ -316,7 +316,7 @@ function parseBlocks(lines: string[], start: number, end: number, errors?: Parse
 }
 
 function isBlockStart(line: string): boolean {
-  return /^#{3,5}\s+(Entity|Relationship|Event|Prediction):/.test(line) || /^\|.+\|/.test(line) || /^\[.+\]/.test(line);
+  return /^#{2,5}\s+(Entity|Relationship|Event|Prediction):/.test(line) || /^\|.+\|/.test(line) || /^\[.+\]/.test(line);
 }
 
 // --- Structured block parser ---
@@ -336,21 +336,35 @@ function parseStructuredBlock(
 
   // Find the YAML code fence
   if (i >= end || !lines[i].startsWith('```')) {
-    // No YAML block — treat as prose-only entity
+    // No YAML block — parse indented properties (format: "  key: value")
+    const props: Record<string, string> = {};
+    let descLines: string[] = [];
+    for (const l of description.split(' ')) {
+      const m = l.match(/^(\w[\w_]*):\s*(.+)/);
+      if (m) { props[m[1]] = m[2]; } else { descLines.push(l); }
+    }
+    // Also parse indented lines after the heading
+    let j = start + 1;
+    while (j < end && !isBlockStart(lines[j]) && !lines[j].startsWith('```')) {
+      const t = lines[j].trim();
+      const m = t.match(/^(\w[\w_]*):\s*(.+)/);
+      if (m && !props[m[1]]) { props[m[1]] = m[2]; }
+      j++;
+    }
     return {
       node: {
         kind: kind as 'entity',
         name: headerRest,
-        description,
-        type: 'node',
-        properties: {},
+        description: descLines.join(' ') || Object.entries(props).map(([k,v]) => `${k}: ${v}`).join(', '),
+        type: 'entity',
+        properties: props,
         states: [],
         lifecycle: [],
-        yaml: {},
+        yaml: props,
         lineStart: start + 1,
-        lineEnd: i,
+        lineEnd: j,
       },
-      nextLine: i,
+      nextLine: j,
     };
   }
 
