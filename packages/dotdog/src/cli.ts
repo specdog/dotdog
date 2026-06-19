@@ -200,7 +200,7 @@ function buildCompactText(project: string, v2nodes: any[][]): string {
   return lines.join('\n');
 }
 
-program.command('compile [dir]').option('-o, --output <file>').option('--v3', 'Ultra-compact v3 format (53% smaller than v2)').action((d='.', opts) => {
+program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'Use v2 format (default: v3 for 57% smaller graphs)').action((d='.', opts) => {
   const dir = resolvePath(d);
   const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
   let found = false;
@@ -425,10 +425,12 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v3', 'U
 
       const v3dag = [3, p, v2nodes.map((n: any[]) => {
           const nd = nodes[n[0]];
-          const tc = nd.g === 'prediction' ? 'p' : 'e';
+          const tc = nd.g === 'prediction' ? 'p' : nd.t === 'infra' ? 'i' : 'e';
           const st = nd.s && nd.s.length ? nd.s : null;
           const ed = n[6] && n[6].length ? n[6] : null;
-          const entry: any[] = [nd.i, tc, n[4].length ? n[4] : null, st, ed];
+          // Strip empty values from props for token efficiency
+          const cleanProps = n[4] && n[4].length ? n[4].filter((_: any, i: number) => i % 2 === 0 || n[4][i]) : null;
+          const entry: any[] = [nd.i, tc, cleanProps, st, ed];
           if (nd.g === 'prediction') {
             const f: any[] = [];
             if (nd.cf != null) f.push(nd.cf);
@@ -438,9 +440,9 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v3', 'U
           return entry;
         }), tokens];
 
-      const dag = opts.v3 ? v3dag : v2dag;
+      const dag = opts.v2 ? v2dag : v3dag;
       const dagJson = JSON.stringify(dag);
-      const report: any = opts.v3 ? [...dag, tokens] : { ...dag, tk: tokens, compact };
+      const report: any = opts.v2 ? { ...dag, tk: tokens, compact } : [...dag, tokens];
       writeFileSync(outPath, JSON.stringify(report, null, 2) + '\n');
       console.log(chalk.green(`  ✓ ${outPath}`));
       console.log(chalk.gray(`    ${nodes.length} nodes, ${edges.length} edges, ${files.length} files`));

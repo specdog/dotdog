@@ -1,5 +1,5 @@
 // spec serve — MCP server over stdio
-// Exposes .dag graph to AI agents (supports v3, v2 positional, v1.5, v1.4, v1.3)
+// Exposes .dag graph to AI agents. v3 format only.
 
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
@@ -13,10 +13,7 @@ function resolvePath(p: string): string {
   if (!p.startsWith('/') && !p.startsWith('~')) {
     const rel = resolve(process.cwd(), p);
     const cwd = process.cwd();
-    const isDescendant = rel.startsWith(cwd + '/');
-    const isSelf = rel === cwd;
-    const isAncestor = cwd.startsWith(rel + '/');
-    if (!isDescendant && !isSelf && !isAncestor) {
+    if (!rel.startsWith(cwd + '/') && rel !== cwd && !cwd.startsWith(rel + '/')) {
       throw new Error(`Path traversal blocked: ${p}`);
     }
     return rel;
@@ -24,62 +21,43 @@ function resolvePath(p: string): string {
   return resolved;
 }
 
-// v2 format detector: positional arrays where first element is a number
-const isV2 = (n: any) => Array.isArray(n) && typeof n[0] === 'number';
-const N = (dag: any) => dag.n || dag.nodes || [];
+// --- v3-only helpers ---
+// Node: [name: string, typeCode: 'e'|'p'|'i', props: [k,v]|null, states: []|null, edges: [[tgtIdx,verb]]|null]
+// DAG:  [3, project: string, nodes: v3node[], tokens: object]
 
-// Convert v2 positional edge to v1-compatible object
-function edgeToObj(n: any, tgtIdx: number, v2e: any[]): any {
-  return { t: String(tgtIdx), v: v2e[1] || '', c: v2e[2] || '', r: v2e[3] || 0 };
-}
-function nodeEdges(n: any): any[] {
-  if (isV2(n)) return (n[6] || []).map((e: any[]) => edgeToObj(n, e[0], e));
-  return n.es || [];
-}
-function E(dag: any): any[] {
-  if (dag.e) return dag.e;
-  const edges: any[] = [];
+const TYPE: Record<string,string> = { e:'entity', p:'prediction', i:'infra' };
+
+const Nm = (n: any) => n[0];                          // name
+const Nt = (n: any) => TYPE[n[1]] || 'entity';        // type
+const Np = (n: any) => {                              // properties
+  const flat = n[2] || [];
+  const obj: Record<string,string> = {};
+  for (let i = 0; i < flat.length; i += 2) obj[flat[i]] = flat[i+1] || '';
+  return obj;
+};
+const Ns = (n: any) => n[3] || [];                    // states
+const Ne = (n: any) => (n[4] || []).map((e: any[]) => ({ s: Nm(n), t: String(e[0]), v: e[1] || '', c: e[2] || '', r: e[3] || 0 }));
+
+const nodes = (dag: any): any[] => dag.n || (Array.isArray(dag) ? dag[2] : []) || [];
+const project = (dag: any): string => dag.p || dag[1] || '';
+const tokens = (dag: any): any => dag.tk || dag.tokens || (Array.isArray(dag) ? dag[3] : {}) || {};
+
+function allEdges(dag: any): any[] {
   const seen = new Set<string>();
-  for (const node of N(dag)) {
-    for (const e of nodeEdges(node)) {
-      const src = nodeId(node);
-      const key = `${src}→${e.t}:${e.v}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        edges.push({ s: src, t: e.t, v: e.v, d: e.d, c: e.c, r: e.r });
-      }
+  const edges: any[] = [];
+  for (const n of nodes(dag)) {
+    for (const e of Ne(n)) {
+      const key = `${e.s}→${e.t}:${e.v}`;
+      if (!seen.has(key)) { seen.add(key); edges.push(e); }
     }
   }
   return edges;
 }
-const P = (dag: any) => dag.p || dag.project || '';
-const nodeId = (n: any) => isV2(n) ? String(n[0]) : (n.i || n.id || '');
-const nodeName = (n: any) => isV2(n) ? (n[1] || String(n[0])) : (n.i || n.id || n.name || '');
-function nodeMatches(n: any, value: string): boolean {
-  const q = (value || '').toLowerCase();
-  return nodeId(n).toLowerCase() === q || nodeName(n).toLowerCase() === q;
-}
-const nt = (n: any) => isV2(n) ? (n[2] || '') : (n.t || n.type || '');
-const nd = (n: any) => isV2(n) ? (n[3] || '') : (n.d || n.description || '');
-function np(n: any): any {
-  if (isV2(n)) {
-    const flat = n[4] || [];
-    const obj: Record<string,string> = {};
-    for (let i = 0; i < flat.length; i += 2) obj[flat[i]] = flat[i+1] || '';
-    return obj;
-  }
-  return n.p || n.properties || {};
-}
-const ns = (n: any) => isV2(n) ? (n[5] || []) : (n.s || n.states || []);
-const nl = (n: any) => isV2(n) ? [] : (n.l || n.lifecycle || []);
-const es = (e: any) => e.s || e.source || '';
-const et = (e: any) => e.t || e.target || '';
 
 export function serve(dir: string = '.'): void {
   const root = resolvePath(dir);
   const dagCache: Map<string, any> = new Map();
 
-  // Find and load .dag files
   function loadDags(): string[] {
     const dirs = [join(root,'projects'),join(root,'specs'),root];
     for (const dd of dirs) {
@@ -87,251 +65,145 @@ export function serve(dir: string = '.'): void {
       const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
       for (const p of projects) {
         const dagFile = join(dd,p,`${p}.dag`);
-        if (existsSync(dagFile)) {
-          dagCache.set(p, JSON.parse(readFileSync(dagFile,'utf-8')));
-        }
+        if (existsSync(dagFile)) dagCache.set(p, JSON.parse(readFileSync(dagFile,'utf-8')));
       }
+      // Also check root-level .dag files
+      try { for (const f of readdirSync(dd)) { if (f.endsWith('.dag')) {
+        const p = f.replace('.dag','');
+        if (!dagCache.has(p)) dagCache.set(p, JSON.parse(readFileSync(join(dd,f),'utf-8')));
+      }}} catch {}
     }
     return [...dagCache.keys()];
   }
 
-  // MCP JSON-RPC handler
   async function handleRequest(req: any): Promise<any> {
     const { id, method, params } = req;
 
-    // Initialize
     if (method === 'initialize') {
-      return {
-        jsonrpc: '2.0', id,
-        result: {
-          protocolVersion: '2024-11-05',
-          serverInfo: { name: 'spec-serve', version: '0.1.0' },
-          capabilities: { tools: {} }
-        }
-      };
+      return { jsonrpc: '2.0', id, result: {
+        protocolVersion: '2024-11-05',
+        serverInfo: { name: 'spec-serve', version: '0.1.0' },
+        capabilities: { tools: {} }
+      }};
     }
 
-    // List tools
     if (method === 'tools/list') {
-      return {
-        jsonrpc: '2.0', id,
-        result: {
-          tools: [
-            { name: 'getEntity', description: 'Get entity with properties, states, lifecycle', inputSchema: { type: 'object', properties: { project: { type:'string' }, name: { type:'string' } }, required: ['name'] } },
-            { name: 'traverse', description: 'Traverse graph: from node, follow edges, return subgraph. Optional verb filter (e.g. maps_to, produces, depends_on).', inputSchema: { type: 'object', properties: { project: { type:'string' }, from: { type:'string' }, depth: { type:'number', default: 1 }, verb: { type:'string', description: 'Filter edges by verb (e.g. maps_to for infra resources)' } }, required: ['from'] } },
-            { name: 'search', description: 'Find entities by name or type', inputSchema: { type: 'object', properties: { project: { type:'string' }, q: { type:'string' }, type: { type:'string' } }, required: ['q'] } },
-            { name: 'listProjects', description: 'List all projects', inputSchema: { type: 'object', properties: {} } },
-            { name: 'summary', description: 'Get project summary: node count, edge count, token savings', inputSchema: { type: 'object', properties: { project: { type:'string' } } } },
-            { name: 'schema', description: 'Get full property schema for an entity', inputSchema: { type: 'object', properties: { project: { type:'string' }, entity: { type:'string' } }, required: ['entity'] } },
-            { name: 'listBlogs', description: 'List all blog posts with titles and descriptions', inputSchema: { type: 'object', properties: {} } },
-            { name: 'infraVerify', description: 'Verify infrastructure resources defined in .dog specs against live cloud (Cloudflare, Supabase, Vercel, Netlify, Railway, AWS)', inputSchema: { type: 'object', properties: { provider: { type: 'string', description: 'Filter by provider (cloudflare, supabase, vercel, netlify, railway, aws)' }, entity: { type: 'string', description: 'Filter by spec entity name' }, summary: { type: 'boolean', description: 'Return count summary only (default: false, returns full results)' } } } },
-          ]
-        }
-      };
+      return { jsonrpc: '2.0', id, result: { tools: [
+        { name: 'getEntity', description: 'Get entity with properties, states, lifecycle', inputSchema: { type: 'object', properties: { project: { type:'string' }, name: { type:'string' } }, required: ['name'] } },
+        { name: 'traverse', description: 'Traverse graph: from node, follow edges, return subgraph. Optional verb filter.', inputSchema: { type: 'object', properties: { project: { type:'string' }, from: { type:'string' }, depth: { type:'number', default: 1 }, verb: { type:'string' } }, required: ['from'] } },
+        { name: 'search', description: 'Find entities by name or type', inputSchema: { type: 'object', properties: { project: { type:'string' }, q: { type:'string' }, type: { type:'string' } }, required: ['q'] } },
+        { name: 'listProjects', description: 'List all projects', inputSchema: { type: 'object', properties: {} } },
+        { name: 'summary', description: 'Get project summary: node count, edge count, token savings', inputSchema: { type: 'object', properties: { project: { type:'string' } } } },
+        { name: 'schema', description: 'Get full property schema for an entity', inputSchema: { type: 'object', properties: { project: { type:'string' }, entity: { type:'string' } }, required: ['entity'] } },
+        { name: 'infraVerify', description: 'Verify infrastructure resources against live cloud', inputSchema: { type: 'object', properties: { provider: { type:'string' }, entity: { type:'string' }, summary: { type:'boolean' } } } },
+      ]}};
     }
 
-    // Call tool
     if (method === 'tools/call') {
       const { name, arguments: args } = params;
       loadDags();
+
+      const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
 
       if (name === 'listProjects') {
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify([...dagCache.keys()]) }] } };
       }
 
-      if (name === 'listNodes') {
-        const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
-        if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(N(dag)) }] } };
-      }
-
       if (name === 'getEntity') {
-        const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const node = N(dag).find((n: any) => nodeMatches(n, args.name || ''));
+        const node = nodes(dag).find((n: any) => Nm(n).toLowerCase() === (args.name || '').toLowerCase());
         if (!node) return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: '{}' }] } };
-        const idForEdges = nodeId(node);
-        const edges = E(dag).filter((e: any) =>
-          es(e).toLowerCase() === idForEdges.toLowerCase() ||
-          et(e).toLowerCase() === idForEdges.toLowerCase()
-        );
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(isV2(node) ? { id: nodeId(node), name: nodeName(node), type: nt(node), description: nd(node), properties: np(node), states: ns(node), edges } : { ...node, edges }) }] } };
+        const name = Nm(node);
+        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
+          id: name, name, type: Nt(node), properties: Np(node), states: Ns(node), edges: Ne(node)
+        }) }] } };
       }
 
       if (name === 'traverse') {
-        const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
         const depth = Math.min(Math.max(1, args.depth || 1), 20);
         const verbFilter = (args.verb || '').toLowerCase();
-        const visitedNodes = new Set<string>();
-        const visitedEdges = new Set<string>();
+        const visited = new Set<string>();
         const subgraph: { nodes: any[], edges: any[] } = { nodes: [], edges: [] };
-        const start = N(dag).find((n: any) => nodeMatches(n, args.from || ''));
-        const queue = [{ id: start ? nodeId(start) : args.from, depth: 0 }];
+        const start = nodes(dag).find((n: any) => Nm(n).toLowerCase() === (args.from || '').toLowerCase());
+        const queue = [{ id: start ? Nm(start) : args.from, depth: 0 }];
         while (queue.length > 0) {
           const curr = queue.shift()!;
-          const node = N(dag).find((n: any) => nodeMatches(n, curr.id));
-          const currId = node ? nodeId(node) : curr.id;
-          if (visitedNodes.has(currId) || curr.depth > depth) continue;
-          visitedNodes.add(currId);
-          if (node) subgraph.nodes.push(isV2(node) ? { id: nodeId(node), name: nodeName(node), type: nt(node), description: nd(node), properties: np(node), states: ns(node), edges: nodeEdges(node) } : node);
-          // Collect edges from this node (source-side only)
-          const rawEdges = isV2(node) ? (node[6] || []) : (node.es || []);
-          for (const raw of rawEdges) {
-            const edgeObj = isV2(node) ? { s: nodeName(node), t: String(raw[0]), v: raw[1] || '', c: raw[2] || '', r: raw[3] || 0 } : raw;
-            // Verb filter
-            if (verbFilter && (edgeObj.v || '').toLowerCase() !== verbFilter) continue;
-            const edgeKey = `${edgeObj.s}→${edgeObj.t}:${edgeObj.v}`;
-            if (visitedEdges.has(edgeKey)) continue;
-            visitedEdges.add(edgeKey);
-            subgraph.edges.push(edgeObj);
-            // Follow edge to target
-            const tgtId = edgeObj.t;
-            if (!visitedNodes.has(tgtId)) queue.push({ id: tgtId, depth: curr.depth + 1 });
+          if (visited.has(curr.id) || curr.depth > depth) continue;
+          visited.add(curr.id);
+          const node = nodes(dag).find((n: any) => Nm(n) === curr.id);
+          if (node) subgraph.nodes.push({ id: Nm(node), name: Nm(node), type: Nt(node), properties: Np(node), states: Ns(node) });
+          if (node) for (const e of Ne(node)) {
+            if (verbFilter && (e.v || '').toLowerCase() !== verbFilter) continue;
+            const key = `${e.s}→${e.t}:${e.v}`;
+            if (subgraph.edges.some((x: any) => `${x.s}→${x.t}:${x.v}` === key)) continue;
+            subgraph.edges.push(e);
+            if (!visited.has(e.t)) queue.push({ id: e.t, depth: curr.depth + 1 });
           }
         }
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(subgraph) }] } };
       }
 
       if (name === 'search') {
-        const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
         const q = (args.q || '').toLowerCase();
-        const type = (args.type || '').toLowerCase();
-        const results = N(dag).filter((n: any) =>
-          (nodeName(n).toLowerCase().includes(q) || nodeId(n).toLowerCase().includes(q) || nt(n).toLowerCase().includes(q)) &&
-          (!type || nt(n).toLowerCase().includes(type))
+        const tf = (args.type || '').toLowerCase();
+        const results = nodes(dag).filter((n: any) =>
+          Nm(n).toLowerCase().includes(q) && (!tf || Nt(n).toLowerCase().includes(tf))
         );
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(results) }] } };
       }
 
       if (name === 'summary') {
-        const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const tk = dag.tk || dag.tokens || {};
-        const s = {
-          project: P(dag),
-          nodes: N(dag).length,
-          edges: E(dag).length,
-          version: dag.v || dag.version || (Array.isArray(dag) ? `${dag[0]}` : 'unknown'),
-          order: dag.o || [],
-          cycles: dag.cy !== undefined ? dag.cy : null,
-          savings: tk.sv || tk.savings_pct || 0,
-          method: tk.m || tk.method || '',
-        };
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(s) }] } };
-      }
-
-      if (name === 'schema') {
-        const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
-        if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const node = N(dag).find((n: any) => nodeMatches(n, args.entity || ''));
-        if (!node) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Entity not found' } };
+        const tk = tokens(dag);
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
-          entity: nodeName(node),
-          properties: np(node),
-          states: ns(node),
-          lifecycle: nl(node),
+          project: project(dag), nodes: nodes(dag).length, edges: allEdges(dag).length,
+          savings: tk.sv || 0
         }) }] } };
       }
 
-      if (name === 'listBlogs') {
-        const blogDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'docs', 'blog');
-        const posts: any[] = [];
-        if (existsSync(blogDir)) {
-          for (const f of readdirSync(blogDir)) {
-            if (!f.endsWith('.md')) continue;
-            const raw = readFileSync(join(blogDir, f), 'utf-8');
-            const fm = raw.match(/^---\n([\s\S]*?)\n---/)?.[1] || '';
-            const title = fm.match(/title:\s*"([^"]+)"/)?.[1] || '';
-            const desc = fm.match(/description:\s*"([^"]+)"/)?.[1] || '';
-            const date = fm.match(/date:\s*(\S+)/)?.[1] || '';
-            const slug = f.replace('.md', '');
-            posts.push({ slug, title, description: desc, date, url: `https://specdog.github.io/dotdog/blog/${slug}` });
-          }
-        }
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(posts) }] } };
+      if (name === 'schema') {
+        if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
+        const node = nodes(dag).find((n: any) => Nm(n).toLowerCase() === (args.entity || '').toLowerCase());
+        if (!node) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Entity not found' } };
+        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
+          entity: Nm(node), properties: Np(node), states: Ns(node)
+        }) }] } };
       }
 
       if (name === 'infraVerify') {
-        // Query .dag for infra nodes (token-efficient, no re-parse)
         loadDags();
         const infraNodes: any[] = [];
-        for (const [project, dag] of dagCache) {
-          const nodes = N(dag);
-          for (const node of nodes) {
-            const t = nt(node);
-            if (t === 'infra' || t === 'resource') {
-              const props = np(node);
-              const name = nodeName(node);
-              infraNodes.push({
-                entity: props.entity || '',
-                provider: props.provider || '',
-                resource: props.resource || '',
-                region: props.region || '',
-                tables: props.tables || '',
-                nodeName: name,
-                project,
-              });
+        for (const [prj, d] of dagCache) {
+          for (const n of nodes(d)) {
+            if (Nt(n) === 'infra') {
+              const p = Np(n);
+              infraNodes.push({ entity: p.entity || '', provider: p.provider || '', resource: p.resource || '', region: p.region || '', tables: p.tables || '', project: prj });
             }
           }
         }
         if (infraNodes.length === 0) {
-          // Fall back to .dog parsing
           const { verifyInfra } = require('./infra/verify');
-          try {
-            const results = await verifyInfra({
-              dir: root,
-              providerFilter: args.provider as string | undefined,
-              entityFilter: args.entity as string | undefined,
-            });
+          try { const results = await verifyInfra({ dir: root, providerFilter: args.provider, entityFilter: args.entity });
             return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(results) }] } };
-          } catch (e: any) {
-            return { jsonrpc: '2.0', id, error: { code: 500, message: `infraVerify failed: ${e.message}` } };
-          }
+          } catch (e: any) { return { jsonrpc: '2.0', id, error: { code: 500, message: e.message } }; }
         }
-        // Filter
         let filtered = infraNodes;
-        if (args.provider) {
-          filtered = filtered.filter((n: any) => n.provider.toLowerCase() === String(args.provider).toLowerCase());
-        }
-        if (args.entity) {
-          filtered = filtered.filter((n: any) => n.entity.toLowerCase() === String(args.entity).toLowerCase());
-        }
-        // Return summary or full results
+        if (args.provider) filtered = filtered.filter((n: any) => n.provider.toLowerCase() === String(args.provider).toLowerCase());
+        if (args.entity) filtered = filtered.filter((n: any) => n.entity.toLowerCase() === String(args.entity).toLowerCase());
         if (args.summary) {
-          const byProvider: Record<string, number> = {};
-          const byEntity: Record<string, number> = {};
-          for (const n of filtered) {
-            byProvider[n.provider] = (byProvider[n.provider] || 0) + 1;
-            byEntity[n.entity] = (byEntity[n.entity] || 0) + 1;
-          }
-          return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
-            total: filtered.length,
-            byProvider,
-            byEntity,
-            sample: filtered.slice(0, 3).map((n: any) => ({ entity: n.entity, provider: n.provider, resource: n.resource })),
-          }) }] } };
+          const bp: Record<string,number> = {}, be: Record<string,number> = {};
+          for (const n of filtered) { bp[n.provider] = (bp[n.provider] || 0) + 1; be[n.entity] = (be[n.entity] || 0) + 1; }
+          return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({ total: filtered.length, byProvider: bp, byEntity: be, sample: filtered.slice(0, 3).map((n: any) => ({ entity: n.entity, provider: n.provider, resource: n.resource })) }) }] } };
         }
-        // Run provider checks for full results
         const { verifyInfra } = require('./infra/verify');
-        const checkResults = [];
+        const results = [];
         for (const node of filtered) {
-          try {
-            const result = await verifyInfra({
-              dir: root,
-              providerFilter: node.provider,
-              entityFilter: node.entity,
-            });
-            checkResults.push(...result);
-          } catch {
-            checkResults.push({
-              entity: node.entity, provider: node.provider, resource: node.resource,
-              status: 'warn', message: 'check failed',
-            });
-          }
+          try { results.push(...(await verifyInfra({ dir: root, providerFilter: node.provider, entityFilter: node.entity }))); }
+          catch { results.push({ entity: node.entity, provider: node.provider, resource: node.resource, status: 'warn', message: 'check failed' }); }
         }
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(checkResults) }] } };
+        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(results) }] } };
       }
 
       return { jsonrpc: '2.0', id, error: { code: 404, message: `Unknown tool: ${name}` } };
@@ -340,19 +212,14 @@ export function serve(dir: string = '.'): void {
     return { jsonrpc: '2.0', id, error: { code: 404, message: `Unknown method: ${method}` } };
   }
 
-  // Run MCP server over stdio
   const rl = readline.createInterface({ input: process.stdin });
   loadDags();
-  
   console.error(`[spec-serve] Loaded ${dagCache.size} projects`);
-  
   rl.on('line', async (line: string) => {
     try {
       const req = JSON.parse(line);
       const res = await handleRequest(req);
       process.stdout.write(JSON.stringify(res) + '\n');
-    } catch (e) {
-      process.stderr.write(`[spec-serve] Error: ${e}\n`);
-    }
+    } catch (e) { process.stderr.write(`[spec-serve] Error: ${e}\n`); }
   });
 }
