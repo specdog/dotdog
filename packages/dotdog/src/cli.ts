@@ -1560,8 +1560,16 @@ program.command('live [entity]')
       }
     }
 
-    // Print infra results
+    // Print infra results (deduplicated)
     if (infraResults.length > 0 && (checkType === 'infra' || checkType === 'all')) {
+      // Deduplicate by entity+provider+resource
+      const seen = new Set<string>();
+      const deduped: any[] = [];
+      for (const r of infraResults) {
+        const key = `${r.entity}||${r.provider}||${r.resource}`;
+        if (!seen.has(key)) { seen.add(key); deduped.push(r); }
+      }
+      infraResults = deduped;
       const allSkip = infraResults.every((r: any) => r.status === 'skip');
       if (allSkip) {
         console.log(chalk.gray('\nInfrastructure — skipped (no provider tokens set)'));

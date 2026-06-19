@@ -1,0 +1,46 @@
+## Entities
+
+### Entity: FileStorage
+
+```yaml
+entity: FileStorage
+type: entity
+properties:
+  provider: { type: string }
+```
+
+### Entity: Database
+
+```yaml
+entity: Database
+type: entity
+properties:
+  host: { type: string }
+```
+
+### Entity: WebApp
+
+```yaml
+entity: WebApp
+type: entity
+properties:
+  url: { type: string }
+```
+
+### Entity: LandingPage
+
+```yaml
+entity: LandingPage
+type: entity
+properties:
+  domain: { type: string }
+```
+
+### Entity: ApiServer
+
+```yaml
+entity: ApiServer
+type: entity
+properties:
+  endpoint: { type: string }
+```
