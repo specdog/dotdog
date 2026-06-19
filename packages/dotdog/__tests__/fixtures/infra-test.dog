@@ -1,0 +1,28 @@
+## Product
+
+Infrastructure verification test
+
+### Infrastructure
+```yaml
+resources:
+  - provider: cloudflare
+    resource: r2:avatars
+    entity: FileStorage
+  - provider: supabase
+    resource: project:abc123xyz
+    entity: Database
+    tables: [users, posts, sessions]
+  - provider: vercel
+    resource: project:my-app
+    entity: WebApp
+  - provider: netlify
+    resource: site:my-landing-page
+    entity: LandingPage
+  - provider: railway
+    resource: service:api
+    entity: ApiServer
+  - provider: aws
+    resource: s3:uploads-prod
+    entity: FileStorage
+    region: us-east-1
+```
