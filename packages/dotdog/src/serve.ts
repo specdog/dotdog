@@ -89,13 +89,13 @@ export function serve(dir: string = '.'): void {
 
     if (method === 'tools/list') {
       return { jsonrpc: '2.0', id, result: { tools: [
-        { name: 'getEntity', description: 'Get entity with properties, states, lifecycle', inputSchema: { type: 'object', properties: { project: { type:'string' }, name: { type:'string' } }, required: ['name'] } },
-        { name: 'traverse', description: 'Traverse graph: from node, follow edges, return subgraph. Optional verb filter.', inputSchema: { type: 'object', properties: { project: { type:'string' }, from: { type:'string' }, depth: { type:'number', default: 1 }, verb: { type:'string' } }, required: ['from'] } },
-        { name: 'search', description: 'Find entities by name or type', inputSchema: { type: 'object', properties: { project: { type:'string' }, q: { type:'string' }, type: { type:'string' } }, required: ['q'] } },
-        { name: 'listProjects', description: 'List all projects', inputSchema: { type: 'object', properties: {} } },
-        { name: 'summary', description: 'Get project summary: node count, edge count, token savings', inputSchema: { type: 'object', properties: { project: { type:'string' } } } },
-        { name: 'schema', description: 'Get full property schema for an entity', inputSchema: { type: 'object', properties: { project: { type:'string' }, entity: { type:'string' } }, required: ['entity'] } },
-        { name: 'infraVerify', description: 'Verify infrastructure resources against live cloud', inputSchema: { type: 'object', properties: { provider: { type:'string' }, entity: { type:'string' }, summary: { type:'boolean' } } } },
+        { name: 'getEntity', description: 'Get entity: name, type, edges', inputSchema: { type: 'object', properties: { project: { type:'string' }, name: { type:'string' } }, required: ['name'] } },
+        { name: 'traverse', description: 'BFS from node, return reachable nodes+edges', inputSchema: { type: 'object', properties: { project: { type:'string' }, from: { type:'string' }, depth: { type:'number', default: 2 }, verb: { type:'string' } }, required: ['from'] } },
+        { name: 'search', description: 'Find entities by name', inputSchema: { type: 'object', properties: { project: { type:'string' }, q: { type:'string' }, type: { type:'string' } }, required: ['q'] } },
+        { name: 'listProjects', description: 'List loaded projects', inputSchema: { type: 'object', properties: {} } },
+        { name: 'summary', description: 'Project stats: nodes, edges, savings', inputSchema: { type: 'object', properties: { project: { type:'string' } } } },
+        { name: 'schema', description: 'Entity property schema', inputSchema: { type: 'object', properties: { project: { type:'string' }, entity: { type:'string' } }, required: ['entity'] } },
+        { name: 'infraVerify', description: 'Verify infra resources', inputSchema: { type: 'object', properties: { provider: { type:'string' }, entity: { type:'string' }, summary: { type:'boolean' } } } },
       ]}};
     }
 
@@ -113,18 +113,17 @@ export function serve(dir: string = '.'): void {
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
         const node = nodes(dag).find((n: any) => Nm(n).toLowerCase() === (args.name || '').toLowerCase());
         if (!node) return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: '{}' }] } };
-        const name = Nm(node);
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
-          id: name, name, type: Nt(node), properties: Np(node), states: Ns(node), edges: Ne(node)
+          name: Nm(node), type: Nt(node), edges: Ne(node).map((e: any) => [e.t, e.v, e.c])
         }) }] } };
       }
 
       if (name === 'traverse') {
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const depth = Math.min(Math.max(1, args.depth || 1), 20);
+        const depth = Math.min(Math.max(1, args.depth || 2), 3);
         const verbFilter = (args.verb || '').toLowerCase();
         const visited = new Set<string>();
-        const subgraph: { nodes: any[], edges: any[] } = { nodes: [], edges: [] };
+        const result: Record<string, string[]> = {};
         const start = nodes(dag).find((n: any) => Nm(n).toLowerCase() === (args.from || '').toLowerCase());
         const queue = [{ id: start ? Nm(start) : args.from, depth: 0 }];
         while (queue.length > 0) {
@@ -132,25 +131,24 @@ export function serve(dir: string = '.'): void {
           if (visited.has(curr.id) || curr.depth > depth) continue;
           visited.add(curr.id);
           const node = nodes(dag).find((n: any) => Nm(n) === curr.id);
-          if (node) subgraph.nodes.push({ id: Nm(node), name: Nm(node), type: Nt(node), properties: Np(node), states: Ns(node) });
-          if (node) for (const e of Ne(node)) {
-            if (verbFilter && (e.v || '').toLowerCase() !== verbFilter) continue;
-            const key = `${e.s}→${e.t}:${e.v}`;
-            if (subgraph.edges.some((x: any) => `${x.s}→${x.t}:${x.v}` === key)) continue;
-            subgraph.edges.push(e);
-            if (!visited.has(e.t)) queue.push({ id: e.t, depth: curr.depth + 1 });
+          if (node) {
+            const edges = Ne(node).filter((e: any) => !verbFilter || (e.v || '').toLowerCase() === verbFilter);
+            result[Nm(node)] = edges.map((e: any) => `${e.t}:${e.v}${e.c ? '(' + e.c + ')' : ''}`);
+            for (const e of edges) {
+              if (!visited.has(e.t)) queue.push({ id: e.t, depth: curr.depth + 1 });
+            }
           }
         }
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(subgraph) }] } };
+        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(result) }] } };
       }
 
       if (name === 'search') {
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
         const q = (args.q || '').toLowerCase();
         const tf = (args.type || '').toLowerCase();
-        const results = nodes(dag).filter((n: any) =>
-          Nm(n).toLowerCase().includes(q) && (!tf || Nt(n).toLowerCase().includes(tf))
-        );
+        const results = nodes(dag)
+          .filter((n: any) => Nm(n).toLowerCase().includes(q) && (!tf || Nt(n).toLowerCase().includes(tf)))
+          .map((n: any) => ({ name: Nm(n), type: Nt(n) }));
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(results) }] } };
       }
 
@@ -168,7 +166,7 @@ export function serve(dir: string = '.'): void {
         const node = nodes(dag).find((n: any) => Nm(n).toLowerCase() === (args.entity || '').toLowerCase());
         if (!node) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Entity not found' } };
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
-          entity: Nm(node), properties: Np(node), states: Ns(node)
+          entity: Nm(node), properties: Np(node)
         }) }] } };
       }
 
