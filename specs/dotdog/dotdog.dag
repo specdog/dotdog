@@ -183,12 +183,12 @@
   ],
   "tk": {
     "m": "chars/4",
-    "st": 8616,
-    "ct": 8600,
+    "st": 8785,
+    "ct": 8769,
     "dt": 442,
-    "sv": 94.9,
-    "cs": 94.9,
-    "saved": 8174
+    "sv": 95,
+    "cs": 95,
+    "saved": 8343
   },
   "compact": "[dot]\nTask→Task:depen(mm)>Prediction:measu(1m)\nDAG→Compile:produ(11)>aws:s3:dotdog-assets:maps_(11)\nNode→Node:conne(mm)\nCompile→DAG:produ(11)\naws:s3:dotdog-assets→DAG:maps_(11)"
 }
