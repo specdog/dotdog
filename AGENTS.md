@@ -13,6 +13,8 @@
 
 **MCP**: `npx dotdog serve` (7 tools: getEntity, traverse, search, schema, summary, listProjects, infraVerify)
 
+**Public site/docs**: keep README, docs, and specdog.github.io in sync when adding commands, docs, blog posts, or discovery pages.
+
 ## Commands (when modifying dotdog source)
 
 ```
