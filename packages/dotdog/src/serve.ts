@@ -96,7 +96,7 @@ export function serve(dir: string = '.'): void {
   }
 
   // MCP JSON-RPC handler
-  function handleRequest(req: any): any {
+  async function handleRequest(req: any): Promise<any> {
     const { id, method, params } = req;
 
     // Initialize
@@ -124,6 +124,7 @@ export function serve(dir: string = '.'): void {
             { name: 'summary', description: 'Get project summary: node count, edge count, token savings', inputSchema: { type: 'object', properties: { project: { type:'string' } } } },
             { name: 'schema', description: 'Get full property schema for an entity', inputSchema: { type: 'object', properties: { project: { type:'string' }, entity: { type:'string' } }, required: ['entity'] } },
             { name: 'listBlogs', description: 'List all blog posts with titles and descriptions', inputSchema: { type: 'object', properties: {} } },
+            { name: 'infraVerify', description: 'Verify infrastructure resources defined in .dog specs against live cloud (Cloudflare, Supabase, Vercel, Netlify, Railway, AWS)', inputSchema: { type: 'object', properties: { provider: { type: 'string', description: 'Filter by provider (cloudflare, supabase, vercel, netlify, railway, aws)' }, entity: { type: 'string', description: 'Filter by spec entity name' } } } },
           ]
         }
       };
@@ -249,6 +250,72 @@ export function serve(dir: string = '.'): void {
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(posts) }] } };
       }
 
+      if (name === 'infraVerify') {
+        // Query .dag for infra nodes (token-efficient, no re-parse)
+        loadDags();
+        const infraNodes: any[] = [];
+        for (const [project, dag] of dagCache) {
+          const nodes = N(dag);
+          for (const node of nodes) {
+            const t = nt(node);
+            if (t === 'infra' || t === 'resource') {
+              const props = np(node);
+              const name = nodeName(node);
+              infraNodes.push({
+                entity: props.entity || '',
+                provider: props.provider || '',
+                resource: props.resource || '',
+                region: props.region || '',
+                tables: props.tables || '',
+                nodeName: name,
+                project,
+              });
+            }
+          }
+        }
+        if (infraNodes.length === 0) {
+          // Fall back to .dog parsing
+          const { verifyInfra } = require('./infra/verify');
+          try {
+            const results = await verifyInfra({
+              dir: root,
+              providerFilter: args.provider as string | undefined,
+              entityFilter: args.entity as string | undefined,
+            });
+            return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(results) }] } };
+          } catch (e: any) {
+            return { jsonrpc: '2.0', id, error: { code: 500, message: `infraVerify failed: ${e.message}` } };
+          }
+        }
+        // Filter
+        let filtered = infraNodes;
+        if (args.provider) {
+          filtered = filtered.filter((n: any) => n.provider.toLowerCase() === String(args.provider).toLowerCase());
+        }
+        if (args.entity) {
+          filtered = filtered.filter((n: any) => n.entity.toLowerCase() === String(args.entity).toLowerCase());
+        }
+        // Run provider checks
+        const { verifyInfra } = require('./infra/verify');
+        const checkResults = [];
+        for (const node of filtered) {
+          try {
+            const result = await verifyInfra({
+              dir: root,
+              providerFilter: node.provider,
+              entityFilter: node.entity,
+            });
+            checkResults.push(...result);
+          } catch {
+            checkResults.push({
+              entity: node.entity, provider: node.provider, resource: node.resource,
+              status: 'warn', message: 'check failed',
+            });
+          }
+        }
+        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(checkResults) }] } };
+      }
+
       return { jsonrpc: '2.0', id, error: { code: 404, message: `Unknown tool: ${name}` } };
     }
 
@@ -261,10 +328,10 @@ export function serve(dir: string = '.'): void {
   
   console.error(`[spec-serve] Loaded ${dagCache.size} projects`);
   
-  rl.on('line', (line: string) => {
+  rl.on('line', async (line: string) => {
     try {
       const req = JSON.parse(line);
-      const res = handleRequest(req);
+      const res = await handleRequest(req);
       process.stdout.write(JSON.stringify(res) + '\n');
     } catch (e) {
       process.stderr.write(`[spec-serve] Error: ${e}\n`);
