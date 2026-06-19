@@ -86,6 +86,14 @@
 - [x] JSON .idx file stored alongside .dag
 - [x] dotdog: 54 sections, 549 terms indexed
 
+## Phase 4.5: Repo Intelligence + Issue Sync
+
+- [ ] `dotdog issues --check` — match GitHub issues to .dag entities and report coverage (#257)
+- [ ] `dotdog analyze --issues` — drift discovery + uncovered issues (#259)
+- [ ] MCP tool `checkIssues` — expose issue coverage to AI agents (#258)
+- [ ] `dotdog init --guided` — persona-based onboarding flow (#256)
+- [ ] Add spec gaps that should become new issues when no existing issue matches
+
 ## Phase 5: Graph Traversal Engine
 
 - [ ] Build in-memory graph from parsed entities + relationships

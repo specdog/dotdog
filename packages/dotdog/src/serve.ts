@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'path';
 import { homedir } from 'os';
 import { fileURLToPath } from 'url';
 import * as readline from 'readline';
+import { parse } from './parser';
 
 function resolvePath(p: string): string {
   if (p.startsWith('~')) p = join(homedir(), p.slice(1));
@@ -29,10 +30,15 @@ const TYPE: Record<string,string> = { e:'entity', p:'prediction', i:'infra' };
 
 const Nm = (n: any) => n[0];                          // name
 const Nt = (n: any) => TYPE[n[1]] || 'entity';        // type
-const Np = (n: any) => {                              // properties
+const Np = (n: any) => {
   const flat = n[2] || [];
+  if (!Array.isArray(flat)) return (flat && typeof flat === 'object') ? flat : {};
   const obj: Record<string,string> = {};
-  for (let i = 0; i < flat.length; i += 2) obj[flat[i]] = flat[i+1] || '';
+  if (flat.length && Array.isArray(flat[0])) {
+    for (const pair of flat) obj[String(pair[0])] = String(pair[1] ?? '');
+    return obj;
+  }
+  for (let i = 0; i < flat.length; i += 2) obj[String(flat[i])] = String(flat[i+1] ?? '');
   return obj;
 };
 const Ns = (n: any) => n[3] || [];                    // states
@@ -57,6 +63,7 @@ function allEdges(dag: any): any[] {
 export function serve(dir: string = '.'): void {
   const root = resolvePath(dir);
   const dagCache: Map<string, any> = new Map();
+  const dagPaths: Map<string, string> = new Map();
 
   function loadDags(): string[] {
     const dirs = [join(root,'projects'),join(root,'specs'),root];
@@ -65,7 +72,7 @@ export function serve(dir: string = '.'): void {
       const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
       for (const p of projects) {
         const dagFile = join(dd,p,`${p}.dag`);
-        if (existsSync(dagFile)) dagCache.set(p, JSON.parse(readFileSync(dagFile,'utf-8')));
+        if (existsSync(dagFile)) { dagCache.set(p, JSON.parse(readFileSync(dagFile,'utf-8'))); dagPaths.set(p, join(dd,p)); }
       }
       // Also check root-level .dag files
       try { for (const f of readdirSync(dd)) { if (f.endsWith('.dag')) {
@@ -113,8 +120,24 @@ export function serve(dir: string = '.'): void {
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
         const node = nodes(dag).find((n: any) => Nm(n).toLowerCase() === (args.name || '').toLowerCase());
         if (!node) return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: '{}' }] } };
+        const props = Np(node);
+        if (Object.keys(props).length === 0) {
+          const projectDir = dagPaths.get(args.project || [...dagCache.keys()][0] || '');
+          if (projectDir) {
+            for (const f of readdirSync(projectDir).filter(x => x.endsWith('.dog'))) {
+              try {
+                const ast = parse(readFileSync(join(projectDir, f), 'utf-8'));
+                for (const s of ast.sections) for (const b of s.blocks) {
+                  if (b.kind === 'entity' && (b as any).name?.toLowerCase() === Nm(node).toLowerCase()) {
+                    Object.assign(props, Object.fromEntries(Object.entries((b as any).properties || {}).map(([k,v]: any) => [k, `${v.type?.[0] || 's'}${v.required ? '!' : ''}`])));
+                  }
+                }
+              } catch {}
+            }
+          }
+        }
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
-          name: Nm(node), type: Nt(node), edges: Ne(node).map((e: any) => [e.t, e.v, e.c])
+          name: Nm(node), type: Nt(node), properties: props, edges: Ne(node).map((e: any) => [e.t, e.v, e.c])
         }) }] } };
       }
 
@@ -123,7 +146,7 @@ export function serve(dir: string = '.'): void {
         const depth = Math.min(Math.max(1, args.depth || 2), 3);
         const verbFilter = (args.verb || '').toLowerCase();
         const visited = new Set<string>();
-        const result: Record<string, string[]> = {};
+        const result: Array<{ name: string; edges: string[] }> = [];
         const start = nodes(dag).find((n: any) => Nm(n).toLowerCase() === (args.from || '').toLowerCase());
         const queue = [{ id: start ? Nm(start) : args.from, depth: 0 }];
         while (queue.length > 0) {
@@ -133,13 +156,13 @@ export function serve(dir: string = '.'): void {
           const node = nodes(dag).find((n: any) => Nm(n) === curr.id);
           if (node) {
             const edges = Ne(node).filter((e: any) => !verbFilter || (e.v || '').toLowerCase() === verbFilter);
-            result[Nm(node)] = edges.map((e: any) => `${e.t}:${e.v}${e.c ? '(' + e.c + ')' : ''}`);
+            result.push({ name: Nm(node), edges: edges.map((e: any) => `${e.t}:${e.v}${e.c ? '(' + e.c + ')' : ''}`) });
             for (const e of edges) {
               if (!visited.has(e.t)) queue.push({ id: e.t, depth: curr.depth + 1 });
             }
           }
         }
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(result) }] } };
+        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({ nodes: result }) }] } };
       }
 
       if (name === 'search') {
@@ -148,7 +171,7 @@ export function serve(dir: string = '.'): void {
         const tf = (args.type || '').toLowerCase();
         const results = nodes(dag)
           .filter((n: any) => Nm(n).toLowerCase().includes(q) && (!tf || Nt(n).toLowerCase().includes(tf)))
-          .map((n: any) => ({ name: Nm(n), type: Nt(n) }));
+          .map((n: any) => [Nt(n), Nm(n)]);
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(results) }] } };
       }
 

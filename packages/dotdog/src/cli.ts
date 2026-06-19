@@ -6,6 +6,7 @@ import { join, resolve } from 'path';
 import { buildIndex, searchIndex } from './index';
 import { homedir } from 'os';
 import { createHash } from 'crypto';
+import { execSync } from 'child_process';
 import type { DocumentNode, SectionNode, BlockNode, EntityNode, RelationshipNode, ProseNode, TableNode, PropertyDef } from './grammar';
 import { parse } from './parser';
 
@@ -44,6 +45,31 @@ function resolvePath(p: string): string {
     return rel;
   }
   return resolved;
+}
+
+function githubRemote(repoDir = process.cwd()): string | null {
+  try {
+    const remote = execSync('git remote get-url origin', { cwd: repoDir, encoding: 'utf8' }).trim();
+    const m = remote.match(/github\.com[:/]([^/]+)\/([^/.]+)(?:\.git)?$/);
+    return m ? `${m[1]}/${m[2]}` : null;
+  } catch { return null; }
+}
+
+function ghIssues(repo: string): Array<{ number:number; title:string; state:string; body:string }> {
+  const raw = execSync(`gh issue list --repo ${repo} --state all --limit 100 --json number,title,state,body`, { encoding: 'utf8' }).trim();
+  return JSON.parse(raw || '[]');
+}
+
+function projectEntities(projectDir: string): string[] {
+  const files = readdirSync(projectDir).filter(f => f.endsWith('.dog'));
+  const entities = new Set<string>();
+  for (const f of files) {
+    try {
+      const ast = parse(readFileSync(join(projectDir, f), 'utf-8'));
+      for (const s of ast.sections) for (const b of s.blocks) if (b.kind === 'entity') entities.add((b as EntityNode).name.toLowerCase());
+    } catch {}
+  }
+  return [...entities];
 }
 
 // --- Inline engine functions (no deps) ---
@@ -120,6 +146,25 @@ program.command('init <project>').option('-m, --minimal', 'Only SPEC.dog + data-
     console.log(chalk.green(`  ✓ ${f}`));
   }
   console.log(chalk.bold(`\nProject "${p}" initialized. Fill in SPEC.dog then run spec validate.`));
+});
+
+program.command('issues [repo]').description('Check GitHub issue coverage against spec entities').option('--json', 'Output JSON').action((repoArg = '', opts) => {
+  const repo = repoArg || githubRemote();
+  if (!repo) { console.log(chalk.red('No GitHub remote found.')); process.exit(1); }
+  const root = join(process.cwd(), 'specs');
+  const projects = existsSync(root) ? readdirSync(root,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name) : [];
+  const results: any[] = [];
+  for (const p of projects) {
+    const pd = join(root, p);
+    if (!existsSync(join(pd,'SPEC.dog'))) continue;
+    const entities = projectEntities(pd);
+    const issues = ghIssues(repo);
+    const uncovered = issues.filter(i => !entities.some(e => (i.title + ' ' + (i.body || '')).toLowerCase().includes(e)));
+    results.push({ project: p, entities: entities.length, issues: issues.length, uncovered: uncovered.length });
+    console.log(chalk.bold(`\n  ${p}`));
+    console.log(`  ${entities.length} entities, ${issues.length} issues, ${uncovered.length} uncovered`);
+  }
+  if (opts.json) console.log(JSON.stringify(results, null, 2));
 });
 
 program.command('list').option('--json', 'Output project names as JSON').action((opts: { json?: boolean }) => {
