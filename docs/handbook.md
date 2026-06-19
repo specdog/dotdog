@@ -43,6 +43,7 @@ Five minutes from zero to AI agents querying your specs.
 - **Existing codebases** — add specs alongside code. `dotdog verify --init`
 - **Teams** — validate in CI, share MCP server
 - **Specdog public site** — keep docs, blog, and discovery pages current
+- **Lean workflow** — one issue, one PR, one merge; spec/.dag first; verify with tests; keep status compact
 - **Smart contracts** — one bug costs millions. Spec first.
 
 ## Further reading
