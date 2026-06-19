@@ -64,7 +64,19 @@
 ## Phase 3: MCP Server Live (done)
 
 - [x] `dotdog serve` — MCP server over stdio
-- [x] 6 tools: getEntity, traverse, search, schema, summary, listProjects
+- [x] 7 tools: getEntity, traverse, search, schema, summary, listProjects, infraVerify
+
+## Phase 3.5: Live Verification (done)
+
+- [x] `dotdog live` — endpoint contract testing (v0.8.5)
+- [x] `dotdog live --type infra` — infrastructure verification (v0.8.6)
+- [x] 6 cloud providers: Cloudflare, Supabase, Vercel, Netlify, Railway, AWS
+- [x] MCP-first architecture with REST/CLI fallbacks
+- [x] Infra resources compiled as .dag nodes with maps_to edges
+- [x] DAG-powered: live queries .dag (94% token savings)
+- [x] Zero credential exposure — env vars only
+- [x] `infraVerify` MCP tool for agents
+- [x] Endpoint + infra both query .dag first, .dog fallback
 
 ## Phase 4: Vector Search (done)
 
@@ -113,7 +125,8 @@
 | 0 | `dotdog validate` → 100%, `dotdog analyze` → 0 gaps |
 | 1 | `dotdog compile` → .dag v1.4 with compact encoding |
 | 2 | `npm install -g dotdog` → 12 commands working + CI blocks broken specs |
-| 3 | `dotdog serve` → AI agent queries spec via MCP |
+| 3 | `dotdog serve` → AI agent queries spec via MCP (7 tools) |
+| 3.5 | `dotdog live` → endpoints + infra verified against live resources |
 | 4 | `dotdog search "entity"` → returns Node, Edge, Task, Prediction, Vector |
 | 5 | `dotdog simulate payment` → walks through steps, reports success/failure |
 | 6 | Prediction "shipping by July" resolved → hit rate updates |
