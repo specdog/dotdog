@@ -118,13 +118,13 @@ export function serve(dir: string = '.'): void {
         result: {
           tools: [
             { name: 'getEntity', description: 'Get entity with properties, states, lifecycle', inputSchema: { type: 'object', properties: { project: { type:'string' }, name: { type:'string' } }, required: ['name'] } },
-            { name: 'traverse', description: 'Traverse graph: from node, follow edges, return subgraph', inputSchema: { type: 'object', properties: { project: { type:'string' }, from: { type:'string' }, depth: { type:'number', default: 1 } }, required: ['from'] } },
+            { name: 'traverse', description: 'Traverse graph: from node, follow edges, return subgraph. Optional verb filter (e.g. maps_to, produces, depends_on).', inputSchema: { type: 'object', properties: { project: { type:'string' }, from: { type:'string' }, depth: { type:'number', default: 1 }, verb: { type:'string', description: 'Filter edges by verb (e.g. maps_to for infra resources)' } }, required: ['from'] } },
             { name: 'search', description: 'Find entities by name or type', inputSchema: { type: 'object', properties: { project: { type:'string' }, q: { type:'string' }, type: { type:'string' } }, required: ['q'] } },
             { name: 'listProjects', description: 'List all projects', inputSchema: { type: 'object', properties: {} } },
             { name: 'summary', description: 'Get project summary: node count, edge count, token savings', inputSchema: { type: 'object', properties: { project: { type:'string' } } } },
             { name: 'schema', description: 'Get full property schema for an entity', inputSchema: { type: 'object', properties: { project: { type:'string' }, entity: { type:'string' } }, required: ['entity'] } },
             { name: 'listBlogs', description: 'List all blog posts with titles and descriptions', inputSchema: { type: 'object', properties: {} } },
-            { name: 'infraVerify', description: 'Verify infrastructure resources defined in .dog specs against live cloud (Cloudflare, Supabase, Vercel, Netlify, Railway, AWS)', inputSchema: { type: 'object', properties: { provider: { type: 'string', description: 'Filter by provider (cloudflare, supabase, vercel, netlify, railway, aws)' }, entity: { type: 'string', description: 'Filter by spec entity name' } } } },
+            { name: 'infraVerify', description: 'Verify infrastructure resources defined in .dog specs against live cloud (Cloudflare, Supabase, Vercel, Netlify, Railway, AWS)', inputSchema: { type: 'object', properties: { provider: { type: 'string', description: 'Filter by provider (cloudflare, supabase, vercel, netlify, railway, aws)' }, entity: { type: 'string', description: 'Filter by spec entity name' }, summary: { type: 'boolean', description: 'Return count summary only (default: false, returns full results)' } } } },
           ]
         }
       };
@@ -162,6 +162,7 @@ export function serve(dir: string = '.'): void {
         const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
         if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
         const depth = Math.min(Math.max(1, args.depth || 1), 20);
+        const verbFilter = (args.verb || '').toLowerCase();
         const visitedNodes = new Set<string>();
         const visitedEdges = new Set<string>();
         const subgraph: { nodes: any[], edges: any[] } = { nodes: [], edges: [] };
@@ -174,17 +175,19 @@ export function serve(dir: string = '.'): void {
           if (visitedNodes.has(currId) || curr.depth > depth) continue;
           visitedNodes.add(currId);
           if (node) subgraph.nodes.push(isV2(node) ? { id: nodeId(node), name: nodeName(node), type: nt(node), description: nd(node), properties: np(node), states: ns(node), edges: nodeEdges(node) } : node);
-          const edges = E(dag).filter((e: any) =>
-            es(e).toLowerCase() === currId.toLowerCase() || et(e).toLowerCase() === currId.toLowerCase()
-          );
-          for (const e of edges) {
-            const edgeKey = `${es(e)}→${et(e)}`;
-            if (!visitedEdges.has(edgeKey)) {
-              visitedEdges.add(edgeKey);
-              subgraph.edges.push(e);
-            }
-            const next = es(e).toLowerCase() === currId.toLowerCase() ? et(e) : es(e);
-            if (!visitedNodes.has(next)) queue.push({ id: next, depth: curr.depth + 1 });
+          // Collect edges from this node (source-side only)
+          const rawEdges = isV2(node) ? (node[6] || []) : (node.es || []);
+          for (const raw of rawEdges) {
+            const edgeObj = isV2(node) ? { s: nodeName(node), t: String(raw[0]), v: raw[1] || '', c: raw[2] || '', r: raw[3] || 0 } : raw;
+            // Verb filter
+            if (verbFilter && (edgeObj.v || '').toLowerCase() !== verbFilter) continue;
+            const edgeKey = `${edgeObj.s}→${edgeObj.t}:${edgeObj.v}`;
+            if (visitedEdges.has(edgeKey)) continue;
+            visitedEdges.add(edgeKey);
+            subgraph.edges.push(edgeObj);
+            // Follow edge to target
+            const tgtId = edgeObj.t;
+            if (!visitedNodes.has(tgtId)) queue.push({ id: tgtId, depth: curr.depth + 1 });
           }
         }
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(subgraph) }] } };
@@ -295,7 +298,22 @@ export function serve(dir: string = '.'): void {
         if (args.entity) {
           filtered = filtered.filter((n: any) => n.entity.toLowerCase() === String(args.entity).toLowerCase());
         }
-        // Run provider checks
+        // Return summary or full results
+        if (args.summary) {
+          const byProvider: Record<string, number> = {};
+          const byEntity: Record<string, number> = {};
+          for (const n of filtered) {
+            byProvider[n.provider] = (byProvider[n.provider] || 0) + 1;
+            byEntity[n.entity] = (byEntity[n.entity] || 0) + 1;
+          }
+          return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
+            total: filtered.length,
+            byProvider,
+            byEntity,
+            sample: filtered.slice(0, 3).map((n: any) => ({ entity: n.entity, provider: n.provider, resource: n.resource })),
+          }) }] } };
+        }
+        // Run provider checks for full results
         const { verifyInfra } = require('./infra/verify');
         const checkResults = [];
         for (const node of filtered) {

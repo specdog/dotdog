@@ -382,12 +382,12 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v3', 'U
         const props: any[] = [];
         if (nd.p) for (const [k, v] of Object.entries(nd.p)) props.push(k, v);
         const states = nd.s || [];
-        // Build edges with integer target IDs, no descriptions
+        // Build edges from source node only (no duplicate reverse edges)
         const outEdges: any[] = [];
         const seen = new Set<string>();
         for (const e of edges) {
-          if (e.s !== nd.i && e.t !== nd.i) continue;
-          const tid = nodeIds.get(e.s === nd.i ? e.t : e.s);
+          if (e.s !== nd.i) continue;  // only source-side edges
+          const tid = nodeIds.get(e.t);
           if (tid === undefined) continue;
           const key = `${j}→${tid}:${e.v}`;
           if (seen.has(key)) continue;
