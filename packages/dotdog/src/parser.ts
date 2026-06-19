@@ -240,6 +240,12 @@ function parseBlocks(lines: string[], start: number, end: number, errors?: Parse
       if (table) { blocks.push(table); i = table.lineEnd; continue; }
     }
 
+    // Compact inline format: [EntityName] followed by Key→ Value lines
+    if (/^\[[^\]]+\]$/.test(line)) {
+      const result = parseCompactBlock(lines, i, end, errors);
+      if (result) { blocks.push(result.node); i = result.nextLine; continue; }
+    }
+
     // Check for YAML blocks with structured keys (container sections)
     if (lines[i].startsWith('```')) {
       let yamlEnd = i + 1;
@@ -310,7 +316,7 @@ function parseBlocks(lines: string[], start: number, end: number, errors?: Parse
 }
 
 function isBlockStart(line: string): boolean {
-  return /^#{3,5}\s+(Entity|Relationship|Event|Prediction):/.test(line) || /^\|.+\|/.test(line);
+  return /^#{3,5}\s+(Entity|Relationship|Event|Prediction):/.test(line) || /^\|.+\|/.test(line) || /^\[.+\]/.test(line);
 }
 
 // --- Structured block parser ---
@@ -681,4 +687,78 @@ function parseInlineObject(value: string): Record<string, unknown> | null {
     else obj[k.trim()] = v;
   }
   return obj;
+}
+
+// --- Compact inline format parser ---
+// Handles the [EntityName] + Key→ Value(cardinality) format
+// Example:
+//   [dogbench]
+//   Desc→ Real token benchmarks...(11)
+//   Run→ dogbench [task]...(11)
+
+function parseCompactBlock(
+  lines: string[], start: number, end: number, errors?: ParseError[]
+): { node: BlockNode; nextLine: number } | null {
+  const headerMatch = lines[start]?.match(/^\[([^\]]+)\]$/);
+  if (!headerMatch) return null;
+
+  const entityName = headerMatch[1].trim();
+  let i = start + 1;
+
+  // Collect all Key→ Value lines until next [Entity] or end
+  const props: Array<{ key: string; value: string; cardinality: string }> = [];
+  const descriptionLines: string[] = [];
+
+  while (i < end) {
+    const line = lines[i];
+    // Stop at next compact entity header, heading, table, or code fence
+    if (/^\[[^\]]+\]$/.test(line) || /^#{1,5}\s/.test(line) || /^\|/.test(line) || line.startsWith('```')) break;
+
+    // Key→ Value(cardinality) or Key→ Value
+    const kvMatch = line.match(/^(\w[\w_]*)\s*→\s*(.+?)(?:\((\w+)\))?\s*$/);
+    if (kvMatch) {
+      const key = kvMatch[1];
+      const value = kvMatch[2].trim();
+      const card = kvMatch[3] || '11';
+      props.push({ key, value, cardinality: card });
+    } else if (line.trim()) {
+      descriptionLines.push(line.trim());
+    }
+    i++;
+  }
+
+  // Build description from Desc→ property or collected prose
+  const descProp = props.find(p => p.key.toLowerCase() === 'desc');
+  const description = descProp ? descProp.value : descriptionLines.join(' ');
+
+  // Build states from lifecycle-like properties
+  const states: string[] = [];
+  const flowProp = props.find(p => p.key.toLowerCase() === 'flow');
+  if (flowProp) {
+    const flowStates = flowProp.value.split(/\s*→\s*/).map(s => s.trim()).filter(Boolean);
+    states.push(...flowStates);
+  }
+
+  // Build compact properties map (exclude Desc which is the description)
+  const compactProps: Record<string, string> = {};
+  for (const p of props) {
+    if (p.key.toLowerCase() !== 'desc') {
+      compactProps[p.key] = p.value;
+    }
+  }
+
+  const node: EntityNode = {
+    kind: 'entity',
+    name: entityName,
+    description,
+    type: 'entity',
+    properties: {},
+    states,
+    lifecycle: states.length > 1 ? states.slice(0, -1).map((s, idx) => `${s} → ${states[idx + 1]}`) : [],
+    yaml: { ...compactProps },
+    lineStart: start + 1,
+    lineEnd: i,
+  };
+
+  return { node, nextLine: i };
 }
