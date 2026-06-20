@@ -128,6 +128,8 @@ cp -r extensions/vscode ~/.vscode/extensions/dotdog
 ## Related Projects
 
 - **[dotdefi](https://github.com/specdog/dotdefi)** — Spec-first DeFi development. Write .dog specs, generate Solidity stubs.
+- **[collar](https://github.com/specdog/collar)** — DAG-first agent harness.
+- **[dogbench](https://github.com/specdog/dogbench)** — Token-savings benchmarks for Collar and dotdog.
 - **[dogfood-paybot](https://github.com/specdog/dogfood-paybot)** — Dogfood test: dotdog on a real payment bot project.
 - **[homebrew-dotdog](https://github.com/specdog/homebrew-dotdog)** — Homebrew tap for `brew install dotdog`.
 

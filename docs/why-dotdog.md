@@ -28,6 +28,7 @@ description: "Compare dotdog with traditional approaches to software specificati
 | Staleness detection | Compares plan.dog tasks against code. Catches drift. |
 | Predictions | Track forecasts and score against reality. |
 | Dogfooding | dotdog validates its own specs at 100pct completeness. |
+| Public docs | README, docs, blog, and specdog.github.io stay in sync. |
 
 ## Comparison
 

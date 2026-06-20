@@ -7,6 +7,12 @@ description: "Write structured specs. Validate completeness. Compile to graphs. 
 
 # dotdog
 
+Current public surfaces:
+- [specdog site](https://specdog.github.io)
+- [blog](https://specdog.github.io/blog)
+- [for agents](https://specdog.github.io/agents)
+- [github discovery](https://specdog.github.io/github)
+
 > The CLI tool that gives AI coding agents a brain.
 
 AI agents are everywhere now — in your editor, your terminal, your CI pipeline. They know every framework and every API. But they do not know *your* project. They hallucinate entity names, invent relationships, and miss required fields because they are reading prose and guessing.

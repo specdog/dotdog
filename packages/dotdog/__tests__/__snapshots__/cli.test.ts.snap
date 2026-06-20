@@ -6,7 +6,6 @@ graph LR
     Node[Node]
     Task[Task]
     Node -->|contains| Task
-    Task -->|contains| Node
 \`\`\`
 
 "

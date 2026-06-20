@@ -13,6 +13,22 @@
 
 **MCP**: `npx dotdog serve` (7 tools: getEntity, traverse, search, schema, summary, listProjects, infraVerify)
 
+**Workflow (lean)**:
+- 1 issue → 1 PR → 1 merge
+- spec/.dag first, code second
+- no unrelated edits
+- verify with targeted test, then full `bun test`
+- update docs/spec in the same PR if behavior changes
+- never merge without explicit user ask
+
+**Token efficiency**:
+- keep truth in .dag/spec, not chat
+- preserve IDs, file paths, and test results verbatim
+- compress chatter/logs, not constraints or state
+- prefer short status: changed / verified / next
+
+**Public site/docs**: keep README, docs, and specdog.github.io in sync when adding commands, docs, blog posts, or discovery pages.
+
 ## Commands (when modifying dotdog source)
 
 ```
