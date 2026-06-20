@@ -19,6 +19,6 @@ jobs:
       - run: node packages/dotdog/dist/cli.js --version
       - run: node packages/dotdog/dist/cli.js --help
       - run: node packages/dotdog/dist/cli.js validate
-      - run: node packages/dotdog/dist/cli.js analyze
+      - run: node packages/dotdog/dist/cli.js analyze --project dotdog
       - run: node packages/dotdog/dist/cli.js staleness
       - run: node packages/dotdog/dist/cli.js list
