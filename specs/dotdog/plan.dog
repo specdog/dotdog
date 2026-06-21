@@ -94,6 +94,20 @@
 - [ ] `dotdog init --guided` — persona-based onboarding flow (#256)
 - [ ] Add spec gaps that should become new issues when no existing issue matches
 
+## Phase 4.6: Spec-Driven Repo Mapping
+
+- [ ] Rename init/docs language from “spec genome” to “spec workspace”
+- [ ] Print the full created tree after `dotdog init`
+- [ ] Explain `.dog` source specs and `.dag` compiled implementation graphs after init
+- [ ] Add `dotdog init --map` to create a workspace and seed it from the current repo
+- [ ] Add `dotdog map [dir]` to inspect existing repos and emit `repo-map.dog`
+- [ ] Detect package manager, framework, app/pages routes, src folders, config files, env examples, and workflows
+- [ ] Map frontend components, routes, API endpoints, backend handlers, services, schemas, database tables, migrations, env vars, cloud resources, CI workflows, tests, tasks, and specs
+- [ ] Emit graph edges for imports, calls, renders, reads, writes, depends_on, implements, configured_by, deployed_by, tested_by, documented_by, and owned_by
+- [ ] Support cross-layer traversal: frontend component → API route → backend handler → schema → database table → env var → infra resource → task/spec reason
+- [ ] Do not overwrite hand-written specs unless explicitly requested
+- [ ] Add MCP traversal examples for mapped repo debugging
+
 ## Phase 5: Graph Traversal Engine
 
 - [ ] Build in-memory graph from parsed entities + relationships
@@ -136,6 +150,8 @@
 | 3 | `dotdog serve` → AI agent queries spec via MCP (7 tools) |
 | 3.5 | `dotdog live` → endpoints + infra verified against live resources |
 | 4 | `dotdog search "entity"` → returns Node, Edge, Task, Prediction, Vector |
+| 4.5 | `dotdog issues --check` → reports spec coverage for GitHub issues |
+| 4.6 | `dotdog map` → emits repo-map.dog with cross-layer implementation graph facts |
 | 5 | `dotdog simulate payment` → walks through steps, reports success/failure |
 | 6 | Prediction "shipping by July" resolved → hit rate updates |
 | 7 | Dashboard shows 3 projects, 87% avg completeness |
