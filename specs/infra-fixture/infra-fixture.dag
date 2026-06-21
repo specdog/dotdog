@@ -1,98 +1,45 @@
-{
-  "v": 2,
-  "p": "infra-fixture",
-  "n": [
+[
+  3,
+  "infra-fixture",
+  [
     [
-      0,
       "FileStorage",
-      "entity",
-      "",
-      [],
-      [],
-      [
-        [
-          5,
-          "maps_to",
-          "1:1",
-          1
-        ],
-        [
-          10,
-          "maps_to",
-          "1:1",
-          1
-        ]
-      ]
+      "e",
+      null,
+      null,
+      null
     ],
     [
-      1,
       "Database",
-      "entity",
-      "",
-      [],
-      [],
-      [
-        [
-          6,
-          "maps_to",
-          "1:1",
-          1
-        ]
-      ]
+      "e",
+      null,
+      null,
+      null
     ],
     [
-      2,
       "WebApp",
-      "entity",
-      "",
-      [],
-      [],
-      [
-        [
-          7,
-          "maps_to",
-          "1:1",
-          1
-        ]
-      ]
+      "e",
+      null,
+      null,
+      null
     ],
     [
-      3,
       "LandingPage",
-      "entity",
-      "",
-      [],
-      [],
-      [
-        [
-          8,
-          "maps_to",
-          "1:1",
-          1
-        ]
-      ]
+      "e",
+      null,
+      null,
+      null
     ],
     [
-      4,
       "ApiServer",
-      "entity",
-      "",
-      [],
-      [],
-      [
-        [
-          9,
-          "maps_to",
-          "1:1",
-          1
-        ]
-      ]
+      "e",
+      null,
+      null,
+      null
     ],
     [
-      5,
       "cloudflare:r2:avatars",
-      "infra",
-      "cloudflare r2:avatars",
+      "i",
       [
         "provider",
         "cloudflare",
@@ -101,11 +48,9 @@
         "entity",
         "FileStorage",
         "region",
-        "",
-        "tables",
-        ""
+        "tables"
       ],
-      [],
+      null,
       [
         [
           0,
@@ -116,10 +61,8 @@
       ]
     ],
     [
-      6,
       "supabase:project:abc123xyz",
-      "infra",
-      "supabase project:abc123xyz",
+      "i",
       [
         "provider",
         "supabase",
@@ -128,11 +71,10 @@
         "entity",
         "Database",
         "region",
-        "",
         "tables",
         "users,posts,sessions"
       ],
-      [],
+      null,
       [
         [
           1,
@@ -143,10 +85,8 @@
       ]
     ],
     [
-      7,
       "vercel:project:my-app",
-      "infra",
-      "vercel project:my-app",
+      "i",
       [
         "provider",
         "vercel",
@@ -155,11 +95,9 @@
         "entity",
         "WebApp",
         "region",
-        "",
-        "tables",
-        ""
+        "tables"
       ],
-      [],
+      null,
       [
         [
           2,
@@ -170,10 +108,8 @@
       ]
     ],
     [
-      8,
       "netlify:site:my-landing-page",
-      "infra",
-      "netlify site:my-landing-page",
+      "i",
       [
         "provider",
         "netlify",
@@ -182,11 +118,9 @@
         "entity",
         "LandingPage",
         "region",
-        "",
-        "tables",
-        ""
+        "tables"
       ],
-      [],
+      null,
       [
         [
           3,
@@ -197,10 +131,8 @@
       ]
     ],
     [
-      9,
       "railway:service:api",
-      "infra",
-      "railway service:api",
+      "i",
       [
         "provider",
         "railway",
@@ -209,11 +141,9 @@
         "entity",
         "ApiServer",
         "region",
-        "",
-        "tables",
-        ""
+        "tables"
       ],
-      [],
+      null,
       [
         [
           4,
@@ -224,10 +154,8 @@
       ]
     ],
     [
-      10,
       "aws:s3:uploads-prod",
-      "infra",
-      "aws s3:uploads-prod",
+      "i",
       [
         "provider",
         "aws",
@@ -237,10 +165,9 @@
         "FileStorage",
         "region",
         "us-east-1",
-        "tables",
-        ""
+        "tables"
       ],
-      [],
+      null,
       [
         [
           0,
@@ -251,14 +178,22 @@
       ]
     ]
   ],
-  "tk": {
+  {
     "m": "chars/4",
     "st": 302,
     "ct": 283,
-    "dt": 374,
-    "sv": -23.8,
-    "cs": -32.2,
-    "saved": -72
+    "dt": 342,
+    "sv": -13.2,
+    "cs": -20.8,
+    "saved": -40
   },
-  "compact": "[if]\nFileStorage→cloudflare:r2:avatars:maps_(11)>aws:s3:uploads-prod:maps_(11)\nDatabase→supabase:project:abc123xyz:maps_(11)\nWebApp→vercel:project:my-app:maps_(11)\nLandingPage→netlify:site:my-landing-page:maps_(11)\nApiServer→railway:service:api:maps_(11)\ncloudflare:r2:avatars→FileStorage:maps_(11)\nsupabase:project:abc123xyz→Database:maps_(11)\nvercel:project:my-app→WebApp:maps_(11)\nnetlify:site:my-landing-page→LandingPage:maps_(11)\nrailway:service:api→ApiServer:maps_(11)\naws:s3:uploads-prod→FileStorage:maps_(11)"
-}
+  {
+    "m": "chars/4",
+    "st": 302,
+    "ct": 283,
+    "dt": 342,
+    "sv": -13.2,
+    "cs": -20.8,
+    "saved": -40
+  }
+]
