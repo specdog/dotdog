@@ -631,8 +631,10 @@ program.command('analyze [dir]').description('Analyze a spec project : score, ga
         const ast = parse(content);
         const entities = ast.sections.flatMap(s => s.blocks.filter(b => b.kind === 'entity') as EntityNode[]);
         const rels = ast.sections.flatMap(s => s.blocks.filter(b => b.kind === 'relationship') as RelationshipNode[]);
-        allEntities.push(...entities);
-        allRelationships.push(...rels);
+        if (f !== 'repo-map.dog') {
+          allEntities.push(...entities);
+          allRelationships.push(...rels);
+        }
         analyses.push({file:f, sections:ast.sections.length, size:content.length, entities:entities.length, rels:rels.length});
       }
       const missingReq = ['SPEC.dog','constitution.dog','data-model.dog'].filter(f => !files.includes(f));
