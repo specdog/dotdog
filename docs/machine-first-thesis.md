@@ -37,7 +37,7 @@ Agent/orchestrator action
 
 Dotdog = human-readable spec + machine-readable repo graph + MCP query surface.
 
-Leash should be the runtime/control surface that guides agents through graph-first execution. Collar should be the lightweight local harness/adapter that keeps agents constrained to the graph, terminal, and repo evidence. JBrain proves the broader doctrine: humans own meaning; agents consume compiled models; digital twins and app twins are models, not authorities.
+Leash should be the runtime/control surface that guides agents through graph-first execution. Collar should be the lightweight local harness/adapter that keeps agents constrained to the graph, terminal, and repo evidence. The broader doctrine is that humans own meaning; agents consume compiled models; digital twins and app twins are models, not authorities.
 
 ## Implementation phases
 

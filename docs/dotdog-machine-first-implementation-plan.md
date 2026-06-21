@@ -16,9 +16,9 @@ The machine should search ML first. Humans should edit HL first. dotdog reconcil
 
 The npm package should not only scaffold new projects. It should ingest existing repositories, construct a living model of the app, detect drift, model likely outcomes, and expose the result through CLI and MCP-compatible query surfaces.
 
-## Jbrain-aligned doctrine
+## Machine-first doctrine
 
-The jbrain doctrine is efficiency through stable context and deterministic local tools.
+The doctrine is efficiency through stable context and deterministic local tools.
 
 - Do not make an LLM reread the same repository every time.
 - Cache stable context into compact machine structures.

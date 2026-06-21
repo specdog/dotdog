@@ -2,7 +2,7 @@
   "version": "0.1",
   "project": "dotdog",
   "root": "/Users/dico/projects/dotdog",
-  "generatedAt": "2026-06-21T15:16:01.058Z",
+  "generatedAt": "2026-06-21T15:36:21.993Z",
   "nodes": [
     {
       "id": "build:.github/workflows/publish.yml",
@@ -441,17 +441,6 @@
       "description": "Documentation",
       "properties": {
         "path": "docs/integrations.md"
-      },
-      "confidence": "certain"
-    },
-    {
-      "id": "doc:docs/jbrain-dotdog-lookup-plan.md",
-      "kind": "doc",
-      "label": "file:docs/jbrain-dotdog-lookup-plan.md",
-      "source": "docs/jbrain-dotdog-lookup-plan.md",
-      "description": "Documentation",
-      "properties": {
-        "path": "docs/jbrain-dotdog-lookup-plan.md"
       },
       "confidence": "certain"
     },
@@ -1044,14 +1033,6 @@
     {
       "id": "doc:docs/integrations.md:documents:repository",
       "sourceId": "doc:docs/integrations.md",
-      "targetId": "repository",
-      "verb": "documents",
-      "confidence": "certain",
-      "source": "/Users/dico/projects/dotdog"
-    },
-    {
-      "id": "doc:docs/jbrain-dotdog-lookup-plan.md:documents:repository",
-      "sourceId": "doc:docs/jbrain-dotdog-lookup-plan.md",
       "targetId": "repository",
       "verb": "documents",
       "confidence": "certain",
