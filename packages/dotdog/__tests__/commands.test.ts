@@ -123,4 +123,30 @@ describe('untested commands', () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  test('map writes repo world artifacts', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-map-'));
+    try {
+      setupTempProject(dir, 'testproj');
+      const out = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts map . --project repo-world-test`.text();
+      expect(out).toContain('repo.dag');
+      expect(existsSync(join(dir, 'specs', 'repo-world-test', 'repo-map.dog'))).toBe(true);
+      expect(existsSync(join(dir, 'specs', 'repo-world-test', 'repo.dag'))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('query reads repo world artifacts', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-query-'));
+    try {
+      setupTempProject(dir, 'testproj');
+      await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts map . --project repo-world-test`.quiet();
+      const dag = join(dir, 'specs', 'repo-world-test', 'repo.dag');
+      const out = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts query repository --dag ${dag}`.text();
+      expect(out.toLowerCase()).toContain('repository');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
