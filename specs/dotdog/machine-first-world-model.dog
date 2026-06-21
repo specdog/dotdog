@@ -1,0 +1,226 @@
+# Machine-First World Model Spec
+
+Status: draft
+Audience: public npm package users, repo maintainers, AI agents, and local developer tools
+Scope: dotdog CLI, DAG output, query behavior, simulation behavior, and documentation integrity
+
+## Purpose
+
+dotdog is a spec-driven design tool for existing and new repositories. Humans write high-level intent in readable files. Machines read compact deterministic graph files first. dotdog connects both layers without requiring private context.
+
+## Layers
+
+HL means human language: `.dog`, `.md`, README files, tutorials, examples, issue descriptions, pull request descriptions, and architecture notes.
+
+ML means machine language: `.dag`, `.idx`, graph manifests, hashes, command facts, package facts, test facts, build facts, generated traces, and query indexes.
+
+### Entity: RepositoryWorldModel
+
+A structured model of repository state that can be queried, checked, explained, and simulated.
+
+```yaml
+entity: RepositoryWorldModel
+type: entity
+description: Structured state of a software repository across files, symbols, specs, docs, commands, tests, packages, outputs, and unknowns
+properties:
+  id:
+    type: string
+    required: true
+  root_path:
+    type: string
+    required: true
+  graph_version:
+    type: string
+    required: true
+  generated_at:
+    type: string
+    required: true
+  confidence:
+    type: enum
+    required: true
+    constraints: values: [certain, likely, unknown]
+states: [empty, mapped, compiled, queried, simulated, explained, stale]
+lifecycle: empty → mapped → compiled → queried
+```
+
+### Entity: WorldNode
+
+A typed node in the repository graph.
+
+```yaml
+entity: WorldNode
+type: node
+description: A typed graph node representing a file, symbol, command, package, spec, test, doc, build, output, external dependency, or unknown
+properties:
+  id:
+    type: string
+    required: true
+  kind:
+    type: enum
+    required: true
+    constraints: values: [file, symbol, command, package, spec, test, doc, build, output, external, unknown]
+  label:
+    type: string
+    required: true
+  source:
+    type: string
+    required: true
+  hash:
+    type: string
+    required: false
+states: [observed, inferred, stale, unknown]
+lifecycle: observed → stale
+```
+
+### Entity: WorldEdge
+
+A typed relation between two world nodes.
+
+```yaml
+entity: WorldEdge
+type: relationship
+description: A typed graph edge connecting two repository facts
+properties:
+  id:
+    type: string
+    required: true
+  source_id:
+    type: string
+    required: true
+  target_id:
+    type: string
+    required: true
+  verb:
+    type: enum
+    required: true
+    constraints: values: [imports, exports, defines, mentions, tests, builds, documents, depends_on, generated_by, changed_with, conflicts_with]
+  confidence:
+    type: enum
+    required: true
+    constraints: values: [certain, likely, unknown]
+states: [active, stale, conflicting]
+lifecycle: active → stale
+```
+
+### Entity: Prediction
+
+A modeled outcome from graph facts or heuristics.
+
+```yaml
+entity: Prediction
+type: prediction
+description: A predicted repository outcome derived from graph facts, heuristics, runtime checks, or human review
+properties:
+  id:
+    type: string
+    required: true
+  trigger:
+    type: string
+    required: true
+  outcome:
+    type: string
+    required: true
+  affected_nodes:
+    type: string[]
+    required: true
+  required_checks:
+    type: string[]
+    required: true
+  confidence:
+    type: enum
+    required: true
+    constraints: values: [certain, likely, unknown]
+states: [proposed, verified, rejected, unknown]
+lifecycle: proposed → verified
+```
+
+### Entity: DotdogCommand
+
+A public CLI command exposed by the npm package.
+
+```yaml
+entity: DotdogCommand
+type: entity
+description: A public dotdog CLI command that maps, compiles, queries, simulates, checks, or explains repository state
+properties:
+  name:
+    type: string
+    required: true
+  purpose:
+    type: string
+    required: true
+  reads:
+    type: string[]
+    required: true
+  writes:
+    type: string[]
+    required: true
+  public:
+    type: boolean
+    required: true
+states: [planned, implemented, documented, tested]
+lifecycle: planned → implemented → documented → tested
+```
+
+### Relationship: RepositoryWorldModel → WorldNode
+
+```yaml
+relationship: RepositoryWorldModel -> WorldNode
+verb: contains
+cardinality: 1:N
+required: true
+cascade: delete
+invariants: Every world model contains zero or more typed nodes sorted deterministically by id
+```
+
+### Relationship: WorldNode → WorldEdge
+
+```yaml
+relationship: WorldNode -> WorldEdge
+verb: connects
+cardinality: 1:N
+required: true
+cascade: restrict
+invariants: Every edge source_id and target_id must resolve to known nodes or explicit unknown nodes
+```
+
+### Relationship: DotdogCommand → RepositoryWorldModel
+
+```yaml
+relationship: DotdogCommand -> RepositoryWorldModel
+verb: produces
+cardinality: N:1
+required: true
+cascade: none
+invariants: Commands that change machine output must preserve deterministic ordering and source references
+```
+
+## Required public commands
+
+- `dotdog init` creates a spec workspace.
+- `dotdog map` maps an existing repository into spec and graph facts.
+- `dotdog compile` compiles readable specs into machine graph output.
+- `dotdog query` searches machine graph output before reading human files.
+- `dotdog simulate` predicts affected files, docs, tests, commands, and package surfaces.
+- `dotdog doctor` reports stale docs, missing tests, missing specs, drift, and unknowns.
+- `dotdog explain` renders graph state back into readable documentation.
+
+## Query rule
+
+Agents must query `.dag` or `.idx` first. They should cite exact graph nodes or source files. They should read large human files only when graph evidence is missing.
+
+## Simulation rule
+
+Simulations must distinguish deterministic outcomes from likely outcomes and unknown outcomes. A prediction is certain only when directly derived from graph facts.
+
+## Public repo process
+
+Every material change should be traceable from spec to implementation to test to documentation. Issues should describe user value, expected behavior, affected commands, acceptance checks, and risk. Pull requests should include spec reference, implementation summary, tests run, docs touched, and known limitations.
+
+No private project language, private repo context, or internal-only doctrine should be required to understand public package behavior.
+
+## Acceptance checks
+
+A fresh user can run dotdog on an existing repository and receive useful machine-readable and human-readable results without first adopting a full new workflow.
+
+A valid agent path queries `.dag` or `.idx` first, returns exact references, and falls back to `.dog`, `.md`, or source only when needed.

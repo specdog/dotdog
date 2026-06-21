@@ -1,0 +1,1255 @@
+{
+  "version": "0.1",
+  "project": "dotdog",
+  "root": "/Users/dico/projects/dotdog",
+  "generatedAt": "2026-06-21T15:16:01.058Z",
+  "nodes": [
+    {
+      "id": "build:.github/workflows/publish.yml",
+      "kind": "build",
+      "label": "file:.github/workflows/publish.yml",
+      "source": ".github/workflows/publish.yml",
+      "description": "GitHub Actions workflow",
+      "properties": {
+        "path": ".github/workflows/publish.yml"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "build:.github/workflows/test.yml",
+      "kind": "build",
+      "label": "file:.github/workflows/test.yml",
+      "source": ".github/workflows/test.yml",
+      "description": "GitHub Actions workflow",
+      "properties": {
+        "path": ".github/workflows/test.yml"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "build:.github/workflows/version-check.yml",
+      "kind": "build",
+      "label": "file:.github/workflows/version-check.yml",
+      "source": ".github/workflows/version-check.yml",
+      "description": "GitHub Actions workflow",
+      "properties": {
+        "path": ".github/workflows/version-check.yml"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:.github/issue_template/bug.md",
+      "kind": "doc",
+      "label": "file:.github/ISSUE_TEMPLATE/bug.md",
+      "source": ".github/ISSUE_TEMPLATE/bug.md",
+      "description": "Documentation",
+      "properties": {
+        "path": ".github/ISSUE_TEMPLATE/bug.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:.github/issue_template/feature_request.md",
+      "kind": "doc",
+      "label": "file:.github/ISSUE_TEMPLATE/feature_request.md",
+      "source": ".github/ISSUE_TEMPLATE/feature_request.md",
+      "description": "Documentation",
+      "properties": {
+        "path": ".github/ISSUE_TEMPLATE/feature_request.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:.github/pull_request_template.md",
+      "kind": "doc",
+      "label": "file:.github/PULL_REQUEST_TEMPLATE.md",
+      "source": ".github/PULL_REQUEST_TEMPLATE.md",
+      "description": "Documentation",
+      "properties": {
+        "path": ".github/PULL_REQUEST_TEMPLATE.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:agent-bench/readme.md",
+      "kind": "doc",
+      "label": "file:agent-bench/README.md",
+      "source": "agent-bench/README.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "agent-bench/README.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:agents.md",
+      "kind": "doc",
+      "label": "file:AGENTS.md",
+      "source": "AGENTS.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "AGENTS.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:changelog.md",
+      "kind": "doc",
+      "label": "file:CHANGELOG.md",
+      "source": "CHANGELOG.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "CHANGELOG.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:claude.md",
+      "kind": "doc",
+      "label": "file:CLAUDE.md",
+      "source": "CLAUDE.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "CLAUDE.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:code_of_conduct.md",
+      "kind": "doc",
+      "label": "file:CODE_OF_CONDUCT.md",
+      "source": "CODE_OF_CONDUCT.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "CODE_OF_CONDUCT.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:contributing.md",
+      "kind": "doc",
+      "label": "file:CONTRIBUTING.md",
+      "source": "CONTRIBUTING.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "CONTRIBUTING.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/adopting.md",
+      "kind": "doc",
+      "label": "file:docs/adopting.md",
+      "source": "docs/adopting.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/adopting.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/agent-first-documentation.md",
+      "kind": "doc",
+      "label": "file:docs/blog/agent-first-documentation.md",
+      "source": "docs/blog/agent-first-documentation.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/agent-first-documentation.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/ai-coding-agents-need-structured-specs.md",
+      "kind": "doc",
+      "label": "file:docs/blog/ai-coding-agents-need-structured-specs.md",
+      "source": "docs/blog/ai-coding-agents-need-structured-specs.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/ai-coding-agents-need-structured-specs.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/building-mcp-servers.md",
+      "kind": "doc",
+      "label": "file:docs/blog/building-mcp-servers.md",
+      "source": "docs/blog/building-mcp-servers.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/building-mcp-servers.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/dogfooding-predictions.md",
+      "kind": "doc",
+      "label": "file:docs/blog/dogfooding-predictions.md",
+      "source": "docs/blog/dogfooding-predictions.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/dogfooding-predictions.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/dotdog-badge-homebrew.md",
+      "kind": "doc",
+      "label": "file:docs/blog/dotdog-badge-homebrew.md",
+      "source": "docs/blog/dotdog-badge-homebrew.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/dotdog-badge-homebrew.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/dotdog-claude-code.md",
+      "kind": "doc",
+      "label": "file:docs/blog/dotdog-claude-code.md",
+      "source": "docs/blog/dotdog-claude-code.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/dotdog-claude-code.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/dotdog-copilot.md",
+      "kind": "doc",
+      "label": "file:docs/blog/dotdog-copilot.md",
+      "source": "docs/blog/dotdog-copilot.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/dotdog-copilot.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/dotdog-cursor.md",
+      "kind": "doc",
+      "label": "file:docs/blog/dotdog-cursor.md",
+      "source": "docs/blog/dotdog-cursor.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/dotdog-cursor.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/dotdog-vs-alternatives.md",
+      "kind": "doc",
+      "label": "file:docs/blog/dotdog-vs-alternatives.md",
+      "source": "docs/blog/dotdog-vs-alternatives.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/dotdog-vs-alternatives.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/google-ard-dotdog.md",
+      "kind": "doc",
+      "label": "file:docs/blog/google-ard-dotdog.md",
+      "source": "docs/blog/google-ard-dotdog.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/google-ard-dotdog.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/index.md",
+      "kind": "doc",
+      "label": "file:docs/blog/index.md",
+      "source": "docs/blog/index.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/index.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/infra-verify-launch.md",
+      "kind": "doc",
+      "label": "file:docs/blog/infra-verify-launch.md",
+      "source": "docs/blog/infra-verify-launch.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/infra-verify-launch.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/introducing-dotdog.md",
+      "kind": "doc",
+      "label": "file:docs/blog/introducing-dotdog.md",
+      "source": "docs/blog/introducing-dotdog.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/introducing-dotdog.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/karpathy-wiki-brain.md",
+      "kind": "doc",
+      "label": "file:docs/blog/karpathy-wiki-brain.md",
+      "source": "docs/blog/karpathy-wiki-brain.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/karpathy-wiki-brain.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/knowledge-graphs-for-code-dag-format.md",
+      "kind": "doc",
+      "label": "file:docs/blog/knowledge-graphs-for-code-dag-format.md",
+      "source": "docs/blog/knowledge-graphs-for-code-dag-format.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/knowledge-graphs-for-code-dag-format.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/live-contracts.md",
+      "kind": "doc",
+      "label": "file:docs/blog/live-contracts.md",
+      "source": "docs/blog/live-contracts.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/live-contracts.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/md-to-dog-to-dag.md",
+      "kind": "doc",
+      "label": "file:docs/blog/md-to-dog-to-dag.md",
+      "source": "docs/blog/md-to-dog-to-dag.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/md-to-dog-to-dag.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/spec-driven-vs-test-driven.md",
+      "kind": "doc",
+      "label": "file:docs/blog/spec-driven-vs-test-driven.md",
+      "source": "docs/blog/spec-driven-vs-test-driven.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/spec-driven-vs-test-driven.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/specs-as-living-documentation.md",
+      "kind": "doc",
+      "label": "file:docs/blog/specs-as-living-documentation.md",
+      "source": "docs/blog/specs-as-living-documentation.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/specs-as-living-documentation.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/blog/what-is-spec-driven-development.md",
+      "kind": "doc",
+      "label": "file:docs/blog/what-is-spec-driven-development.md",
+      "source": "docs/blog/what-is-spec-driven-development.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/blog/what-is-spec-driven-development.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/contributing-kits.md",
+      "kind": "doc",
+      "label": "file:docs/contributing-kits.md",
+      "source": "docs/contributing-kits.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/contributing-kits.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/contributing-quickstart.md",
+      "kind": "doc",
+      "label": "file:docs/CONTRIBUTING-QUICKSTART.md",
+      "source": "docs/CONTRIBUTING-QUICKSTART.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/CONTRIBUTING-QUICKSTART.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/dotdog-machine-first-implementation-plan.md",
+      "kind": "doc",
+      "label": "file:docs/dotdog-machine-first-implementation-plan.md",
+      "source": "docs/dotdog-machine-first-implementation-plan.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/dotdog-machine-first-implementation-plan.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/faq.md",
+      "kind": "doc",
+      "label": "file:docs/faq.md",
+      "source": "docs/faq.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/faq.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/handbook.md",
+      "kind": "doc",
+      "label": "file:docs/handbook.md",
+      "source": "docs/handbook.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/handbook.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/index.md",
+      "kind": "doc",
+      "label": "file:docs/index.md",
+      "source": "docs/index.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/index.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/integrations.md",
+      "kind": "doc",
+      "label": "file:docs/integrations.md",
+      "source": "docs/integrations.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/integrations.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/jbrain-dotdog-lookup-plan.md",
+      "kind": "doc",
+      "label": "file:docs/jbrain-dotdog-lookup-plan.md",
+      "source": "docs/jbrain-dotdog-lookup-plan.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/jbrain-dotdog-lookup-plan.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/live-endpoint-testing.md",
+      "kind": "doc",
+      "label": "file:docs/live-endpoint-testing.md",
+      "source": "docs/live-endpoint-testing.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/live-endpoint-testing.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/machine-first-thesis.md",
+      "kind": "doc",
+      "label": "file:docs/machine-first-thesis.md",
+      "source": "docs/machine-first-thesis.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/machine-first-thesis.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/spec-driven-repo-mapping.md",
+      "kind": "doc",
+      "label": "file:docs/spec-driven-repo-mapping.md",
+      "source": "docs/spec-driven-repo-mapping.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/spec-driven-repo-mapping.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/troubleshooting.md",
+      "kind": "doc",
+      "label": "file:docs/troubleshooting.md",
+      "source": "docs/troubleshooting.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/troubleshooting.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/tutorial.md",
+      "kind": "doc",
+      "label": "file:docs/tutorial.md",
+      "source": "docs/tutorial.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/tutorial.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/use-cases.md",
+      "kind": "doc",
+      "label": "file:docs/use-cases.md",
+      "source": "docs/use-cases.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/use-cases.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/v0.9-plan.md",
+      "kind": "doc",
+      "label": "file:docs/v0.9-plan.md",
+      "source": "docs/v0.9-plan.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/v0.9-plan.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:docs/why-dotdog.md",
+      "kind": "doc",
+      "label": "file:docs/why-dotdog.md",
+      "source": "docs/why-dotdog.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "docs/why-dotdog.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:license",
+      "kind": "doc",
+      "label": "file:LICENSE",
+      "source": "LICENSE",
+      "description": "Documentation",
+      "properties": {
+        "path": "LICENSE"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:packages/dotdog/readme.md",
+      "kind": "doc",
+      "label": "file:packages/dotdog/README.md",
+      "source": "packages/dotdog/README.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "packages/dotdog/README.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:readme.md",
+      "kind": "doc",
+      "label": "file:README.md",
+      "source": "README.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "README.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:security.md",
+      "kind": "doc",
+      "label": "file:SECURITY.md",
+      "source": "SECURITY.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "SECURITY.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:specs/dotdog/repo-audit.md",
+      "kind": "doc",
+      "label": "file:specs/dotdog/repo-audit.md",
+      "source": "specs/dotdog/repo-audit.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "specs/dotdog/repo-audit.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "doc:templates/claude.md",
+      "kind": "doc",
+      "label": "file:templates/CLAUDE.md",
+      "source": "templates/CLAUDE.md",
+      "description": "Documentation",
+      "properties": {
+        "path": "templates/CLAUDE.md"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "package:bun.lock",
+      "kind": "package",
+      "label": "file:bun.lock",
+      "source": "bun.lock",
+      "description": "Package manager lockfile",
+      "properties": {
+        "path": "bun.lock"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "package:package.json",
+      "kind": "package",
+      "label": "file:package.json",
+      "source": "package.json",
+      "description": "Node package manifest",
+      "properties": {
+        "path": "package.json"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "package:spec-platform",
+      "kind": "package",
+      "label": "package:spec-platform",
+      "source": "/Users/dico/projects/dotdog",
+      "description": "Spec genome platform — validate, simulate, generate code. MCP server for AI agents. $0 stack.",
+      "properties": {
+        "version": "0.1.0"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "repository",
+      "kind": "package",
+      "label": "repository",
+      "source": "/Users/dico/projects/dotdog",
+      "description": "Mapped repository at /Users/dico/projects/dotdog",
+      "confidence": "certain"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/__snapshots__/cli.test.ts.snap",
+      "kind": "test",
+      "label": "file:packages/dotdog/__tests__/__snapshots__/cli.test.ts.snap",
+      "source": "packages/dotdog/__tests__/__snapshots__/cli.test.ts.snap",
+      "description": "Test file",
+      "properties": {
+        "path": "packages/dotdog/__tests__/__snapshots__/cli.test.ts.snap"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/cli.test.ts",
+      "kind": "test",
+      "label": "file:packages/dotdog/__tests__/cli.test.ts",
+      "source": "packages/dotdog/__tests__/cli.test.ts",
+      "description": "Test file",
+      "properties": {
+        "path": "packages/dotdog/__tests__/cli.test.ts"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/commands.test.ts",
+      "kind": "test",
+      "label": "file:packages/dotdog/__tests__/commands.test.ts",
+      "source": "packages/dotdog/__tests__/commands.test.ts",
+      "description": "Test file",
+      "properties": {
+        "path": "packages/dotdog/__tests__/commands.test.ts"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/fixtures/live-test.dog",
+      "kind": "test",
+      "label": "file:packages/dotdog/__tests__/fixtures/live-test.dog",
+      "source": "packages/dotdog/__tests__/fixtures/live-test.dog",
+      "description": "Test file",
+      "properties": {
+        "path": "packages/dotdog/__tests__/fixtures/live-test.dog"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/helpers.ts",
+      "kind": "test",
+      "label": "file:packages/dotdog/__tests__/helpers.ts",
+      "source": "packages/dotdog/__tests__/helpers.ts",
+      "description": "Test file",
+      "properties": {
+        "path": "packages/dotdog/__tests__/helpers.ts"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/parser.test.ts",
+      "kind": "test",
+      "label": "file:packages/dotdog/__tests__/parser.test.ts",
+      "source": "packages/dotdog/__tests__/parser.test.ts",
+      "description": "Test file",
+      "properties": {
+        "path": "packages/dotdog/__tests__/parser.test.ts"
+      },
+      "confidence": "certain"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/regression.test.ts",
+      "kind": "test",
+      "label": "file:packages/dotdog/__tests__/regression.test.ts",
+      "source": "packages/dotdog/__tests__/regression.test.ts",
+      "description": "Test file",
+      "properties": {
+        "path": "packages/dotdog/__tests__/regression.test.ts"
+      },
+      "confidence": "certain"
+    }
+  ],
+  "edges": [
+    {
+      "id": "build:.github/workflows/publish.yml:builds:repository",
+      "sourceId": "build:.github/workflows/publish.yml",
+      "targetId": "repository",
+      "verb": "builds",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "build:.github/workflows/test.yml:builds:repository",
+      "sourceId": "build:.github/workflows/test.yml",
+      "targetId": "repository",
+      "verb": "builds",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "build:.github/workflows/version-check.yml:builds:repository",
+      "sourceId": "build:.github/workflows/version-check.yml",
+      "targetId": "repository",
+      "verb": "builds",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:.github/issue_template/bug.md:documents:repository",
+      "sourceId": "doc:.github/issue_template/bug.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:.github/issue_template/feature_request.md:documents:repository",
+      "sourceId": "doc:.github/issue_template/feature_request.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:.github/pull_request_template.md:documents:repository",
+      "sourceId": "doc:.github/pull_request_template.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:agent-bench/readme.md:documents:repository",
+      "sourceId": "doc:agent-bench/readme.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:agents.md:documents:repository",
+      "sourceId": "doc:agents.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:changelog.md:documents:repository",
+      "sourceId": "doc:changelog.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:claude.md:documents:repository",
+      "sourceId": "doc:claude.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:code_of_conduct.md:documents:repository",
+      "sourceId": "doc:code_of_conduct.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:contributing.md:documents:repository",
+      "sourceId": "doc:contributing.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/adopting.md:documents:repository",
+      "sourceId": "doc:docs/adopting.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/agent-first-documentation.md:documents:repository",
+      "sourceId": "doc:docs/blog/agent-first-documentation.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/ai-coding-agents-need-structured-specs.md:documents:repository",
+      "sourceId": "doc:docs/blog/ai-coding-agents-need-structured-specs.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/building-mcp-servers.md:documents:repository",
+      "sourceId": "doc:docs/blog/building-mcp-servers.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/dogfooding-predictions.md:documents:repository",
+      "sourceId": "doc:docs/blog/dogfooding-predictions.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/dotdog-badge-homebrew.md:documents:repository",
+      "sourceId": "doc:docs/blog/dotdog-badge-homebrew.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/dotdog-claude-code.md:documents:repository",
+      "sourceId": "doc:docs/blog/dotdog-claude-code.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/dotdog-copilot.md:documents:repository",
+      "sourceId": "doc:docs/blog/dotdog-copilot.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/dotdog-cursor.md:documents:repository",
+      "sourceId": "doc:docs/blog/dotdog-cursor.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/dotdog-vs-alternatives.md:documents:repository",
+      "sourceId": "doc:docs/blog/dotdog-vs-alternatives.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/google-ard-dotdog.md:documents:repository",
+      "sourceId": "doc:docs/blog/google-ard-dotdog.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/index.md:documents:repository",
+      "sourceId": "doc:docs/blog/index.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/infra-verify-launch.md:documents:repository",
+      "sourceId": "doc:docs/blog/infra-verify-launch.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/introducing-dotdog.md:documents:repository",
+      "sourceId": "doc:docs/blog/introducing-dotdog.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/karpathy-wiki-brain.md:documents:repository",
+      "sourceId": "doc:docs/blog/karpathy-wiki-brain.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/knowledge-graphs-for-code-dag-format.md:documents:repository",
+      "sourceId": "doc:docs/blog/knowledge-graphs-for-code-dag-format.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/live-contracts.md:documents:repository",
+      "sourceId": "doc:docs/blog/live-contracts.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/md-to-dog-to-dag.md:documents:repository",
+      "sourceId": "doc:docs/blog/md-to-dog-to-dag.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/spec-driven-vs-test-driven.md:documents:repository",
+      "sourceId": "doc:docs/blog/spec-driven-vs-test-driven.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/specs-as-living-documentation.md:documents:repository",
+      "sourceId": "doc:docs/blog/specs-as-living-documentation.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/blog/what-is-spec-driven-development.md:documents:repository",
+      "sourceId": "doc:docs/blog/what-is-spec-driven-development.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/contributing-kits.md:documents:repository",
+      "sourceId": "doc:docs/contributing-kits.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/contributing-quickstart.md:documents:repository",
+      "sourceId": "doc:docs/contributing-quickstart.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/dotdog-machine-first-implementation-plan.md:documents:repository",
+      "sourceId": "doc:docs/dotdog-machine-first-implementation-plan.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/faq.md:documents:repository",
+      "sourceId": "doc:docs/faq.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/handbook.md:documents:repository",
+      "sourceId": "doc:docs/handbook.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/index.md:documents:repository",
+      "sourceId": "doc:docs/index.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/integrations.md:documents:repository",
+      "sourceId": "doc:docs/integrations.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/jbrain-dotdog-lookup-plan.md:documents:repository",
+      "sourceId": "doc:docs/jbrain-dotdog-lookup-plan.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/live-endpoint-testing.md:documents:repository",
+      "sourceId": "doc:docs/live-endpoint-testing.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/machine-first-thesis.md:documents:repository",
+      "sourceId": "doc:docs/machine-first-thesis.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/spec-driven-repo-mapping.md:documents:repository",
+      "sourceId": "doc:docs/spec-driven-repo-mapping.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/troubleshooting.md:documents:repository",
+      "sourceId": "doc:docs/troubleshooting.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/tutorial.md:documents:repository",
+      "sourceId": "doc:docs/tutorial.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/use-cases.md:documents:repository",
+      "sourceId": "doc:docs/use-cases.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/v0.9-plan.md:documents:repository",
+      "sourceId": "doc:docs/v0.9-plan.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:docs/why-dotdog.md:documents:repository",
+      "sourceId": "doc:docs/why-dotdog.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:license:documents:repository",
+      "sourceId": "doc:license",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:packages/dotdog/readme.md:documents:repository",
+      "sourceId": "doc:packages/dotdog/readme.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:readme.md:documents:repository",
+      "sourceId": "doc:readme.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:security.md:documents:repository",
+      "sourceId": "doc:security.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:specs/dotdog/repo-audit.md:documents:repository",
+      "sourceId": "doc:specs/dotdog/repo-audit.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "doc:templates/claude.md:documents:repository",
+      "sourceId": "doc:templates/claude.md",
+      "targetId": "repository",
+      "verb": "documents",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "package:package.json:defines:package:spec-platform",
+      "sourceId": "package:package.json",
+      "targetId": "package:spec-platform",
+      "verb": "defines",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "repository:depends_on:package:bun.lock",
+      "sourceId": "repository",
+      "targetId": "package:bun.lock",
+      "verb": "depends_on",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "repository:depends_on:package:package.json",
+      "sourceId": "repository",
+      "targetId": "package:package.json",
+      "verb": "depends_on",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/__snapshots__/cli.test.ts.snap:tests:repository",
+      "sourceId": "test:packages/dotdog/__tests__/__snapshots__/cli.test.ts.snap",
+      "targetId": "repository",
+      "verb": "tests",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/cli.test.ts:tests:repository",
+      "sourceId": "test:packages/dotdog/__tests__/cli.test.ts",
+      "targetId": "repository",
+      "verb": "tests",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/commands.test.ts:tests:repository",
+      "sourceId": "test:packages/dotdog/__tests__/commands.test.ts",
+      "targetId": "repository",
+      "verb": "tests",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/fixtures/live-test.dog:tests:repository",
+      "sourceId": "test:packages/dotdog/__tests__/fixtures/live-test.dog",
+      "targetId": "repository",
+      "verb": "tests",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/helpers.ts:tests:repository",
+      "sourceId": "test:packages/dotdog/__tests__/helpers.ts",
+      "targetId": "repository",
+      "verb": "tests",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/parser.test.ts:tests:repository",
+      "sourceId": "test:packages/dotdog/__tests__/parser.test.ts",
+      "targetId": "repository",
+      "verb": "tests",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    },
+    {
+      "id": "test:packages/dotdog/__tests__/regression.test.ts:tests:repository",
+      "sourceId": "test:packages/dotdog/__tests__/regression.test.ts",
+      "targetId": "repository",
+      "verb": "tests",
+      "confidence": "certain",
+      "source": "/Users/dico/projects/dotdog"
+    }
+  ],
+  "predictions": [],
+  "unknowns": []
+}

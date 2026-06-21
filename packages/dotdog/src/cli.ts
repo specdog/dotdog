@@ -9,6 +9,8 @@ import { createHash } from 'crypto';
 import { execSync } from 'child_process';
 import type { DocumentNode, SectionNode, BlockNode, EntityNode, RelationshipNode, ProseNode, TableNode, PropertyDef } from './grammar';
 import { parse } from './parser';
+import { safeProjectName, writeRepoMap } from './map/repoMapper';
+import { formatQueryResult, formatTrace, loadWorldModel, queryWorldModel, traceWorldNode } from './dag/query';
 
 
 function normalizeDag(dag: any): any {
@@ -1688,5 +1690,45 @@ function diffBody(expected: Record<string, unknown>, actual: Record<string, unkn
   const extra = actKeys.filter(k => !(k in expected));
   return { missing, extra };
 }
+
+
+program
+  .command('map [dir]')
+  .description('Map a repository into a machine-readable repo.dag world model')
+  .option('-p, --project <name>', 'project name')
+  .option('--json', 'print write result as JSON')
+  .action((dir = '.', opts) => {
+    const projectName = opts.project || safeProjectName(resolve(dir));
+    const specDir = resolve(dir, 'specs', projectName);
+    const result = writeRepoMap(resolve(dir), projectName, specDir);
+    if (opts.json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+    console.log(`wrote ${result.dagFile}`);
+    console.log(`${result.facts} facts, ${result.edges} edges`);
+  });
+
+program
+  .command('query <term>')
+  .description('Query a repo.dag world model')
+  .option('--dag <file>', 'path to repo.dag', 'specs/repo.dag')
+  .option('-l, --limit <n>', 'max results', '10')
+  .action((term, opts) => {
+    const world = loadWorldModel(resolve(opts.dag));
+    const result = queryWorldModel(world, term, Number(opts.limit || 10));
+    console.log(formatQueryResult(result));
+  });
+
+program
+  .command('trace <node>')
+  .description('Trace repo.dag relationships for a node')
+  .option('--dag <file>', 'path to repo.dag', 'specs/repo.dag')
+  .option('-d, --depth <n>', 'trace depth', '2')
+  .action((node, opts) => {
+    const world = loadWorldModel(resolve(opts.dag));
+    const result = traceWorldNode(world, node, Number(opts.depth || 2));
+    console.log(formatTrace(result));
+  });
 
 program.parse();
