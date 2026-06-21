@@ -9,8 +9,24 @@
 [![Install in VS Code](https://img.shields.io/badge/Install_in_VS_Code-0098FF?logo=visualstudiocode)](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522dotdog%2522%252C%2522command%2522%253A%2522npx%2522%252C%2522args%2522%253A%255B%2522-y%2522%252C%2522dotdog%2540latest%2522%252C%2522serve%2522%255D%257D)
 [![Install in Cursor](https://img.shields.io/badge/Install_in_Cursor-1a1a1a?logo=cursor)](https://cursor.com/install-mcp?name=dotdog&config=%7B%22command%22%3A%22npx%20-y%20dotdog%40latest%20serve%22%7D)
 
+> **Spec-driven design for agent-ready projects.** Turn plans or existing repos into structured `.dog` specs, validate them, compile them into `.dag` graphs, and let agents query real project structure instead of guessing.
 
-> **Feed the dog. Ship with specs.** Write .dog specs. Dog checks them. AI agents fetch them.
+## What dotdog does
+
+dotdog is a spec-driven design toolchain.
+
+It supports two starting points:
+
+1. **Empty project** — create a spec foundation before implementation.
+2. **Existing project** — map the current repo into a structured spec workspace.
+
+The core flow:
+
+```text
+plan -> spec workspace -> validation -> implementation graph -> agent execution
+```
+
+`.dog` files are the human-readable source specs. `.dag` files are compiled implementation graphs for agents and tools.
 
 ## Install
 
@@ -25,19 +41,80 @@ Requires Node.js >= 20 or Bun >= 1.3.
 ## Quick Start
 
 ```bash
-dotdog init my-project     # scaffold a spec genome
-dotdog validate            # score completeness (0-100%)
-dotdog compile             # build the .dag graph (94% smaller)
-dotdog badge               # generate savings badge for your README
+dotdog init my-project     # create a spec workspace
+dotdog validate            # check spec completeness
+dotdog compile             # build the .dag implementation graph
+dotdog serve               # expose the graph to MCP-compatible agents
 ```
+
+## What init creates
+
+`dotdog init <project>` creates a project spec workspace under `specs/<project>/`.
+
+```text
+specs/<project>/
+  INDEX.dog
+  SPEC.dog
+  constitution.dog
+  data-model.dog
+  plan.dog
+  COPY.dog
+```
+
+Planned full scaffold:
+
+```text
+specs/<project>/
+  INDEX.dog
+  SPEC.dog
+  constitution.dog
+  data-model.dog
+  plan.dog
+  COPY.dog
+  tasks.dog
+  tasks/
+    AGENTS.dog
+```
+
+Edit order:
+
+1. `SPEC.dog` — product intent, behavior, flows, and user stories.
+2. `data-model.dog` — entities, states, schemas, and relationships.
+3. `plan.dog` — implementation phases and tasks.
+4. `constitution.dog` — constraints, rules, and boundaries.
+5. `INDEX.dog` — navigation map for humans and agents.
+6. `COPY.dog` — user-facing text and interface language.
+
+Then run:
+
+```bash
+dotdog validate
+dotdog compile
+```
+
+## Repo mapping direction
+
+dotdog should not only scaffold empty projects. It should also map existing repos.
+
+The intended graph connects product intent to real implementation:
+
+```text
+frontend component -> API route -> backend handler -> schema -> database table -> env var -> infra resource -> task/spec reason
+```
+
+Target node types include files, directories, packages, frontend components, routes, pages, API endpoints, backend handlers, services, schemas, database tables, migrations, environment variables, cloud resources, CI workflows, tests, tasks, and specs.
+
+Target edge types include imports, calls, renders, reads, writes, depends_on, implements, configured_by, deployed_by, tested_by, documented_by, and owned_by.
+
+See [Spec-Driven Repo Mapping](docs/spec-driven-repo-mapping.md) for the formal plan.
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `dotdog init <project>` | Scaffold a new spec genome project with templates. |
+| `dotdog init <project>` | Create a spec workspace for a new project. |
 | `dotdog validate [dir]` | Score spec completeness. Checks file existence, entity descriptions, section counts. |
-| `dotdog compile [dir]` | Compile `.dog` files into a `.dag` graph (JSON). 94% smaller than source. |
+| `dotdog compile [dir]` | Compile `.dog` files into a `.dag` graph for agents and tools. |
 | `dotdog analyze [dir]` | Deep analysis. Detects domain, stack, gaps with severity, entity quality audit. |
 | `dotdog badge [dir]` | Generate a shields.io SVG badge showing token savings. |
 | `dotdog staleness [dir]` | Detect drift between spec and reality. Compares plan.dog tasks against code. |
@@ -57,18 +134,25 @@ dotdog badge               # generate savings badge for your README
 | `dotdog woof` | Prints "woof" because every good CLI deserves an easter egg. |
 | `dotdog live [entity]` | Test live endpoints + cloud infrastructure against .dog contracts. Hits URLs, diffs responses, backup failover. Verify S3 buckets, Vercel projects, Supabase tables, and more. |
 
+Planned:
+
+| Command | Description |
+|---------|-------------|
+| `dotdog init <project> --map` | Create a spec workspace and seed it from the current repo. |
+| `dotdog map [dir]` | Inspect an existing repo and generate graph-ready `.dog` facts. |
+
 ## File Formats
 
-### `.dog` : Human-Written Spec Genome
+### `.dog` : Human-Written Source Spec
 
-Markdown prose + YAML structured blocks. Free and open source. Define entities, relationships, events, predictions, and copy in a single format that both humans and parsers understand.
+Markdown prose + YAML structured blocks. Free and open source. Define entities, relationships, events, predictions, implementation facts, and copy in a single format that both humans and parsers understand.
 
 ```markdown
 ### Entity: User
 
 A person who uses the app.
 
-` ``yaml
+```yaml
 entity: User
 type: entity
 properties:
@@ -79,17 +163,27 @@ properties:
     type: string
     required: true
 states: [active, suspended]
-lifecycle: active → suspended
-` ``
+lifecycle: active -> suspended
+```
 ```
 
-### `.dag` : Machine-Compiled Graph
+### `.dag` : Machine-Compiled Implementation Graph
 
-JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a deterministic structure. 94% token savings vs raw `.dog` files for AI agents.
+JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a deterministic structure. Designed for AI agents to query exact project structure with lower token cost than raw prose.
+
+Example graph facts:
+
+```text
+CheckoutPage renders CartSummary
+CheckoutPage calls POST /api/checkout
+POST /api/checkout writes orders
+POST /api/checkout depends_on STRIPE_SECRET_KEY
+orders implemented_by prisma/schema.prisma
+```
 
 ## MCP Server : AI Agent Integration
 
-`dotdog serve` exposes specs to any MCP-compatible AI agent over stdio. Six tools:
+`dotdog serve` exposes specs to any MCP-compatible AI agent over stdio.
 
 | Tool | Description |
 |------|-------------|
@@ -100,14 +194,18 @@ JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a
 | `summary` | Node count, edge count, file count, compile time |
 | `listProjects` | Array of project names |
 
-Agent workflow: `listProjects` → `getEntity` → `traverse` graph.
+Agent workflow:
+
+```text
+listProjects -> getEntity -> traverse graph
+```
 
 ## Dogfood
 
 dotdog validates its own specs. Every PR:
 
-```
-dotdog validate → find gaps → fix spec → PR → merge → tag → CI publish
+```text
+dotdog validate -> find gaps -> fix spec -> PR -> merge -> tag -> CI publish
 ```
 
 Eat your own dogfood. The tool is the project.
@@ -143,15 +241,13 @@ cp -r extensions/vscode ~/.vscode/extensions/dotdog
 
 ## Spec-Driven Development
 
-Read the **[SDD Handbook](https://specdog.github.io/dotdog/handbook)** — the complete guide to spec-driven development.
+dotdog is built for spec-driven development and spec-driven design. Write or map the spec first. Validate it. Compile it. Let agents query the implementation graph.
 
-dotdog is built for SDD. Write your spec first. Validate it. Compile it. Let AI agents query it. The spec is the source of truth.
-
-```
-spec → validate → compile → serve → AI agent queries
+```text
+plan -> spec -> validate -> compile -> serve -> agent queries
 ```
 
-No more specs that rot in a wiki. No more agents guessing from prose. One source. Zero ambiguity.
+No more specs that rot in a wiki. No more agents guessing from prose. One source. Queryable graph.
 
 ## License
 
