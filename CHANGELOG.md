@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.8 — 2026-06-21
+
+- Publish repo-world CLI surface with `map`, `query`, and `trace`
+- Add smoke coverage for repository mapping and world-model lookup
+- Keep generated repo maps advisory in project analysis
+
 ## 0.8.5 — 2026-06-18
 
 - Add `dotdog live` command — endpoint contract testing with backup failover
