@@ -546,19 +546,6 @@ properties:
     default: docs/integrations.md
 ```
 
-### Entity: file:docs/jbrain-dotdog-lookup-plan.md
-
-Documentation
-
-```yaml
-entity: file:docs/jbrain-dotdog-lookup-plan.md
-type: doc
-properties:
-  path:
-    type: string
-    default: docs/jbrain-dotdog-lookup-plan.md
-```
-
 ### Entity: file:docs/live-endpoint-testing.md
 
 Documentation
@@ -1303,17 +1290,6 @@ required: false
 ```yaml
 relationship: file:docs/integrations.md → repository
 source: file:docs/integrations.md
-target: repository
-verb: documented_by
-cardinality: N:1
-required: false
-```
-
-### Relationship: file:docs/jbrain-dotdog-lookup-plan.md → repository
-
-```yaml
-relationship: file:docs/jbrain-dotdog-lookup-plan.md → repository
-source: file:docs/jbrain-dotdog-lookup-plan.md
 target: repository
 verb: documented_by
 cardinality: N:1
