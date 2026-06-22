@@ -163,10 +163,10 @@ function loadDogLayer(dir: string, originType: 'semantic' | 'overlay', labelToId
 }
 
 export function compileDotdogLayers(root: string, project: string): LayerCompileResult | null {
-  const dotdogDir = join(root, '.dotdog');
-  const generatedFile = join(dotdogDir, 'generated', 'repo.dag');
-  const semanticDir = join(dotdogDir, 'semantic');
-  const overlayDir = join(dotdogDir, 'overlays');
+  const doghouseDir = join(root, '.doghouse');
+  const generatedFile = join(doghouseDir, 'generated', 'repo.dag');
+  const semanticDir = join(doghouseDir, 'semantic');
+  const overlayDir = join(doghouseDir, 'overlays');
   if (!existsSync(generatedFile) && !existsSync(semanticDir) && !existsSync(overlayDir)) return null;
 
   const base = readGeneratedWorld(generatedFile, project, root);
@@ -198,7 +198,7 @@ export function compileDotdogLayers(root: string, project: string): LayerCompile
     unknowns: [...base.unknowns, ...semantic.unknowns, ...overlay.unknowns],
   };
 
-  const compiledDir = join(dotdogDir, 'compiled');
+  const compiledDir = join(doghouseDir, 'compiled');
   mkdirSync(compiledDir, { recursive: true });
   const outFile = join(compiledDir, 'repo.dag');
   writeFileSync(outFile, serializeWorldModel(compiled));

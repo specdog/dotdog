@@ -1708,7 +1708,7 @@ program
   .option('--json', 'print write result as JSON')
   .action((dir = '.', opts) => {
     const projectName = opts.project || safeProjectName(resolve(dir));
-    const specDir = resolve(dir, '.dotdog', 'generated');
+    const specDir = resolve(dir, '.doghouse', 'generated');
     const result = writeRepoMap(resolve(dir), projectName, specDir);
     if (opts.json) {
       console.log(JSON.stringify(result, null, 2));
@@ -1721,7 +1721,7 @@ program
 program
   .command('query <term>')
   .description('Query a repo.dag world model')
-  .option('--dag <file>', 'path to repo.dag', '.dotdog/compiled/repo.dag')
+  .option('--dag <file>', 'path to repo.dag', '.doghouse/compiled/repo.dag')
   .option('-l, --limit <n>', 'max results', '10')
   .action((term, opts) => {
     const world = loadWorldModel(resolve(opts.dag));
@@ -1732,7 +1732,7 @@ program
 program
   .command('trace <node>')
   .description('Trace repo.dag relationships for a node')
-  .option('--dag <file>', 'path to repo.dag', '.dotdog/compiled/repo.dag')
+  .option('--dag <file>', 'path to repo.dag', '.doghouse/compiled/repo.dag')
   .option('-d, --depth <n>', 'trace depth', '2')
   .action((node, opts) => {
     const world = loadWorldModel(resolve(opts.dag));

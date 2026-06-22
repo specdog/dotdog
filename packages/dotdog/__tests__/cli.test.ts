@@ -170,4 +170,71 @@ describe('CLI', () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  test('serve reads compiled .doghouse graph artifacts', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-serve-compiled-'));
+    try {
+      mkdirSync(join(dir, '.doghouse', 'semantic'), { recursive: true });
+      writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'compiled-graph-app', version: '1.0.0' }, null, 2));
+      writeFileSync(join(dir, 'railway.json'), JSON.stringify({ startCommand: 'bun start' }, null, 2));
+      writeFileSync(join(dir, '.doghouse', 'semantic', 'deployment.dog'), [
+        '## Deployment',
+        '',
+        '### Entity: Deployment',
+        '',
+        'A generic deployment capability.',
+        '',
+        '```yaml',
+        'entity: Deployment',
+        'type: external',
+        '```',
+        '',
+        '### Entity: RailwayService',
+        '',
+        'A generic Railway deployment service.',
+        '',
+        '```yaml',
+        'entity: RailwayService',
+        'type: external',
+        '```',
+        '',
+        '### Relationship: Deployment → RailwayService',
+        '',
+        '```yaml',
+        'relationship: Deployment → RailwayService',
+        'source: Deployment',
+        'target: RailwayService',
+        'verb: includes',
+        '```',
+      ].join('\n'));
+
+      await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts map . --project compiled-graph-app`.quiet();
+      await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts compile`.quiet();
+      expect(existsSync(join(dir, '.doghouse', 'compiled', 'repo.dag'))).toBe(true);
+
+      const proc = Bun.spawn([BUN, join(ROOT, 'packages/dotdog/src/cli.ts'), 'serve'], {
+        stdin: 'pipe', stdout: 'pipe', stderr: 'pipe',
+        cwd: dir,
+      });
+      proc.stdin.write(JSON.stringify({jsonrpc:'2.0',id:1,method:'initialize',params:{}})+'\n');
+      await new Promise(r => setTimeout(r, 1000));
+      proc.stdin.write(JSON.stringify({jsonrpc:'2.0',id:2,method:'tools/call',params:{name:'getEntity',arguments:{name:'Deployment'}}})+'\n');
+      proc.stdin.write(JSON.stringify({jsonrpc:'2.0',id:3,method:'tools/call',params:{name:'traverse',arguments:{from:'Deployment',depth:1}}})+'\n');
+      proc.stdin.end();
+      const out = await new Response(proc.stdout).text();
+      proc.kill();
+
+      const lines = out.split('\n').filter(l => l.trim());
+      expect(lines.length).toBeGreaterThanOrEqual(3);
+      const entity = JSON.parse(JSON.parse(lines[1]).result.content[0].text);
+      expect(entity.name).toBe('Deployment');
+      expect(entity.type).toBe('external');
+      expect(entity.edges.some((edge: any) => edge[0] === 'RailwayService' && edge[1] === 'includes')).toBe(true);
+      const graph = JSON.parse(JSON.parse(lines[2]).result.content[0].text);
+      expect(graph.nodes.some((node: any) => node.name === 'Deployment')).toBe(true);
+      expect(graph.nodes.some((node: any) => node.edges.some((edge: string) => edge.startsWith('RailwayService:includes')))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

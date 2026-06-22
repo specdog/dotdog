@@ -130,8 +130,8 @@ describe('untested commands', () => {
       setupTempProject(dir, 'testproj');
       const out = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts map . --project repo-world-test`.text();
       expect(out).toContain('repo.dag');
-      expect(existsSync(join(dir, '.dotdog', 'generated', 'repo-map.dog'))).toBe(true);
-      expect(existsSync(join(dir, '.dotdog', 'generated', 'repo.dag'))).toBe(true);
+      expect(existsSync(join(dir, '.doghouse', 'generated', 'repo-map.dog'))).toBe(true);
+      expect(existsSync(join(dir, '.doghouse', 'generated', 'repo.dag'))).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -142,7 +142,7 @@ describe('untested commands', () => {
     try {
       setupTempProject(dir, 'testproj');
       await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts map . --project repo-world-test`.quiet();
-      const dag = join(dir, '.dotdog', 'generated', 'repo.dag');
+      const dag = join(dir, '.doghouse', 'generated', 'repo.dag');
       const out = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts query repository --dag ${dag}`.text();
       expect(out.toLowerCase()).toContain('repository');
     } finally {
