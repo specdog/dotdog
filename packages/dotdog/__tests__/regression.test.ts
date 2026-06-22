@@ -68,4 +68,65 @@ describe('regression', () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+  test('semantic deployment nodes survive map and compile remap', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-layers-'));
+    try {
+      mkdirSync(join(dir, '.dotdog', 'semantic'), { recursive: true });
+      writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'example-web-app', version: '1.0.0' }, null, 2));
+      writeFileSync(join(dir, 'railway.json'), JSON.stringify({ startCommand: 'npm start' }, null, 2));
+      writeFileSync(join(dir, '.dotdog', 'semantic', 'deployment.dog'), [
+        '## Deployment',
+        '',
+        '### Entity: Deployment',
+        '',
+        'Generic deployment capability.',
+        '',
+        '```yaml',
+        'entity: Deployment',
+        'type: external',
+        '```',
+        '',
+        '### Entity: RailwayService',
+        '',
+        'Generic Railway deployment service.',
+        '',
+        '```yaml',
+        'entity: RailwayService',
+        'type: external',
+        '```',
+        '',
+        '### Relationship: Deployment → RailwayService',
+        '',
+        '```yaml',
+        'relationship: Deployment → RailwayService',
+        'source: Deployment',
+        'target: RailwayService',
+        'verb: includes',
+        '```',
+        '',
+        '### Relationship: RailwayService → file:railway.json',
+        '',
+        '```yaml',
+        'relationship: RailwayService → file:railway.json',
+        'source: RailwayService',
+        'target: file:railway.json',
+        'verb: configured_by',
+        '```',
+      ].join('\n'));
+
+      await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts map`.quiet();
+      await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts compile`.quiet();
+      await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts map`.quiet();
+      await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts compile`.quiet();
+
+      const compiled = JSON.parse(readFileSync(join(dir, '.dotdog', 'compiled', 'repo.dag'), 'utf-8'));
+      const labels = compiled.nodes.map((node: any) => node.label);
+      expect(labels).toContain('Deployment');
+      expect(labels).toContain('RailwayService');
+      expect(labels).toContain('file:railway.json');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
 });

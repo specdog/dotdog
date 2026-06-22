@@ -104,10 +104,32 @@ export function detectRepoMap(root: string): RepoMap {
   const edges: RepoMapEdge[] = [];
   const addFact = (fact: RepoMapFact) => { if (!facts.has(fact.name)) facts.set(fact.name, fact); };
   const addFile = (file: string, type = 'file', description = file) => addFact({ name: fileNodeName(file), type, description, properties: { path: file } });
+  const addDeploymentProvider = (file: string, name: string, provider: string) => {
+    addFile(file, 'deployment_config', provider + ' deployment configuration');
+    addFact({ name: 'Deployment', type: 'external', description: 'Detected deployment capability', properties: { required: 'false' } });
+    addFact({ name, type: 'external', description: provider + ' deployment service', properties: { provider, required: 'false' } });
+    edges.push({ source: 'Deployment', target: name, verb: 'includes' });
+    edges.push({ source: name, target: fileNodeName(file), verb: 'configured_by' });
+  };
 
   addFact({ name: 'repository', type: 'repo', description: `Mapped repository at ${root}` });
 
   for (const file of files) {
+    if (file === 'railway.json' || file.endsWith('/railway.json')) {
+      addDeploymentProvider(file, 'RailwayService', 'railway');
+      continue;
+    }
+
+    if (file === 'vercel.json' || file.endsWith('/vercel.json') || file === '.vercel/project.json') {
+      addDeploymentProvider(file, 'VercelApp', 'vercel');
+      continue;
+    }
+
+    if (file === 'netlify.toml' || file.endsWith('/netlify.toml')) {
+      addDeploymentProvider(file, 'NetlifySite', 'netlify');
+      continue;
+    }
+
     if (file === 'package.json') {
       addFile(file, 'manifest', 'Node package manifest');
       edges.push({ source: 'repository', target: fileNodeName(file), verb: 'configured_by' });

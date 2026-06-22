@@ -1,5 +1,11 @@
 export type Confidence = 'certain' | 'likely' | 'unknown';
 
+export type GraphOrigin = {
+  type: 'generated' | 'semantic' | 'overlay';
+  file?: string;
+  line?: number;
+};
+
 export type WorldNodeKind =
   | 'file'
   | 'symbol'
@@ -22,6 +28,12 @@ export type WorldEdgeVerb =
   | 'builds'
   | 'documents'
   | 'depends_on'
+  | 'includes'
+  | 'implements'
+  | 'configured_by'
+  | 'deployed_by'
+  | 'requires'
+  | 'supports'
   | 'generated_by'
   | 'changed_with'
   | 'conflicts_with';
@@ -34,6 +46,7 @@ export type WorldNode = {
   hash?: string;
   description?: string;
   properties?: Record<string, string | number | boolean | string[]>;
+  origin?: GraphOrigin;
   confidence: Confidence;
 };
 
@@ -45,6 +58,7 @@ export type WorldEdge = {
   confidence: Confidence;
   source?: string;
   description?: string;
+  origin?: GraphOrigin;
 };
 
 export type WorldPrediction = {
@@ -90,6 +104,12 @@ const EDGE_VERBS = new Set<WorldEdgeVerb>([
   'builds',
   'documents',
   'depends_on',
+  'includes',
+  'implements',
+  'configured_by',
+  'deployed_by',
+  'requires',
+  'supports',
   'generated_by',
   'changed_with',
   'conflicts_with',
@@ -116,6 +136,7 @@ export function makeNode(input: Omit<WorldNode, 'id' | 'confidence'> & { id?: st
     hash: input.hash,
     description: input.description,
     properties: input.properties,
+    origin: input.origin,
     confidence: input.confidence || 'certain',
   };
 }
@@ -130,6 +151,7 @@ export function makeEdge(input: Omit<WorldEdge, 'id' | 'confidence'> & { id?: st
     confidence: input.confidence || 'certain',
     source: input.source,
     description: input.description,
+    origin: input.origin,
   };
 }
 
@@ -173,5 +195,6 @@ export function validateWorldModel(model: RepositoryWorldModel): string[] {
 }
 
 export function serializeWorldModel(model: RepositoryWorldModel): string {
-  return `${JSON.stringify(sortWorldModel(model), null, 2)}\n`;
+  return `${JSON.stringify(sortWorldModel(model), null, 2)}
+`;
 }
