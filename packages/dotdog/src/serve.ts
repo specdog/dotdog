@@ -28,9 +28,10 @@ function resolvePath(p: string): string {
 
 const TYPE: Record<string,string> = { e:'entity', p:'prediction', i:'infra' };
 
-const Nm = (n: any) => n[0];                          // name
-const Nt = (n: any) => TYPE[n[1]] || 'entity';        // type
+const Nm = (n: any) => Array.isArray(n) ? n[0] : (n.label || n.id || '');                          // name
+const Nt = (n: any) => Array.isArray(n) ? (TYPE[n[1]] || 'entity') : (n.kind || 'entity');        // type
 const Np = (n: any) => {
+  if (!Array.isArray(n)) return n.properties || {};
   const flat = n[2] || [];
   if (!Array.isArray(flat)) return (flat && typeof flat === 'object') ? flat : {};
   const obj: Record<string,string> = {};
@@ -41,18 +42,29 @@ const Np = (n: any) => {
   for (let i = 0; i < flat.length; i += 2) obj[String(flat[i])] = String(flat[i+1] ?? '');
   return obj;
 };
-const Ns = (n: any) => n[3] || [];                    // states
-const Ne = (n: any) => (n[4] || []).map((e: any[]) => ({ s: Nm(n), t: String(e[0]), v: e[1] || '', c: e[2] || '', r: e[3] || 0 }));
+const Ns = (n: any) => Array.isArray(n) ? (n[3] || []) : [];                    // states
+const Ne = (n: any, dag?: any) => {
+  if (!Array.isArray(n)) return (dag?.edges || []).filter((e: any) => e.sourceId === n.id).map((e: any) => {
+    const target = nodes(dag || {}).find((node: any) => node.id === e.targetId);
+    return { s: Nm(n), t: target ? Nm(target) : e.targetId, v: e.verb || '', c: '', r: 0 };
+  });
+  return (n[4] || []).map((e: any[]) => ({ s: Nm(n), t: String(e[0]), v: e[1] || '', c: e[2] || '', r: e[3] || 0 }));
+};
 
-const nodes = (dag: any): any[] => dag.n || (Array.isArray(dag) ? dag[2] : []) || [];
-const project = (dag: any): string => dag.p || dag[1] || '';
+const nodes = (dag: any): any[] => dag.nodes || dag.n || (Array.isArray(dag) ? dag[2] : []) || [];
+const project = (dag: any): string => dag.project || dag.p || dag[1] || '';
 const tokens = (dag: any): any => dag.tk || dag.tokens || (Array.isArray(dag) ? dag[3] : {}) || {};
 
 function allEdges(dag: any): any[] {
+  if (Array.isArray(dag.edges)) return dag.edges.map((e: any) => {
+    const source = nodes(dag).find((node: any) => node.id === e.sourceId);
+    const target = nodes(dag).find((node: any) => node.id === e.targetId);
+    return { s: source ? Nm(source) : e.sourceId, t: target ? Nm(target) : e.targetId, v: e.verb || '', c: '', r: 0 };
+  });
   const seen = new Set<string>();
   const edges: any[] = [];
   for (const n of nodes(dag)) {
-    for (const e of Ne(n)) {
+    for (const e of Ne(n, dag)) {
       const key = `${e.s}→${e.t}:${e.v}`;
       if (!seen.has(key)) { seen.add(key); edges.push(e); }
     }
@@ -66,6 +78,14 @@ export function serve(dir: string = '.'): void {
   const dagPaths: Map<string, string> = new Map();
 
   function loadDags(): string[] {
+    const compiledDag = join(root, '.dotdog', 'compiled', 'repo.dag');
+    if (existsSync(compiledDag)) {
+      const dag = JSON.parse(readFileSync(compiledDag, 'utf-8'));
+      const p = project(dag) || 'repo';
+      dagCache.set(p, dag);
+      dagPaths.set(p, join(root, '.dotdog'));
+    }
+
     const dirs = [join(root,'projects'),join(root,'specs'),root];
     for (const dd of dirs) {
       if (!existsSync(dd)) continue;
@@ -137,7 +157,7 @@ export function serve(dir: string = '.'): void {
           }
         }
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
-          name: Nm(node), type: Nt(node), properties: props, edges: Ne(node).map((e: any) => [e.t, e.v, e.c])
+          name: Nm(node), type: Nt(node), properties: props, edges: Ne(node, dag).map((e: any) => [e.t, e.v, e.c])
         }) }] } };
       }
 
@@ -155,7 +175,7 @@ export function serve(dir: string = '.'): void {
           visited.add(curr.id);
           const node = nodes(dag).find((n: any) => Nm(n) === curr.id);
           if (node) {
-            const edges = Ne(node).filter((e: any) => !verbFilter || (e.v || '').toLowerCase() === verbFilter);
+            const edges = Ne(node, dag).filter((e: any) => !verbFilter || (e.v || '').toLowerCase() === verbFilter);
             result.push({ name: Nm(node), edges: edges.map((e: any) => `${e.t}:${e.v}${e.c ? '(' + e.c + ')' : ''}`) });
             for (const e of edges) {
               if (!visited.has(e.t)) queue.push({ id: e.t, depth: curr.depth + 1 });

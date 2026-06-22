@@ -11,6 +11,7 @@ import type { DocumentNode, SectionNode, BlockNode, EntityNode, RelationshipNode
 import { parse } from './parser';
 import { safeProjectName, writeRepoMap } from './map/repoMapper';
 import { formatQueryResult, formatTrace, loadWorldModel, queryWorldModel, traceWorldNode } from './dag/query';
+import { compileDotdogLayers } from './dag/layers';
 
 
 function normalizeDag(dag: any): any {
@@ -249,6 +250,12 @@ function buildCompactText(project: string, v2nodes: any[][]): string {
 
 program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'Use v2 format (default: v3 for 57% smaller graphs)').action((d='.', opts) => {
   const dir = resolvePath(d);
+  const layered = compileDotdogLayers(dir, safeProjectName(dir));
+  if (layered) {
+    console.log(chalk.green('  ✓ ' + layered.file));
+    console.log(chalk.gray('    ' + layered.nodes + ' nodes, ' + layered.edges + ' edges, ' + layered.unknowns + ' unknowns'));
+    return;
+  }
   const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
   let found = false;
   for (const dd of dirs) {
@@ -1701,7 +1708,7 @@ program
   .option('--json', 'print write result as JSON')
   .action((dir = '.', opts) => {
     const projectName = opts.project || safeProjectName(resolve(dir));
-    const specDir = resolve(dir, 'specs', projectName);
+    const specDir = resolve(dir, '.dotdog', 'generated');
     const result = writeRepoMap(resolve(dir), projectName, specDir);
     if (opts.json) {
       console.log(JSON.stringify(result, null, 2));
@@ -1714,7 +1721,7 @@ program
 program
   .command('query <term>')
   .description('Query a repo.dag world model')
-  .option('--dag <file>', 'path to repo.dag', 'specs/repo.dag')
+  .option('--dag <file>', 'path to repo.dag', '.dotdog/compiled/repo.dag')
   .option('-l, --limit <n>', 'max results', '10')
   .action((term, opts) => {
     const world = loadWorldModel(resolve(opts.dag));
@@ -1725,7 +1732,7 @@ program
 program
   .command('trace <node>')
   .description('Trace repo.dag relationships for a node')
-  .option('--dag <file>', 'path to repo.dag', 'specs/repo.dag')
+  .option('--dag <file>', 'path to repo.dag', '.dotdog/compiled/repo.dag')
   .option('-d, --depth <n>', 'trace depth', '2')
   .action((node, opts) => {
     const world = loadWorldModel(resolve(opts.dag));

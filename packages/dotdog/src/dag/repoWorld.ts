@@ -45,10 +45,16 @@ function normalizeEdgeVerb(verb: string): WorldEdgeVerb {
   const v = verb.toLowerCase();
   if (v === 'imports') return 'imports';
   if (v === 'exports') return 'exports';
-  if (v === 'defines' || v === 'implements') return 'defines';
+  if (v === 'defines') return 'defines';
+  if (v === 'implements') return 'implements';
+  if (v === 'includes') return 'includes';
+  if (v === 'configured_by') return 'configured_by';
+  if (v === 'deployed_by') return 'deployed_by';
+  if (v === 'requires' || v === 'requires_env') return 'requires';
+  if (v === 'supports') return 'supports';
   if (v === 'mentions') return 'mentions';
   if (v === 'tested_by' || v === 'tests') return 'tests';
-  if (v === 'deployed_by' || v === 'builds') return 'builds';
+  if (v === 'builds') return 'builds';
   if (v === 'documented_by' || v === 'documents') return 'documents';
   if (v === 'generated_by') return 'generated_by';
   if (v === 'changed_with') return 'changed_with';
@@ -74,6 +80,7 @@ export function buildRepositoryWorldModel(project: string, root: string, map: Re
       source: fact.properties?.path || root,
       description: fact.description,
       properties: fact.properties,
+      origin: { type: 'generated', file: fact.properties?.path || root },
       confidence: 'certain',
     });
   });
@@ -91,6 +98,7 @@ export function buildRepositoryWorldModel(project: string, root: string, map: Re
         source: root,
         description: 'Referenced by an edge but not mapped as a known node',
         confidence: 'unknown',
+        origin: { type: 'generated' },
       }));
     }
     if (!targetId && !existingNodeIds.has(stableId('unknown', edge.target))) {
@@ -101,6 +109,7 @@ export function buildRepositoryWorldModel(project: string, root: string, map: Re
         source: root,
         description: 'Referenced by an edge but not mapped as a known node',
         confidence: 'unknown',
+        origin: { type: 'generated' },
       }));
     }
   }
@@ -111,6 +120,7 @@ export function buildRepositoryWorldModel(project: string, root: string, map: Re
     verb: normalizeEdgeVerb(edge.verb),
     confidence: 'certain',
     source: root,
+    origin: { type: 'generated' },
   }));
 
   return {
