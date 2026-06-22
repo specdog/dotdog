@@ -78,12 +78,12 @@ export function serve(dir: string = '.'): void {
   const dagPaths: Map<string, string> = new Map();
 
   function loadDags(): string[] {
-    const compiledDag = join(root, '.dotdog', 'compiled', 'repo.dag');
+    const compiledDag = join(root, '.doghouse', 'compiled', 'repo.dag');
     if (existsSync(compiledDag)) {
       const dag = JSON.parse(readFileSync(compiledDag, 'utf-8'));
       const p = project(dag) || 'repo';
       dagCache.set(p, dag);
-      dagPaths.set(p, join(root, '.dotdog'));
+      dagPaths.set(p, join(root, '.doghouse'));
     }
 
     const dirs = [join(root,'projects'),join(root,'specs'),root];

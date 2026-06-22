@@ -71,10 +71,10 @@ describe('regression', () => {
   test('semantic deployment nodes survive map and compile remap', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-layers-'));
     try {
-      mkdirSync(join(dir, '.dotdog', 'semantic'), { recursive: true });
+      mkdirSync(join(dir, '.doghouse', 'semantic'), { recursive: true });
       writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'example-web-app', version: '1.0.0' }, null, 2));
       writeFileSync(join(dir, 'railway.json'), JSON.stringify({ startCommand: 'npm start' }, null, 2));
-      writeFileSync(join(dir, '.dotdog', 'semantic', 'deployment.dog'), [
+      writeFileSync(join(dir, '.doghouse', 'semantic', 'deployment.dog'), [
         '## Deployment',
         '',
         '### Entity: Deployment',
@@ -119,7 +119,7 @@ describe('regression', () => {
       await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts map`.quiet();
       await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts compile`.quiet();
 
-      const compiled = JSON.parse(readFileSync(join(dir, '.dotdog', 'compiled', 'repo.dag'), 'utf-8'));
+      const compiled = JSON.parse(readFileSync(join(dir, '.doghouse', 'compiled', 'repo.dag'), 'utf-8'));
       const labels = compiled.nodes.map((node: any) => node.label);
       expect(labels).toContain('Deployment');
       expect(labels).toContain('RailwayService');
