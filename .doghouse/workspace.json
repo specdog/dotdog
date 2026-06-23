@@ -1,29 +1,14 @@
 {
   "version": 1,
   "workspace": {
-    "id": "specdog",
-    "name": "specdog"
+    "id": "dotdog",
+    "name": "dotdog"
   },
   "repos": [
     {
       "alias": "dotdog",
-      "role": "unknown",
+      "role": "cli",
       "path": ".."
-    },
-    {
-      "alias": "dogbench",
-      "role": "package",
-      "path": "../../dogbench"
-    },
-    {
-      "alias": "specdog-github-io",
-      "role": "docs",
-      "path": "../../specdog.github.io"
-    },
-    {
-      "alias": "specs",
-      "role": "docs",
-      "path": "../../specs"
     }
   ],
   "groups": [],
