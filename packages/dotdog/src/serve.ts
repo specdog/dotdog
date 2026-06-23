@@ -2,24 +2,15 @@
 // Exposes .dag graph to AI agents. v3 format only.
 
 import { existsSync, readdirSync, readFileSync } from 'fs';
-import { dirname, join, resolve } from 'path';
-import { homedir } from 'os';
+import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import * as readline from 'readline';
 import { parse } from './parser';
+import { resolveUserPath } from './workspace/paths';
+import { resolveWorkspace } from './workspace/resolver';
 
 function resolvePath(p: string): string {
-  if (p.startsWith('~')) p = join(homedir(), p.slice(1));
-  const resolved = p.startsWith('/') ? p : join(process.cwd(), p);
-  if (!p.startsWith('/') && !p.startsWith('~')) {
-    const rel = resolve(process.cwd(), p);
-    const cwd = process.cwd();
-    if (!rel.startsWith(cwd + '/') && rel !== cwd && !cwd.startsWith(rel + '/')) {
-      throw new Error(`Path traversal blocked: ${p}`);
-    }
-    return rel;
-  }
-  return resolved;
+  return resolveUserPath(p, process.cwd());
 }
 
 // --- v3-only helpers ---
@@ -120,6 +111,7 @@ export function serve(dir: string = '.'): void {
         { name: 'traverse', description: 'BFS from node, return reachable nodes+edges', inputSchema: { type: 'object', properties: { project: { type:'string' }, from: { type:'string' }, depth: { type:'number', default: 2 }, verb: { type:'string' } }, required: ['from'] } },
         { name: 'search', description: 'Find entities by name', inputSchema: { type: 'object', properties: { project: { type:'string' }, q: { type:'string' }, type: { type:'string' } }, required: ['q'] } },
         { name: 'listProjects', description: 'List loaded projects', inputSchema: { type: 'object', properties: {} } },
+        { name: 'workspace.list', description: 'List workspace repos and groups', inputSchema: { type: 'object', properties: {} } },
         { name: 'summary', description: 'Project stats: nodes, edges, savings', inputSchema: { type: 'object', properties: { project: { type:'string' } } } },
         { name: 'schema', description: 'Entity property schema', inputSchema: { type: 'object', properties: { project: { type:'string' }, entity: { type:'string' } }, required: ['entity'] } },
         { name: 'infraVerify', description: 'Verify infra resources', inputSchema: { type: 'object', properties: { provider: { type:'string' }, entity: { type:'string' }, summary: { type:'boolean' } } } },
@@ -134,6 +126,19 @@ export function serve(dir: string = '.'): void {
 
       if (name === 'listProjects') {
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify([...dagCache.keys()]) }] } };
+      }
+
+      if (name === 'workspace.list') {
+        const workspace = resolveWorkspace(root, { requireManifest: false });
+        const data = {
+          workspace: workspace.config.workspace,
+          mode: workspace.mode,
+          repos: workspace.repos.map((repo) => ({ alias: repo.alias, role: repo.role, cwd: repo.cwd })),
+          groups: workspace.config.groups || [],
+          trustedAsInstruction: false,
+          contentKind: 'workspace-metadata',
+        };
+        return { jsonrpc: '2.0', id, result: { structuredContent: data, content: [{ type: 'text', text: JSON.stringify(data) }] } };
       }
 
       if (name === 'getEntity') {

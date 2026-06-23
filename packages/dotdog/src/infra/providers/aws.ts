@@ -5,27 +5,28 @@
 // Auth: AWS_PROFILE env var or ~/.aws/credentials (handled by aws CLI)
 // Community MCP: aws-s3-mcp (samuraikun/aws-s3-mcp)
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
+import { redactSecrets } from '../../workspace/redact';
 import type { InfraResource, CheckResult, Provider } from './types';
 import { connectStdio, type MCPConnection, type MCPTool } from '../mcp-client';
 
-function aws(args: string): { ok: boolean; output: string } {
+function aws(args: string[]): { ok: boolean; output: string } {
   try {
-    const result = execSync(`aws ${args} --no-cli-pager --output json 2>&1`, {
+    const result = execFileSync('aws', [...args, '--no-cli-pager', '--output', 'json'], {
       encoding: 'utf-8',
       timeout: 20000,
       env: { ...process.env },
     });
-    return { ok: true, output: result.trim() };
+    return { ok: true, output: redactSecrets(result.trim()) };
   } catch (e: unknown) {
     const err = e as { stdout?: string; stderr?: string; message?: string };
     const output = String(err.stdout || err.stderr || err.message || '');
-    return { ok: false, output };
+    return { ok: false, output: redactSecrets(output) };
   }
 }
 
 function hasAwsCli(): boolean {
-  try { execSync('which aws', { encoding: 'utf-8' }); return true; } catch { return false; }
+  try { execFileSync('aws', ['--version'], { encoding: 'utf-8' }); return true; } catch { return false; }
 }
 
 async function verifyResource(resource: InfraResource): Promise<CheckResult> {
@@ -38,17 +39,17 @@ async function verifyResource(resource: InfraResource): Promise<CheckResult> {
     return { entity: resource.entity, provider: 'aws', resource: resource.resource, status: 'skip', message: 'aws CLI not installed' };
   }
 
-  const region = resource.region ? ` --region ${resource.region}` : '';
+  const regionArgs = resource.region ? ['--region', resource.region] : [];
 
   if (type === 's3') {
     // aws s3api head-bucket checks existence
-    const { ok, output } = aws(`s3api head-bucket --bucket ${name}${region}`);
+    const { ok, output } = aws(['s3api', 'head-bucket', '--bucket', name, ...regionArgs]);
     if (ok) {
       // Get approximate object count for detail
       let detail = '';
       try {
-        const sizeResult = aws(`s3 ls --summarize --human-readable --recursive s3://${name}${region} 2>&1 | tail -3`);
-        detail = sizeResult.output.replace(/\n/g, ' ').trim().slice(0, 120);
+        const sizeResult = aws(['s3', 'ls', '--summarize', '--human-readable', '--recursive', `s3://${name}`, ...regionArgs]);
+        detail = sizeResult.output.split('\n').slice(-3).join(' ').trim().slice(0, 120);
       } catch {}
       return { entity: resource.entity, provider: 'aws', resource: resource.resource, status: 'pass', message: 'exists', detail };
     }
@@ -60,7 +61,7 @@ async function verifyResource(resource: InfraResource): Promise<CheckResult> {
   }
 
   if (type === 'lambda') {
-    const { ok, output } = aws(`lambda get-function --function-name ${name}${region}`);
+    const { ok, output } = aws(['lambda', 'get-function', '--function-name', name, ...regionArgs]);
     if (ok) {
       try {
         const d = JSON.parse(output);
@@ -78,7 +79,7 @@ async function verifyResource(resource: InfraResource): Promise<CheckResult> {
   }
 
   if (type === 'rds') {
-    const { ok, output } = aws(`rds describe-db-instances --db-instance-identifier ${name}${region}`);
+    const { ok, output } = aws(['rds', 'describe-db-instances', '--db-instance-identifier', name, ...regionArgs]);
     if (ok) {
       try {
         const d = JSON.parse(output);
@@ -101,7 +102,7 @@ async function verifyResource(resource: InfraResource): Promise<CheckResult> {
   }
 
   if (type === 'dynamodb') {
-    const { ok, output } = aws(`dynamodb describe-table --table-name ${name}${region}`);
+    const { ok, output } = aws(['dynamodb', 'describe-table', '--table-name', name, ...regionArgs]);
     if (ok) {
       try {
         const d = JSON.parse(output);

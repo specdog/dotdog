@@ -2,16 +2,19 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { existsSync, readdirSync, readFileSync, mkdirSync, writeFileSync, statSync } from 'fs';
-import { join, resolve } from 'path';
+import { join, relative, resolve } from 'path';
 import { buildIndex, searchIndex } from './index';
-import { homedir } from 'os';
+import { resolveUserPath } from './workspace/paths';
 import { createHash } from 'crypto';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import type { DocumentNode, SectionNode, BlockNode, EntityNode, RelationshipNode, ProseNode, TableNode, PropertyDef } from './grammar';
 import { parse } from './parser';
 import { safeProjectName, writeRepoMap } from './map/repoMapper';
 import { formatQueryResult, formatTrace, loadWorldModel, queryWorldModel, traceWorldNode } from './dag/query';
 import { compileDotdogLayers } from './dag/layers';
+import { buildWorkspaceGraph } from './workspace/graph';
+import { resolveWorkspace, WORKSPACE_MANIFEST } from './workspace/resolver';
+import { validateWorkspaceConfig } from './workspace/validator';
 
 
 function normalizeDag(dag: any): any {
@@ -32,34 +35,19 @@ function normalizeDag(dag: any): any {
 }
 
 function resolvePath(p: string): string {
-  if (p.startsWith('~')) p = join(homedir(), p.slice(1));
-  const resolved = p.startsWith('/') ? p : join(process.cwd(), p);
-  // Prevent traversal outside working directory for relative paths.
-  // Allow descendants (cdw/child), same dir (cwd), and ancestors (parent of cwd).
-  if (!p.startsWith('/') && !p.startsWith('~')) {
-    const rel = resolve(process.cwd(), p);
-    const cwd = process.cwd();
-    const isDescendant = rel.startsWith(cwd + '/');
-    const isSelf = rel === cwd;
-    const isAncestor = cwd.startsWith(rel + '/');
-    if (!isDescendant && !isSelf && !isAncestor) {
-      throw new Error(`Path traversal blocked: ${p}`);
-    }
-    return rel;
-  }
-  return resolved;
+  return resolveUserPath(p, process.cwd());
 }
 
 function githubRemote(repoDir = process.cwd()): string | null {
   try {
-    const remote = execSync('git remote get-url origin', { cwd: repoDir, encoding: 'utf8' }).trim();
+    const remote = execFileSync('git', ['remote', 'get-url', 'origin'], { cwd: repoDir, encoding: 'utf8' }).trim();
     const m = remote.match(/github\.com[:/]([^/]+)\/([^/.]+)(?:\.git)?$/);
     return m ? `${m[1]}/${m[2]}` : null;
   } catch { return null; }
 }
 
 function ghIssues(repo: string): Array<{ number:number; title:string; state:string; body:string }> {
-  const raw = execSync(`gh issue list --repo ${repo} --state all --limit 100 --json number,title,state,body`, { encoding: 'utf8' }).trim();
+  const raw = execFileSync('gh', ['issue', 'list', '--repo', repo, '--state', 'all', '--limit', '100', '--json', 'number,title,state,body'], { encoding: 'utf8' }).trim();
   return JSON.parse(raw || '[]');
 }
 
@@ -1700,6 +1688,116 @@ function diffBody(expected: Record<string, unknown>, actual: Record<string, unkn
   return { missing, extra };
 }
 
+
+const workspaceCmd = program.command('workspace').description('Manage a dotdog multi-repo workspace');
+
+workspaceCmd
+  .command('init')
+  .description('Create .doghouse/workspace.json')
+  .requiredOption('--id <id>', 'workspace id')
+  .option('--name <name>', 'workspace display name')
+  .option('--force', 'overwrite an existing manifest')
+  .action((opts) => {
+    const doghouseDir = join(process.cwd(), '.doghouse');
+    const manifestPath = join(process.cwd(), WORKSPACE_MANIFEST);
+    if (existsSync(manifestPath) && !opts.force) {
+      console.error(chalk.red(`Workspace manifest already exists: ${WORKSPACE_MANIFEST}`));
+      process.exitCode = 1;
+      return;
+    }
+    mkdirSync(doghouseDir, { recursive: true });
+    const repoAlias = safeProjectName(process.cwd());
+    const config = {
+      version: 1,
+      workspace: { id: opts.id, name: opts.name || opts.id },
+      repos: [{ alias: repoAlias, role: 'unknown', path: '..' }],
+      groups: [],
+      edges: [],
+    };
+    writeFileSync(manifestPath, `${JSON.stringify(config, null, 2)}\n`);
+    console.log(`Workspace initialized: ${WORKSPACE_MANIFEST}`);
+  });
+
+workspaceCmd
+  .command('add <repoPath>')
+  .description('Add a repo to .doghouse/workspace.json')
+  .requiredOption('--alias <alias>', 'repo alias')
+  .option('--role <role>', 'repo role', 'unknown')
+  .option('--remote <remote>', 'repo remote')
+  .option('--default-branch <branch>', 'default branch')
+  .action((repoPath, opts) => {
+    const manifestPath = join(process.cwd(), WORKSPACE_MANIFEST);
+    if (!existsSync(manifestPath)) {
+      console.error(chalk.red(`No ${WORKSPACE_MANIFEST} found. Run: dotdog workspace init --id <id>`));
+      process.exitCode = 1;
+      return;
+    }
+    const config = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+    const resolvedRepoPath = resolve(process.cwd(), repoPath);
+    const manifestRepoPath = relative(join(process.cwd(), '.doghouse'), resolvedRepoPath) || '.';
+    if (!existsSync(resolvedRepoPath) || !statSync(resolvedRepoPath).isDirectory()) {
+      console.error(chalk.red(`Repo path is not a directory: ${repoPath}`));
+      process.exitCode = 1;
+      return;
+    }
+    config.repos = config.repos || [];
+    config.repos.push({ alias: opts.alias, role: opts.role, path: manifestRepoPath, ...(opts.remote ? { remote: opts.remote } : {}), ...(opts.defaultBranch ? { defaultBranch: opts.defaultBranch } : {}) });
+    const validation = validateWorkspaceConfig(config, { manifestDir: join(process.cwd(), '.doghouse'), checkPaths: true });
+    if (!validation.valid) {
+      console.error(chalk.red('Invalid workspace manifest:'));
+      for (const error of validation.errors) console.error(`  - ${error.message}`);
+      process.exitCode = 1;
+      return;
+    }
+    writeFileSync(manifestPath, `${JSON.stringify(config, null, 2)}\n`);
+    console.log(`Added repo ${opts.alias}`);
+  });
+
+workspaceCmd
+  .command('list')
+  .description('List workspace repos and groups')
+  .option('--json', 'print JSON')
+  .action((opts) => {
+    const context = resolveWorkspace(process.cwd(), { requireManifest: false });
+    const data = { workspace: context.config.workspace, mode: context.mode, repos: context.repos.map((repo) => ({ alias: repo.alias, role: repo.role, cwd: repo.cwd })), groups: context.config.groups || [] };
+    if (opts.json) {
+      console.log(JSON.stringify(data, null, 2));
+      return;
+    }
+    console.log(`${data.workspace.id} (${data.mode})`);
+    for (const repo of data.repos) console.log(`  ${repo.alias}\t${repo.role || 'unknown'}\t${repo.cwd}`);
+    if (data.groups.length) console.log('\nGroups:');
+    for (const group of data.groups) console.log(`  ${group.name}\t${group.repos.join(', ')}`);
+  });
+
+workspaceCmd
+  .command('validate')
+  .description('Validate .doghouse/workspace.json')
+  .option('--json', 'print JSON')
+  .action((opts) => {
+    try {
+      const context = resolveWorkspace(process.cwd(), { requireManifest: true });
+      const result = validateWorkspaceConfig(context.config, { manifestDir: join(process.cwd(), '.doghouse'), checkPaths: true });
+      if (opts.json) console.log(JSON.stringify(result, null, 2));
+      else console.log(result.valid ? chalk.green('Workspace valid') : chalk.red('Workspace invalid'));
+      if (!result.valid) {
+        for (const error of result.errors) console.error(`  - ${error.message}`);
+        process.exitCode = 1;
+      }
+    } catch (error) {
+      console.error(chalk.red(String(error instanceof Error ? error.message : error)));
+      process.exitCode = 1;
+    }
+  });
+
+workspaceCmd
+  .command('graph')
+  .description('Print workspace graph JSON')
+  .option('--json', 'print JSON', true)
+  .action(() => {
+    const context = resolveWorkspace(process.cwd(), { requireManifest: false });
+    console.log(JSON.stringify(buildWorkspaceGraph(context), null, 2));
+  });
 
 program
   .command('map [dir]')
