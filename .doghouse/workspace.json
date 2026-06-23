@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "workspace": {
+    "id": "dotdog",
+    "name": "dotdog"
+  },
+  "repos": [
+    {
+      "alias": "dotdog",
+      "role": "cli",
+      "path": ".."
+    }
+  ],
+  "groups": [],
+  "edges": []
+}
