@@ -26,9 +26,9 @@ dotdog analyze              # deep analysis: gaps, suggestions, entity audit
 For an existing multi-repo product:
 
 ```bash
-dotdog workspace init --id example-product
-dotdog workspace add ../example-api --alias example-api --role api
-dotdog workspace add ../example-web --alias example-web --role web
+dotdog workspace init --id example-workspace
+dotdog workspace add ../example-service --alias example-service --role api
+dotdog workspace add ../example-interface --alias example-interface --role web
 dotdog workspace validate
 dotdog workspace graph --json
 ```

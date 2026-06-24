@@ -127,41 +127,41 @@ Agents should be able to ask:
 ## Example Map Output
 
 ```dog
-### Entity: CheckoutPage
+### Entity: CoreFlowPage
 
-Frontend checkout screen.
+Frontend core-flow screen.
 
 ```yaml
-entity: CheckoutPage
+entity: CoreFlowPage
 type: component
-file: src/app/checkout/page.tsx
+file: src/app/core-flow/page.tsx
 renders:
-  - CartSummary
+  - StatusPanel
 calls:
-  - POST /api/checkout
+  - POST /api/core-flow
 depends_on:
-  - NEXT_PUBLIC_STRIPE_KEY
+  - NEXT_PUBLIC_SERVICE_URL
 implements:
-  - Checkout Flow
+  - CoreFlow Flow
 ```
 
-### Entity: Checkout API
+### Entity: CoreFlow API
 
-Backend endpoint that creates checkout sessions.
+Backend endpoint that creates core-flow sessions.
 
 ```yaml
-entity: Checkout API
+entity: CoreFlow API
 type: api_route
-route: POST /api/checkout
-file: src/app/api/checkout/route.ts
+route: POST /api/core-flow
+file: src/app/api/core-flow/route.ts
 calls:
-  - Stripe Checkout Session
+  - CoreFlow Service
 writes:
-  - orders
+  - records
 depends_on:
-  - STRIPE_SECRET_KEY
+  - SERVICE_TOKEN
 implements:
-  - Checkout Flow
+  - CoreFlow Flow
 ```
 ```
 

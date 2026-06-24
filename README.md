@@ -51,9 +51,9 @@ dotdog serve                # expose the graph to MCP-compatible agents
 For an existing product or organization workspace:
 
 ```bash
-dotdog workspace init --id example-product
-dotdog workspace add ../example-api --alias example-api --role api
-dotdog workspace add ../example-web --alias example-web --role web
+dotdog workspace init --id example-workspace
+dotdog workspace add ../example-service --alias example-service --role api
+dotdog workspace add ../example-interface --alias example-interface --role web
 dotdog workspace validate
 dotdog workspace graph --json
 ```
@@ -118,10 +118,10 @@ Example:
 ```json
 {
   "version": 1,
-  "workspace": { "id": "example-product", "name": "example-product" },
+  "workspace": { "id": "example-workspace", "name": "example-workspace" },
   "repos": [
-    { "alias": "example-api", "role": "api", "path": "../example-api" },
-    { "alias": "example-web", "role": "web", "path": "../example-web" }
+    { "alias": "example-service", "role": "api", "path": "../example-service" },
+    { "alias": "example-interface", "role": "web", "path": "../example-interface" }
   ],
   "groups": [],
   "edges": []
@@ -131,8 +131,8 @@ Example:
 The workspace graph emits repo-qualified facts so humans and agents can distinguish where a fact came from:
 
 ```text
-example-api:src/routes/checkout.ts
-example-web:src/features/checkout/index.ts
+example-service:src/routes/core-flow.ts
+example-interface:src/features/core-flow/index.ts
 ```
 
 No manifest is required for single-repo projects; Dotdog treats the current repo as a one-repo workspace by default.
@@ -225,11 +225,11 @@ JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a
 Example graph facts:
 
 ```text
-CheckoutPage renders CartSummary
-CheckoutPage calls POST /api/checkout
-POST /api/checkout writes orders
-POST /api/checkout depends_on STRIPE_SECRET_KEY
-orders implemented_by prisma/schema.prisma
+CoreFlowPage renders StatusPanel
+CoreFlowPage calls POST /api/core-flow
+POST /api/core-flow writes records
+POST /api/core-flow depends_on SERVICE_TOKEN
+records implemented_by prisma/schema.prisma
 ```
 
 ## MCP Server : AI Agent Integration

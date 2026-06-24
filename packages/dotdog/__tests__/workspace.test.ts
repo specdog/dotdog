@@ -11,22 +11,22 @@ function fixtureWorkspace() {
   const root = mkdtempSync(path.join(tmpdir(), 'dotdog-workspace-'));
   const doghouse = path.join(root, '.doghouse');
   const repos = path.join(root, 'repos');
-  mkdirSync(path.join(repos, 'example-web'), { recursive: true });
-  mkdirSync(path.join(repos, 'example-api'), { recursive: true });
+  mkdirSync(path.join(repos, 'example-interface'), { recursive: true });
+  mkdirSync(path.join(repos, 'example-service'), { recursive: true });
   mkdirSync(path.join(repos, 'example-worker'), { recursive: true });
   mkdirSync(doghouse, { recursive: true });
   writeFileSync(path.join(doghouse, 'workspace.json'), JSON.stringify({
     version: 1,
-    workspace: { id: 'example-product', name: 'example-product' },
+    workspace: { id: 'example-workspace', name: 'example-workspace' },
     repos: [
-      { alias: 'example-web', role: 'web', path: '../repos/example-web' },
-      { alias: 'example-api', role: 'api', path: '../repos/example-api' },
+      { alias: 'example-interface', role: 'web', path: '../repos/example-interface' },
+      { alias: 'example-service', role: 'api', path: '../repos/example-service' },
       { alias: 'example-worker', role: 'worker', path: '../repos/example-worker' },
     ],
-    groups: [{ name: 'checkout', repos: ['example-web', 'example-api', 'example-worker'] }],
+    groups: [{ name: 'core-flow', repos: ['example-interface', 'example-service', 'example-worker'] }],
     edges: [
-      { from: 'example-web', to: 'example-api', type: 'http' },
-      { from: 'example-api', to: 'example-worker', type: 'event' },
+      { from: 'example-interface', to: 'example-service', type: 'http' },
+      { from: 'example-service', to: 'example-worker', type: 'event' },
     ],
   }, null, 2));
   return root;
@@ -36,12 +36,12 @@ describe('workspace bridge', () => {
   test('validates duplicate aliases and unknown edges', () => {
     const result = validateWorkspaceConfig({
       version: 1,
-      workspace: { id: 'example-product' },
+      workspace: { id: 'example-workspace' },
       repos: [
-        { alias: 'example-api', path: '.' },
-        { alias: 'example-api', path: '.' },
+        { alias: 'example-service', path: '.' },
+        { alias: 'example-service', path: '.' },
       ],
-      edges: [{ from: 'example-api', to: 'example-worker', type: 'http' }],
+      edges: [{ from: 'example-service', to: 'example-worker', type: 'http' }],
     });
     expect(result.valid).toBe(false);
     expect(result.errors.map((error) => error.code)).toContain('duplicate_repo_alias');
@@ -52,10 +52,10 @@ describe('workspace bridge', () => {
     const root = fixtureWorkspace();
     const context = resolveWorkspace(root);
     expect(context.mode).toBe('workspace');
-    expect(context.repos.map((repo) => repo.alias)).toEqual(['example-web', 'example-api', 'example-worker']);
+    expect(context.repos.map((repo) => repo.alias)).toEqual(['example-interface', 'example-service', 'example-worker']);
     const graph = buildWorkspaceGraph(context);
-    expect(graph.workspace).toBe('example-product');
-    expect(graph.nodes.map((node) => node.id)).toContain('repo:example-api');
+    expect(graph.workspace).toBe('example-workspace');
+    expect(graph.nodes.map((node) => node.id)).toContain('repo:example-service');
     expect(graph.edges.map((edge) => edge.type)).toContain('http');
   });
 

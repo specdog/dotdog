@@ -25,7 +25,7 @@ Here's a real-world product spec:
 
 ```
 Users can sign up with email and password. Each user belongs to one
-organization. Organizations have billing plans...
+organization. Organizations have access rules...
 ```
 
 An AI agent reads this and builds a user system. But it fills in blanks with plausible-sounding hallucinations:
