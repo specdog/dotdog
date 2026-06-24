@@ -1907,6 +1907,76 @@ program
     }
   });
 
+
+type DriftIssue = {
+  severity: 'HIGH' | 'MEDIUM' | 'LOW';
+  code: string;
+  message: string;
+  file?: string;
+};
+
+function driftIssueRank(issue: DriftIssue): string {
+  const rank = issue.severity === 'HIGH' ? '0' : issue.severity === 'MEDIUM' ? '1' : '2';
+  return `${rank}:${issue.code}:${issue.file || ''}:${issue.message}`;
+}
+
+program
+  .command('drift')
+  .description('Detect stale or inconsistent observed graph artifacts')
+  .option('--facts <file>', 'path to facts.jsonl', '.doghouse/facts.jsonl')
+  .option('--json', 'print JSON')
+  .action((opts) => {
+    try {
+      const context = resolveWorkspace(process.cwd(), { requireManifest: false });
+      const factsFile = resolve(opts.facts);
+      const issues: DriftIssue[] = [];
+
+      if (!existsSync(factsFile)) {
+        issues.push({ severity: 'HIGH', code: 'missing_facts', message: `Observed facts not found: ${opts.facts}` });
+      } else {
+        const factsMtime = statSync(factsFile).mtimeMs;
+        const facts = readJsonl(factsFile);
+        const seenFiles = new Set<string>();
+
+        for (const fact of facts) {
+          if (!fact.file || seenFiles.has(`${fact.repo || ''}:${fact.file}`)) continue;
+          seenFiles.add(`${fact.repo || ''}:${fact.file}`);
+          const repo = fact.repo ? context.registry.get(String(fact.repo)) : null;
+          const baseDir = repo?.cwd || context.workspaceRoot;
+          const sourceFile = resolve(baseDir, String(fact.file));
+
+          if (!existsSync(sourceFile)) {
+            issues.push({ severity: 'HIGH', code: 'missing_fact_file', message: `Fact references missing file: ${fact.file}`, file: fact.file });
+            continue;
+          }
+
+          if (statSync(sourceFile).mtimeMs > factsMtime) {
+            issues.push({ severity: 'LOW', code: 'stale_facts', message: `Source file is newer than observed facts: ${fact.file}`, file: fact.file });
+          }
+        }
+      }
+
+      issues.sort((a, b) => driftIssueRank(a).localeCompare(driftIssueRank(b)));
+
+      if (opts.json) {
+        console.log(JSON.stringify({ ok: issues.length === 0, issues }, null, 2));
+        return;
+      }
+
+      if (!issues.length) {
+        console.log('No drift found.');
+        return;
+      }
+
+      for (const issue of issues) {
+        console.log(`${issue.severity} ${issue.code}: ${issue.message}`);
+      }
+    } catch (error) {
+      console.error(chalk.red(String(error instanceof Error ? error.message : error)));
+      process.exitCode = 1;
+    }
+  });
+
 program
   .command('observe')
   .description('Observe the current repo or workspace and write queryable graph artifacts')

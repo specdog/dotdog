@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { $, which } from 'bun';
-import { mkdtempSync, rmSync, existsSync, readFileSync } from 'fs';
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { setupTempProject } from './helpers';
@@ -170,6 +170,18 @@ describe('untested commands', () => {
       const out = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts ask repository`.text();
       expect(out).toContain('Question: repository');
       expect(out).toContain('repository is repo');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('drift reports clean observed facts', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-drift-'));
+    try {
+      setupTempProject(dir, 'testproj');
+      await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts observe`.quiet();
+      const out = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts drift`.text();
+      expect(out).toContain('No drift found.');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
