@@ -82,7 +82,7 @@ describe('untested commands', () => {
     const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-analyze-'));
     try {
       setupTempProject(dir, 'testproj');
-      const result = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts analyze`.nothrow();
+      const result = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts analyze`.quiet().nothrow();
       expect(result.text()).toContain('complete');
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -117,7 +117,7 @@ describe('untested commands', () => {
       setupTempProject(dir, 'testproj');
       await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts compile`.quiet();
       // Simulate should not crash — returns partial success if no scenario steps
-      const result = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts simulate compile`.nothrow();
+      const result = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts simulate compile`.quiet().nothrow();
       expect([0, 1]).toContain(result.exitCode);
     } finally {
       rmSync(dir, { recursive: true, force: true });
