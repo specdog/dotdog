@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import { $, which } from 'bun';
-import { mkdtempSync, rmSync, existsSync } from 'fs';
+import { mkdtempSync, rmSync, existsSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { setupTempProject } from './helpers';
@@ -132,6 +132,44 @@ describe('untested commands', () => {
       expect(out).toContain('repo.dag');
       expect(existsSync(join(dir, '.doghouse', 'generated', 'repo-map.dog'))).toBe(true);
       expect(existsSync(join(dir, '.doghouse', 'generated', 'repo.dag'))).toBe(true);
+      const factsFile = join(dir, '.doghouse', 'generated', 'facts.jsonl');
+      expect(existsSync(factsFile)).toBe(true);
+      const facts = readFileSync(factsFile, 'utf-8').trim().split('\n').map((line) => JSON.parse(line));
+      expect(facts.some((fact) => fact.subject === 'repository' && fact.predicate === 'is')).toBe(true);
+      expect(facts.every((fact) => fact.repo === 'repo-world-test')).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('observe writes observed workspace artifacts', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-observe-'));
+    try {
+      setupTempProject(dir, 'testproj');
+      const out = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts observe`.text();
+      expect(out).toContain('Observed workspace');
+      const observedFile = join(dir, '.doghouse', 'observed.json');
+      const factsFile = join(dir, '.doghouse', 'facts.jsonl');
+      const workspaceDagFile = join(dir, '.doghouse', 'workspace.dag');
+      expect(existsSync(observedFile)).toBe(true);
+      expect(existsSync(factsFile)).toBe(true);
+      expect(existsSync(workspaceDagFile)).toBe(true);
+      const observed = JSON.parse(readFileSync(observedFile, 'utf-8'));
+      expect(observed.repos.length).toBe(1);
+      expect(observed.factCount).toBeGreaterThan(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('ask queries observed facts', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-ask-'));
+    try {
+      setupTempProject(dir, 'testproj');
+      await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts observe`.quiet();
+      const out = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts ask repository`.text();
+      expect(out).toContain('Question: repository');
+      expect(out).toContain('repository is repo');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
