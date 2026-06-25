@@ -7,7 +7,7 @@ const ALLOWED_PUBLIC_EXAMPLES = new Set([
   'example-worker',
   'example-ops',
   'core-flow',
-  'billing',
+  'access-control',
   'catalog',
   'customer-portal',
   'admin-dashboard',

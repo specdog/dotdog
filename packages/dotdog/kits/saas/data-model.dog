@@ -71,7 +71,7 @@ properties:
   price_cents:
     type: number
     required: true
-  billing_cycle:
+  plan_cycle:
     type: enum
     required: true
     values: [monthly, annual]

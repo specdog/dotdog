@@ -61,6 +61,20 @@ You write specs before code. Five minutes to set up. Zero configuration.
 | Compile | `dotdog compile` | Build a positional DAG graph — 94% smaller, optimized for LLM context |
 | Expose | `dotdog serve` | Start an MCP server. AI agents query via six structured tools |
 
+## Observed workspace graph
+
+Dotdog can also observe an existing repo or multi-repo workspace and write deterministic graph artifacts:
+
+```bash
+dotdog observe
+dotdog ask "which files define routes?"
+dotdog drift
+```
+
+`observe` writes `.doghouse/observed.json`, `.doghouse/facts.jsonl`, and `.doghouse/workspace.dag`. `ask` queries those facts without an LLM dependency. `drift` reports stale or missing observed references.
+
+Read more: [Observed Workspace Graphs](blog/observed-workspace-graphs).
+
 ## For AI agents
 
 Six MCP tools for structured queries — no scanning, no guessing:
