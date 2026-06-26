@@ -1799,6 +1799,272 @@ workspaceCmd
     console.log(JSON.stringify(buildWorkspaceGraph(context), null, 2));
   });
 
+
+type ObservedRepoResult = {
+  alias: string;
+  role?: string;
+  path: string;
+  scanned: number;
+  facts: number;
+  edges: number;
+  observedFacts: number;
+  artifacts: {
+    repoMap: string;
+    repoDag: string;
+    facts: string;
+  };
+};
+
+function readJsonl(file: string): any[] {
+  if (!existsSync(file)) return [];
+  return readFileSync(file, 'utf-8')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+}
+
+function writeJsonl(file: string, rows: any[]): void {
+  writeFileSync(file, rows.map((row) => JSON.stringify(row)).join('\n') + (rows.length ? '\n' : ''));
+}
+
+function normalizedRelative(from: string, to: string): string {
+  return relative(from, to).replace(/\\/g, '/') || '.';
+}
+
+
+function factText(fact: any): string {
+  return [fact.subject, fact.predicate, fact.object, fact.file || '', fact.repo || ''].join(' ').toLowerCase();
+}
+
+function scoreFact(fact: any, terms: string[]): number {
+  const subject = String(fact.subject || '').toLowerCase();
+  const predicate = String(fact.predicate || '').toLowerCase();
+  const object = String(fact.object || '').toLowerCase();
+  const file = String(fact.file || '').toLowerCase();
+  const text = factText(fact);
+  let score = 0;
+  for (const term of terms) {
+    if (subject === term || object === term || file === term) score += 12;
+    else if (subject.includes(term) || object.includes(term)) score += 6;
+    if (predicate.includes(term)) score += 4;
+    if (file.includes(term)) score += 5;
+    if (text.includes(term)) score += 1;
+  }
+  return score;
+}
+
+function queryTerms(query: string): string[] {
+  return query
+    .toLowerCase()
+    .replace(/[^a-z0-9._:/-]+/g, ' ')
+    .split(/\s+/)
+    .map((term) => term.trim())
+    .filter((term) => term.length > 2);
+}
+
+program
+  .command('ask <question>')
+  .description('Ask a deterministic question over observed graph facts')
+  .option('--facts <file>', 'path to facts.jsonl', '.doghouse/facts.jsonl')
+  .option('-l, --limit <n>', 'max results', '10')
+  .option('--json', 'print JSON')
+  .action((question, opts) => {
+    try {
+      const factsFile = resolve(opts.facts);
+      if (!existsSync(factsFile)) {
+        console.error(chalk.red(`No observed facts found: ${opts.facts}. Run dotdog observe first.`));
+        process.exitCode = 1;
+        return;
+      }
+      const facts = readJsonl(factsFile);
+      const terms = queryTerms(question);
+      const matches = facts
+        .map((fact) => ({ fact, score: scoreFact(fact, terms) }))
+        .filter((result) => result.score > 0)
+        .sort((a, b) => b.score - a.score || String(a.fact.id).localeCompare(String(b.fact.id)))
+        .slice(0, Number(opts.limit || 10));
+
+      if (opts.json) {
+        console.log(JSON.stringify({ question, matches }, null, 2));
+        return;
+      }
+
+      console.log(`Question: ${question}`);
+      if (!matches.length) {
+        console.log('No matching facts found.');
+        return;
+      }
+      console.log(`Matches: ${matches.length}`);
+      for (const [index, result] of matches.entries()) {
+        const fact = result.fact;
+        console.log(`${index + 1}. ${fact.subject} ${fact.predicate} ${fact.object}`);
+        if (fact.file) console.log(`   source: ${fact.repo ? `${fact.repo}:` : ''}${fact.file}`);
+      }
+    } catch (error) {
+      console.error(chalk.red(String(error instanceof Error ? error.message : error)));
+      process.exitCode = 1;
+    }
+  });
+
+
+type DriftIssue = {
+  severity: 'HIGH' | 'MEDIUM' | 'LOW';
+  code: string;
+  message: string;
+  file?: string;
+};
+
+function driftIssueRank(issue: DriftIssue): string {
+  const rank = issue.severity === 'HIGH' ? '0' : issue.severity === 'MEDIUM' ? '1' : '2';
+  return `${rank}:${issue.code}:${issue.file || ''}:${issue.message}`;
+}
+
+program
+  .command('drift')
+  .description('Detect stale or inconsistent observed graph artifacts')
+  .option('--facts <file>', 'path to facts.jsonl', '.doghouse/facts.jsonl')
+  .option('--json', 'print JSON')
+  .action((opts) => {
+    try {
+      const context = resolveWorkspace(process.cwd(), { requireManifest: false });
+      const factsFile = resolve(opts.facts);
+      const issues: DriftIssue[] = [];
+
+      if (!existsSync(factsFile)) {
+        issues.push({ severity: 'HIGH', code: 'missing_facts', message: `Observed facts not found: ${opts.facts}` });
+      } else {
+        const factsMtime = statSync(factsFile).mtimeMs;
+        const facts = readJsonl(factsFile);
+        const seenFiles = new Set<string>();
+
+        for (const fact of facts) {
+          if (!fact.file || seenFiles.has(`${fact.repo || ''}:${fact.file}`)) continue;
+          seenFiles.add(`${fact.repo || ''}:${fact.file}`);
+          const repo = fact.repo ? context.registry.get(String(fact.repo)) : null;
+          const baseDir = repo?.cwd || context.workspaceRoot;
+          const sourceFile = resolve(baseDir, String(fact.file));
+
+          if (!existsSync(sourceFile)) {
+            issues.push({ severity: 'HIGH', code: 'missing_fact_file', message: `Fact references missing file: ${fact.file}`, file: fact.file });
+            continue;
+          }
+
+          if (statSync(sourceFile).mtimeMs > factsMtime) {
+            issues.push({ severity: 'LOW', code: 'stale_facts', message: `Source file is newer than observed facts: ${fact.file}`, file: fact.file });
+          }
+        }
+      }
+
+      issues.sort((a, b) => driftIssueRank(a).localeCompare(driftIssueRank(b)));
+
+      if (opts.json) {
+        console.log(JSON.stringify({ ok: issues.length === 0, issues }, null, 2));
+        return;
+      }
+
+      if (!issues.length) {
+        console.log('No drift found.');
+        return;
+      }
+
+      for (const issue of issues) {
+        console.log(`${issue.severity} ${issue.code}: ${issue.message}`);
+      }
+    } catch (error) {
+      console.error(chalk.red(String(error instanceof Error ? error.message : error)));
+      process.exitCode = 1;
+    }
+  });
+
+program
+  .command('observe')
+  .description('Observe the current repo or workspace and write queryable graph artifacts')
+  .option('--json', 'print JSON')
+  .option('--repo <alias>', 'observe one workspace repo')
+  .option('--group <name>', 'observe one workspace group')
+  .action((opts) => {
+    try {
+      if (opts.repo && opts.group) {
+        console.error(chalk.red('Use either --repo or --group, not both.'));
+        process.exitCode = 1;
+        return;
+      }
+
+      const context = resolveWorkspace(process.cwd(), { requireManifest: false });
+      const selectedRepos = opts.repo
+        ? [context.registry.require(opts.repo)]
+        : opts.group
+          ? context.registry.group(opts.group)
+          : context.registry.list();
+      const repos = [...selectedRepos].sort((a, b) => a.alias.localeCompare(b.alias));
+      const doghouseDir = join(context.workspaceRoot, '.doghouse');
+      const observedDir = join(doghouseDir, 'observed');
+      mkdirSync(observedDir, { recursive: true });
+
+      const workspaceGraph = buildWorkspaceGraph(context);
+      const repoResults: ObservedRepoResult[] = [];
+      const allFacts: any[] = [];
+
+      for (const repo of repos) {
+        const repoOutDir = join(observedDir, repo.alias);
+        const result = writeRepoMap(repo.cwd, repo.alias, repoOutDir);
+        const repoFacts = readJsonl(result.factsFile);
+        allFacts.push(...repoFacts);
+        repoResults.push({
+          alias: repo.alias,
+          role: repo.role,
+          path: normalizedRelative(context.workspaceRoot, repo.cwd),
+          scanned: result.scanned,
+          facts: result.facts,
+          edges: result.edges,
+          observedFacts: result.observedFacts,
+          artifacts: {
+            repoMap: normalizedRelative(context.workspaceRoot, result.file),
+            repoDag: normalizedRelative(context.workspaceRoot, result.dagFile),
+            facts: normalizedRelative(context.workspaceRoot, result.factsFile),
+          },
+        });
+      }
+
+      allFacts.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+      const factsFile = join(doghouseDir, 'facts.jsonl');
+      const workspaceDagFile = join(doghouseDir, 'workspace.dag');
+      const observedFile = join(doghouseDir, 'observed.json');
+      const observed = {
+        version: 1,
+        workspace: context.config.workspace,
+        mode: context.mode,
+        repos: repoResults,
+        factCount: allFacts.length,
+        artifacts: {
+          facts: normalizedRelative(context.workspaceRoot, factsFile),
+          workspaceDag: normalizedRelative(context.workspaceRoot, workspaceDagFile),
+        },
+      };
+
+      writeJsonl(factsFile, allFacts);
+      writeFileSync(workspaceDagFile, `${JSON.stringify(workspaceGraph, null, 2)}\n`);
+      writeFileSync(observedFile, `${JSON.stringify(observed, null, 2)}\n`);
+
+      if (opts.json) {
+        console.log(JSON.stringify(observed, null, 2));
+        return;
+      }
+
+      console.log(`Observed workspace: ${context.config.workspace.id}`);
+      console.log(`Repos: ${repoResults.length}`);
+      console.log(`Facts written: ${allFacts.length}`);
+      console.log('Artifacts:');
+      console.log(`  ${normalizedRelative(context.workspaceRoot, observedFile)}`);
+      console.log(`  ${normalizedRelative(context.workspaceRoot, workspaceDagFile)}`);
+      console.log(`  ${normalizedRelative(context.workspaceRoot, factsFile)}`);
+    } catch (error) {
+      console.error(chalk.red(String(error instanceof Error ? error.message : error)));
+      process.exitCode = 1;
+    }
+  });
+
 program
   .command('map [dir]')
   .description('Map a repository into a machine-readable repo.dag world model')

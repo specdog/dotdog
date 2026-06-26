@@ -49,7 +49,7 @@ $ dotdog compile
 
 Then ask Cursor:
 
-You: Build a checkout flow for the Order entity
+You: Build a core-flow flow for the Order entity
 
 Cursor (agent mode):
   → getEntity("Order")
@@ -57,7 +57,7 @@ Cursor (agent mode):
   → getEntity("Payment")
   → getEntity("Cart")
 
-Generates complete checkout component with:
+Generates complete core-flow component with:
   - Order status flow (pending → confirmed → shipped)
   - Payment integration with exact field names
   - Cart-to-Order conversion

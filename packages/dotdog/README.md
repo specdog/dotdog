@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/npm/l/dotdog)](https://github.com/specdog/dotdog/blob/main/LICENSE)
 [![CI](https://github.com/specdog/dotdog/actions/workflows/test.yml/badge.svg)](https://github.com/specdog/dotdog/actions)
 
-> **Feed the dog. Ship with specs.** Write .dog specs. Dog checks them. AI agents fetch them.
+> **Feed the dog. Ship with specs.** Write `.dog` specs, map repos into `.dag` graphs, and expose single-repo or N-repo workspaces to agents.
 
 ## Install
 
@@ -18,9 +18,19 @@ Requires Node.js >= 20.
 ## Quick Start
 
 ```bash
-dotdog init my-project     # scaffold a spec genome
-dotdog validate            # score completeness (0-100%)
-dotdog analyze             # deep analysis : gaps, suggestions, entity audit
+dotdog init my-project      # scaffold a spec workspace
+dotdog validate             # score completeness (0-100%)
+dotdog analyze              # deep analysis: gaps, suggestions, entity audit
+```
+
+For an existing multi-repo product:
+
+```bash
+dotdog workspace init --id example-workspace
+dotdog workspace add ../example-service --alias example-service --role api
+dotdog workspace add ../example-interface --alias example-interface --role web
+dotdog workspace validate
+dotdog workspace graph --json
 ```
 
 ## Commands
@@ -32,18 +42,24 @@ dotdog analyze             # deep analysis : gaps, suggestions, entity audit
 | `dotdog parse <file>` | Parse a `.dog` file into sections. |
 | `dotdog compile [dir]` | Compile `.dog` files into a `.dag` graph (JSON). |
 | `dotdog visualize [dir]` | Output Mermaid graph from `.dag`. `--save` writes `.md` for GitHub rendering. |
-| `dotdog serve [dir]` | Start MCP server over stdio. AI agents query specs without hallucination. |
+| `dotdog serve [dir]` | Start MCP server over stdio. AI agents query specs and workspace metadata without hallucination. |
+| `dotdog workspace init --id <id>` | Create `.doghouse/workspace.json` for one repo or a product workspace. |
+| `dotdog workspace add <path>` | Add a repository to a workspace with `--alias` and `--role`. |
+| `dotdog workspace list` | List workspace repos and groups. |
+| `dotdog workspace validate` | Validate workspace aliases, paths, groups, and edges. |
+| `dotdog workspace graph` | Emit deterministic workspace graph JSON. |
+| `dotdog map [dir]` | Inspect an existing repo and generate graph-ready `.dog` facts plus `repo.dag`. |
 | `dotdog staleness [dir]` | Detect drift between spec and reality. Compares plan.dog tasks against code. |
 | `dotdog generate [dir]` | Generate missing spec files from SPEC.dog (data-model, COPY, INDEX). |
 | `dotdog simulate <scenario>` | Run a simulation scenario. Reads SPEC.dog scenarios, checks pre/postconditions. |
-| `dotdog init <project>` | Scaffold a new spec genome project with templates. |
+| `dotdog init <project>` | Scaffold a new spec workspace project with templates. |
 | `dotdog list` | List all projects and their `.dog` file counts. |
 
 ## File Formats
 
-### `.dog` : Human-Written Spec Genome
+### `.dog` : Human-Written Source Spec
 
-Markdown prose + YAML structured blocks. Free and open source. Define entities, relationships, events, predictions, and copy in a single format that both humans and parsers understand.
+Markdown prose + YAML structured blocks. Free and open source. Define entities, relationships, events, predictions, implementation facts, and copy in a single format that both humans and parsers understand.
 
 ```markdown
 ### Entity: User
@@ -71,7 +87,7 @@ JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a
 
 ## MCP Server : AI Agent Integration
 
-`dotdog serve` exposes specs to any MCP-compatible AI agent over stdio. Six tools:
+`dotdog serve` exposes specs and workspace metadata to any MCP-compatible AI agent over stdio.
 
 | Tool | Description |
 |------|-------------|
@@ -81,8 +97,9 @@ JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a
 | `schema` | Property definitions only : zero prose, agent-optimized |
 | `summary` | Node count, edge count, file count, compile time |
 | `listProjects` | Array of project names |
+| `workspace.list` | Structured workspace metadata with repos, groups, and `trustedAsInstruction: false` |
 
-Agent workflow: `listProjects` → `getEntity` → `traverse` graph.
+Agent workflow: `workspace.list` → `listProjects` → `getEntity` → `traverse` graph.
 
 ## Dogfood
 
@@ -117,7 +134,7 @@ cp -r extensions/vscode ~/.vscode/extensions/dotdog
 
 ## Spec-Driven Development
 
-dotdog is built for SDD. Write your spec first. Validate it. Compile it. Let AI agents query it. The spec is the source of truth.
+dotdog is built for SDD. Write your spec first, or map an existing repo/workspace. Validate it. Compile it. Let AI agents query it. The spec and graph are the source of truth.
 
 ```
 spec → validate → compile → serve → AI agent queries

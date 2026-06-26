@@ -9,21 +9,22 @@
 [![Install in VS Code](https://img.shields.io/badge/Install_in_VS_Code-0098FF?logo=visualstudiocode)](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522dotdog%2522%252C%2522command%2522%253A%2522npx%2522%252C%2522args%2522%253A%255B%2522-y%2522%252C%2522dotdog%2540latest%2522%252C%2522serve%2522%255D%257D)
 [![Install in Cursor](https://img.shields.io/badge/Install_in_Cursor-1a1a1a?logo=cursor)](https://cursor.com/install-mcp?name=dotdog&config=%7B%22command%22%3A%22npx%20-y%20dotdog%40latest%20serve%22%7D)
 
-> **Spec-driven design for agent-ready projects.** Turn plans or existing repos into structured `.dog` specs, validate them, compile them into `.dag` graphs, and let agents query real project structure instead of guessing.
+> **Spec-driven design for agent-ready projects and workspaces.** Turn plans, repos, or multi-repo products into structured `.dog` specs, compile `.dag` graphs, and let agents query real project structure instead of guessing.
 
 ## What dotdog does
 
-dotdog is a spec-driven design toolchain.
+dotdog is a spec-driven design toolchain for single repos, monorepos, and polyrepo workspaces.
 
-It supports two starting points:
+It supports three starting points:
 
 1. **Empty project** — create a spec foundation before implementation.
-2. **Existing project** — map the current repo into a structured spec workspace.
+2. **Existing project** — map the current repo into structured graph facts.
+3. **Workspace product** — describe a product made from N repositories with `.doghouse/workspace.json`.
 
 The core flow:
 
 ```text
-plan -> spec workspace -> validation -> implementation graph -> agent execution
+plan -> spec workspace -> validation -> repo/workspace graph -> agent execution
 ```
 
 `.dog` files are the human-readable source specs. `.dag` files are compiled implementation graphs for agents and tools.
@@ -41,10 +42,20 @@ Requires Node.js >= 20 or Bun >= 1.3.
 ## Quick Start
 
 ```bash
-dotdog init my-project     # create a spec workspace
-dotdog validate            # check spec completeness
-dotdog compile             # build the .dag implementation graph
-dotdog serve               # expose the graph to MCP-compatible agents
+dotdog init my-project      # create a spec workspace
+dotdog validate             # check spec completeness
+dotdog compile              # build the .dag implementation graph
+dotdog serve                # expose the graph to MCP-compatible agents
+```
+
+For an existing product or organization workspace:
+
+```bash
+dotdog workspace init --id example-workspace
+dotdog workspace add ../example-service --alias example-service --role api
+dotdog workspace add ../example-interface --alias example-interface --role web
+dotdog workspace validate
+dotdog workspace graph --json
 ```
 
 ## What init creates
@@ -92,6 +103,40 @@ dotdog validate
 dotdog compile
 ```
 
+## Workspaces for N repos
+
+A Dotdog workspace is a product boundary. It can contain one repo, a monorepo, or N separate repositories.
+
+Workspace metadata lives in:
+
+```text
+.doghouse/workspace.json
+```
+
+Example:
+
+```json
+{
+  "version": 1,
+  "workspace": { "id": "example-workspace", "name": "example-workspace" },
+  "repos": [
+    { "alias": "example-service", "role": "api", "path": "../example-service" },
+    { "alias": "example-interface", "role": "web", "path": "../example-interface" }
+  ],
+  "groups": [],
+  "edges": []
+}
+```
+
+The workspace graph emits repo-qualified facts so humans and agents can distinguish where a fact came from:
+
+```text
+example-service:src/routes/core-flow.ts
+example-interface:src/features/core-flow/index.ts
+```
+
+No manifest is required for single-repo projects; Dotdog treats the current repo as a one-repo workspace by default.
+
 ## Repo mapping direction
 
 dotdog should not only scaffold empty projects. It should also map existing repos.
@@ -121,7 +166,13 @@ See [Spec-Driven Repo Mapping](docs/spec-driven-repo-mapping.md) for the formal 
 | `dotdog tokens [dir]` | Count tokens in `.dog` files and compare to compiled `.dag` savings. |
 | `dotdog index [dir]` | Build search index for semantic queries across compiled specs. |
 | `dotdog search <query>` | Semantic search across compiled specs using the search index. |
-| `dotdog serve [dir]` | Start MCP server over stdio. AI agents query specs without hallucination. |
+| `dotdog serve [dir]` | Start MCP server over stdio. AI agents query specs and workspace metadata without hallucination. |
+| `dotdog workspace init --id <id>` | Create `.doghouse/workspace.json` for a repo or product workspace. |
+| `dotdog workspace add <path>` | Add a repository to the workspace manifest with `--alias` and `--role`. |
+| `dotdog workspace list` | List workspace repos and groups. Use `--json` for structured output. |
+| `dotdog workspace validate` | Validate workspace manifest aliases, paths, groups, and edges. |
+| `dotdog workspace graph` | Emit deterministic workspace graph JSON. |
+| `dotdog map [dir]` | Inspect an existing repo and generate graph-ready `.dog` facts plus `repo.dag`. |
 | `dotdog simulate <scenario>` | Walk through a scenario. Reads SPEC.dog scenarios, checks pre/postconditions. |
 | `dotdog predictions [dir]` | List all predictions with status (pending, correct, wrong, partial). |
 | `dotdog resolve <name>` | Mark a prediction as correct, wrong, or partial with evidence. |
@@ -139,7 +190,7 @@ Planned:
 | Command | Description |
 |---------|-------------|
 | `dotdog init <project> --map` | Create a spec workspace and seed it from the current repo. |
-| `dotdog map [dir]` | Inspect an existing repo and generate graph-ready `.dog` facts. |
+| Cross-repo trace/search | Infer relationships across workspace repos beyond explicit manifest edges. |
 
 ## File Formats
 
@@ -174,11 +225,11 @@ JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a
 Example graph facts:
 
 ```text
-CheckoutPage renders CartSummary
-CheckoutPage calls POST /api/checkout
-POST /api/checkout writes orders
-POST /api/checkout depends_on STRIPE_SECRET_KEY
-orders implemented_by prisma/schema.prisma
+CoreFlowPage renders StatusPanel
+CoreFlowPage calls POST /api/core-flow
+POST /api/core-flow writes records
+POST /api/core-flow depends_on SERVICE_TOKEN
+records implemented_by prisma/schema.prisma
 ```
 
 ## MCP Server : AI Agent Integration
@@ -193,11 +244,12 @@ orders implemented_by prisma/schema.prisma
 | `schema` | Property definitions only : zero prose, agent-optimized |
 | `summary` | Node count, edge count, file count, compile time |
 | `listProjects` | Array of project names |
+| `workspace.list` | Structured workspace metadata with repos, groups, and `trustedAsInstruction: false` |
 
 Agent workflow:
 
 ```text
-listProjects -> getEntity -> traverse graph
+workspace.list -> listProjects -> getEntity -> traverse graph
 ```
 
 ## Dogfood

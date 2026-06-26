@@ -1,19 +1,14 @@
 ---
 layout: default
-title: "dotdog — Spec-driven development CLI"
-description: "Write structured specs. Validate completeness. Compile to graphs. AI agents query via MCP. No hallucination."
+title: "dotdog — CLI and MCP tooling | specdog"
+description: "dotdog CLI and MCP tooling for .dog specs, .dag graphs, repo mapping, and multi-repo workspaces."
 ---
 
 
 # dotdog
 
-Current public surfaces:
-- [specdog site](https://specdog.github.io)
-- [blog](https://specdog.github.io/blog)
-- [for agents](https://specdog.github.io/agents)
-- [github discovery](https://specdog.github.io/github)
 
-> The CLI tool that gives AI coding agents a brain.
+> CLI and MCP tooling for structured `.dog` specs, compiled `.dag` graphs, repo mapping, and multi-repo workspaces.
 
 AI agents are everywhere now — in your editor, your terminal, your CI pipeline. They know every framework and every API. But they do not know *your* project. They hallucinate entity names, invent relationships, and miss required fields because they are reading prose and guessing.
 
@@ -60,6 +55,20 @@ You write specs before code. Five minutes to set up. Zero configuration.
 | Validate | `dotdog validate` | Score completeness. Find missing entities and broken links |
 | Compile | `dotdog compile` | Build a positional DAG graph — 94% smaller, optimized for LLM context |
 | Expose | `dotdog serve` | Start an MCP server. AI agents query via six structured tools |
+
+## Observed workspace graph
+
+Dotdog can also observe an existing repo or multi-repo workspace and write deterministic graph artifacts:
+
+```bash
+dotdog observe
+dotdog ask "which files define routes?"
+dotdog drift
+```
+
+`observe` writes `.doghouse/observed.json`, `.doghouse/facts.jsonl`, and `.doghouse/workspace.dag`. `ask` queries those facts without an LLM dependency. `drift` reports stale or missing observed references.
+
+Read more: [Observed Workspace Graphs](blog/observed-workspace-graphs).
 
 ## For AI agents
 

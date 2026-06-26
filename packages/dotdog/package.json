@@ -48,6 +48,7 @@
     "url": "https://github.com/specdog/dotdog/issues"
   },
   "scripts": {
-    "lint": "bun run --check src/"
+    "lint": "bun run --check src/",
+    "build": "bun build src/cli.ts --outdir dist --target node"
   }
 }

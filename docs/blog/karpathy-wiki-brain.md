@@ -54,7 +54,7 @@ Entity: Payment
     → Webhook: triggers
 
 Entity: Customer
-  Properties: email (string), payment_methods (array), billing_address (object)
+  Properties: email (string), display_name (string), preferences (object)
   States: active → suspended → deleted
   Relationships:
     → Payment: initiates

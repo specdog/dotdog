@@ -72,7 +72,7 @@ describe('regression', () => {
     const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-layers-'));
     try {
       mkdirSync(join(dir, '.doghouse', 'semantic'), { recursive: true });
-      writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'example-web-app', version: '1.0.0' }, null, 2));
+      writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'example-interface-app', version: '1.0.0' }, null, 2));
       writeFileSync(join(dir, 'railway.json'), JSON.stringify({ startCommand: 'npm start' }, null, 2));
       writeFileSync(join(dir, '.doghouse', 'semantic', 'deployment.dog'), [
         '## Deployment',

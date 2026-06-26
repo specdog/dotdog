@@ -2,7 +2,7 @@
 
 ## Product
 
-An online store. Customers browse products, add to cart, checkout, and track orders.
+An online store. Customers browse products, add to cart, core flow, and track records.
 
 ## What the User Sees
 
@@ -19,10 +19,10 @@ An online store. Customers browse products, add to cart, checkout, and track ord
 |  [Add to Cart]                           |
 +------------------------------------------+
 
-### Screen: Checkout
+### Screen: Core Flow
 
 +------------------------------------------+
-|  Checkout                                |
+|  Core Flow                                |
 |------------------------------------------|
 |  Shipping: Alex Smith                    |
 |  123 Main St, NY 10001                   |

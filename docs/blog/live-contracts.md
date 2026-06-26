@@ -22,7 +22,7 @@ That's it. One command. dotdog scans your `.dog` files for `type: endpoint` enti
   ✓ memory-api
   ✓ user-api
   ⚠ search-api: https://backup.search.sh (backup, primary failed)
-  ✗ billing-api: https://api.billing.sh — missing fields: invoice_count
+  ✗ status-api: https://api.example.test — missing fields: status_code
 
   4 endpoints: 2 passed, 1 degraded, 1 failed
 ```

@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { renderRepositoryDag } from '../dag/repoWorld';
+import { stableId } from '../dag/schema';
 import { isIgnoredRepoPath } from '../workspace/paths';
 
 export type RepoMapFact = {
@@ -17,6 +18,18 @@ export type RepoMapEdge = {
   cardinality?: string;
 };
 
+export type GraphFact = {
+  id: string;
+  subject: string;
+  predicate: string;
+  object: string;
+  repo?: string;
+  file?: string;
+  line?: number;
+  confidence: 'explicit' | 'compiled' | 'inferred';
+  source: 'spec' | 'code' | 'manifest' | 'package';
+};
+
 export type RepoMap = {
   facts: RepoMapFact[];
   edges: RepoMapEdge[];
@@ -26,8 +39,10 @@ export type RepoMap = {
 export type RepoMapWriteResult = {
   file: string;
   dagFile: string;
+  factsFile: string;
   facts: number;
   edges: number;
+  observedFacts: number;
   scanned: number;
 };
 
@@ -198,6 +213,48 @@ function dogString(value: string): string {
   return String(value).replace(/`/g, "'").trim();
 }
 
+function graphFactSource(fact: RepoMapFact): GraphFact['source'] {
+  if (fact.type === 'package') return 'package';
+  if (fact.type === 'manifest' || fact.type === 'lockfile' || fact.type === 'deployment_config') return 'manifest';
+  return 'code';
+}
+
+export function toGraphFacts(map: RepoMap, repo?: string): GraphFact[] {
+  const facts: GraphFact[] = [];
+
+  for (const fact of map.facts) {
+    const file = fact.properties?.path;
+    facts.push({
+      id: stableId('fact', repo || 'repo', fact.name, 'is', fact.type),
+      subject: fact.name,
+      predicate: 'is',
+      object: fact.type,
+      ...(repo ? { repo } : {}),
+      ...(file ? { file } : {}),
+      confidence: 'compiled',
+      source: graphFactSource(fact),
+    });
+  }
+
+  for (const edge of map.edges) {
+    facts.push({
+      id: stableId('fact', repo || 'repo', edge.source, edge.verb, edge.target),
+      subject: edge.source,
+      predicate: edge.verb,
+      object: edge.target,
+      ...(repo ? { repo } : {}),
+      confidence: 'compiled',
+      source: 'code',
+    });
+  }
+
+  return facts.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+export function renderGraphFactsJsonl(facts: GraphFact[]): string {
+  return facts.map((fact) => JSON.stringify(fact)).join('\n') + (facts.length ? '\n' : '');
+}
+
 export function renderRepoMapDog(project: string, root: string, map: RepoMap): string {
   const lines: string[] = [];
   lines.push('# Repo Map');
@@ -250,15 +307,20 @@ export function writeRepoMap(targetDir: string, projectName: string, specDir: st
 
   const outFile = join(specDir, 'repo-map.dog');
   const dagFile = join(specDir, 'repo.dag');
+  const factsFile = join(specDir, 'facts.jsonl');
+  const observedFacts = toGraphFacts(map, projectName);
 
   writeFileSync(outFile, renderRepoMapDog(projectName, targetDir, map));
   writeFileSync(dagFile, renderRepositoryDag(projectName, targetDir, map));
+  writeFileSync(factsFile, renderGraphFactsJsonl(observedFacts));
 
   return {
     file: outFile,
     dagFile,
+    factsFile,
     facts: map.facts.length,
     edges: map.edges.length,
+    observedFacts: observedFacts.length,
     scanned: map.files.length,
   };
 }
