@@ -1,4 +1,3 @@
-theme: jekyll-theme-minimal
 title: dotdog
 description: CLI tool for structured software specs. Validate .dog files, compile .dag graphs, query via MCP.
 logo: /assets/dog.svg?v=2

@@ -1,19 +1,14 @@
 ---
 layout: default
-title: "dotdog — Spec-driven development CLI"
-description: "Write structured specs. Validate completeness. Compile to graphs. AI agents query via MCP. No hallucination."
+title: "dotdog — CLI and MCP tooling | specdog"
+description: "dotdog CLI and MCP tooling for .dog specs, .dag graphs, repo mapping, and multi-repo workspaces."
 ---
 
 
 # dotdog
 
-Current public surfaces:
-- [specdog site](https://specdog.github.io)
-- [blog](https://specdog.github.io/blog)
-- [for agents](https://specdog.github.io/agents)
-- [github discovery](https://specdog.github.io/github)
 
-> The CLI tool that gives AI coding agents a brain.
+> CLI and MCP tooling for structured `.dog` specs, compiled `.dag` graphs, repo mapping, and multi-repo workspaces.
 
 AI agents are everywhere now — in your editor, your terminal, your CI pipeline. They know every framework and every API. But they do not know *your* project. They hallucinate entity names, invent relationships, and miss required fields because they are reading prose and guessing.
 
