@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.10 — 2026-06-27
+
+- Add `dotdog audit <dag...>` for format-agnostic DAG readability checks
+- Support `--require-kind` and `--json` for CI-friendly graph assertions
+
 ## 0.8.8 — 2026-06-21
 
 - Publish repo-world CLI surface with `map`, `query`, and `trace`

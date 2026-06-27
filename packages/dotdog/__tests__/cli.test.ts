@@ -134,6 +134,37 @@ describe('CLI', () => {
     }
   });
 
+  test('audit reports DAG shape as JSON', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-audit-'));
+    try {
+      setupTempProject(dir, 'testproj');
+      await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts compile`.quiet();
+      const out = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts audit --require-kind entity --json projects/testproj/testproj.dag`.text();
+      const result = JSON.parse(out);
+
+      expect(result.ok).toBe(true);
+      expect(result.nodeCount).toBeGreaterThan(0);
+      expect(result.kinds.entity).toBeGreaterThan(0);
+      expect(result.missingKinds).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('audit fails when required kind is missing', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-audit-missing-'));
+    try {
+      setupTempProject(dir, 'testproj');
+      await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts compile`.quiet();
+      const result = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts audit --require-kind missing-kind --json projects/testproj/testproj.dag`.nothrow().quiet();
+
+      expect(result.exitCode).toBe(1);
+      expect(JSON.parse(result.stdout.toString()).missingKinds).toEqual(['missing-kind']);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test('serve returns valid getEntity response', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-serve-'));
     try {

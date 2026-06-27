@@ -34,6 +34,73 @@ function normalizeDag(dag: any): any {
   return dag;
 }
 
+function dagNodes(dag: any): any[] {
+  if (Array.isArray(dag)) return Array.isArray(dag[2]) ? dag[2] : [];
+  if (Array.isArray(dag.n)) return dag.n;
+  if (Array.isArray(dag.nodes)) return dag.nodes;
+  return [];
+}
+
+function dagNodeKind(node: any): string {
+  if (Array.isArray(node)) {
+    if (node[1] === 'p') return 'prediction';
+    if (node[1] === 'i') return 'infra';
+    if (node[1] === 'e') {
+      const props = Array.isArray(node[2]) ? node[2] : [];
+      const kindIndex = props.indexOf('kind');
+      if (kindIndex >= 0 && props[kindIndex + 1]) return String(props[kindIndex + 1]);
+      return 'entity';
+    }
+    return String(node[2] || node[1] || 'unknown');
+  }
+
+  return String(node.kind || node.type || node.t || node.g || 'unknown');
+}
+
+function dagEdges(dag: any, nodes: any[]): any[] {
+  if (!Array.isArray(dag) && Array.isArray(dag.edges)) return dag.edges;
+  if (!Array.isArray(dag) && Array.isArray(dag.e)) return dag.e;
+
+  const edges: any[] = [];
+  for (const node of nodes) {
+    if (Array.isArray(node)) {
+      const outEdges = node[4] && node[1] !== 'e' && node[1] !== 'i' && node[1] !== 'p'
+        ? node[6] || []
+        : node[4] || node[6] || [];
+      edges.push(...outEdges);
+    } else if (Array.isArray(node.edges)) {
+      edges.push(...node.edges);
+    } else if (Array.isArray(node.es)) {
+      edges.push(...node.es);
+    }
+  }
+  return edges;
+}
+
+function auditDagFile(path: string, requiredKinds: string[] = []) {
+  const dag = JSON.parse(readFileSync(path, 'utf-8'));
+  const nodes = dagNodes(dag);
+  const edges = dagEdges(dag, nodes);
+  const kinds = new Map<string, number>();
+
+  for (const node of nodes) {
+    const kind = dagNodeKind(node);
+    kinds.set(kind, (kinds.get(kind) || 0) + 1);
+  }
+
+  const missingKinds = requiredKinds.filter(kind => !kinds.has(kind));
+  const result = {
+    path,
+    nodeCount: nodes.length,
+    edgeCount: edges.length,
+    kinds: Object.fromEntries([...kinds.entries()].sort(([a], [b]) => a.localeCompare(b))),
+    missingKinds,
+    ok: nodes.length > 0 && missingKinds.length === 0,
+  };
+
+  return result;
+}
+
 function resolvePath(p: string): string {
   return resolveUserPath(p, process.cwd());
 }
@@ -190,6 +257,32 @@ program.command('parse <file>').action((f) => {
   console.log(chalk.bold(`\n${s.length} sections`));
   for (const sec of s) console.log(`  ${sec.heading.padEnd(30)} ${sec.content.length} chars`);
 });
+
+program.command('audit <files...>')
+  .description('Audit compiled .dag files for basic readability and required node kinds')
+  .option('--require-kind <kind...>', 'Require at least one node of each kind')
+  .option('--json', 'Output JSON')
+  .action((files: string[], opts: { requireKind?: string[]; json?: boolean }) => {
+    const requiredKinds = opts.requireKind || [];
+    const results = files.map(file => auditDagFile(resolvePath(file), requiredKinds));
+
+    if (opts.json) {
+      console.log(JSON.stringify(files.length === 1 ? results[0] : results, null, 2));
+    } else {
+      for (const result of results) {
+        const status = result.ok ? chalk.green('✓') : chalk.red('✗');
+        console.log(`${status} ${result.path}`);
+        console.log(chalk.gray(`  ${result.nodeCount} nodes, ${result.edgeCount} edges`));
+        const kindSummary = Object.entries(result.kinds)
+          .map(([kind, count]) => `${kind}:${count}`)
+          .join(', ');
+        if (kindSummary) console.log(chalk.gray(`  kinds: ${kindSummary}`));
+        if (result.missingKinds.length) console.log(chalk.red(`  missing kinds: ${result.missingKinds.join(', ')}`));
+      }
+    }
+
+    if (results.some(result => !result.ok)) process.exit(1);
+  });
 
 // Compact injection helpers — produce token-optimized text for collar's DAG context
 const COMPACT_CARD: Record<string,string> = {'1:1':'','1:N':'1m','1:many':'1m','N:1':'m1','many:1':'m1','N:M':'mm','many:many':'mm'};
