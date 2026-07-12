@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.11 — 2026-07-12
+
+- Keep generated `.doghouse` graph artifacts out of Git by default
+- Return portable relative paths from workspace CLI, graph, and MCP output while retaining `cwd` as a compatibility alias
+- Limit stdio MCP child processes to an explicit minimal environment
+- Remove the unused generic workspace process runner
+
 ## 0.8.10 — 2026-06-27
 
 - Add `dotdog audit <dag...>` for format-agnostic DAG readability checks

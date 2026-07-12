@@ -1,4 +1,5 @@
 import type { WorkspaceContext } from './types';
+import path from 'path';
 
 export interface WorkspaceGraphNode {
   id: string;
@@ -29,12 +30,12 @@ export interface WorkspaceGraph {
 export function buildWorkspaceGraph(context: WorkspaceContext): WorkspaceGraph {
   const workspaceId = context.config.workspace.id;
   const workspaceNodeId = `workspace:${workspaceId}`;
-  const nodes: WorkspaceGraphNode[] = [{ id: workspaceNodeId, kind: 'workspace', label: workspaceId, path: context.workspaceRoot }];
+  const nodes: WorkspaceGraphNode[] = [{ id: workspaceNodeId, kind: 'workspace', label: workspaceId, path: '.' }];
   const edges: WorkspaceGraphEdge[] = [];
 
   for (const repo of [...context.repos].sort((a, b) => a.alias.localeCompare(b.alias))) {
     const repoNodeId = `repo:${repo.alias}`;
-    nodes.push({ id: repoNodeId, kind: 'repo', label: repo.alias, repoAlias: repo.alias, path: repo.cwd, metadata: { role: repo.role || 'unknown' } });
+    nodes.push({ id: repoNodeId, kind: 'repo', label: repo.alias, repoAlias: repo.alias, path: portableWorkspacePath(context, repo.cwd), metadata: { role: repo.role || 'unknown' } });
     edges.push({ id: `${workspaceNodeId}:contains:${repoNodeId}`, from: workspaceNodeId, to: repoNodeId, type: 'contains', confidence: 'explicit' });
   }
 
@@ -57,6 +58,10 @@ export function buildWorkspaceGraph(context: WorkspaceContext): WorkspaceGraph {
     nodes: nodes.sort((a, b) => graphNodeRank(a).localeCompare(graphNodeRank(b))),
     edges: edges.sort((a, b) => `${a.from}:${a.to}:${a.type}`.localeCompare(`${b.from}:${b.to}:${b.type}`)),
   };
+}
+
+export function portableWorkspacePath(context: WorkspaceContext, absolutePath: string): string {
+  return path.relative(context.workspaceRoot, absolutePath).replace(/\\/g, '/') || '.';
 }
 
 function graphNodeRank(node: WorkspaceGraphNode): string {

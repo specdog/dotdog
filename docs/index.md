@@ -54,7 +54,7 @@ You write specs before code. Five minutes to set up. Zero configuration.
 | Describe | edit `.dog` files | Define entities, properties, states, lifecycles, relationships |
 | Validate | `dotdog validate` | Score completeness. Find missing entities and broken links |
 | Compile | `dotdog compile` | Build a positional DAG graph — 94% smaller, optimized for LLM context |
-| Expose | `dotdog serve` | Start an MCP server. AI agents query via six structured tools |
+| Expose | `dotdog serve` | Start a local stdio MCP server. AI agents query via eight structured tools |
 
 ## Observed workspace graph
 
@@ -68,13 +68,15 @@ dotdog drift
 
 `observe` writes `.doghouse/observed.json`, `.doghouse/facts.jsonl`, and `.doghouse/workspace.dag`. `ask` queries those facts without an LLM dependency. `drift` reports stale or missing observed references.
 
+Generated `.doghouse` graphs and observed facts are ignored by Git by default because they may contain repository metadata. Workspace output uses repository-relative paths.
+
 Read more: [Observed Workspace Graphs](blog/observed-workspace-graphs).
 
 ## For AI agents
 
-Six MCP tools for structured queries — no scanning, no guessing:
+Eight MCP tools for structured queries — no scanning, no guessing:
 
-`getEntity` · `traverse` · `search` · `schema` · `summary` · `listProjects`
+`getEntity` · `traverse` · `search` · `schema` · `summary` · `listProjects` · `workspace.list` · `infraVerify`
 
 ```json
 {
@@ -86,6 +88,8 @@ Six MCP tools for structured queries — no scanning, no guessing:
   }
 }
 ```
+
+The bundled server uses stdio, opens no TCP listener, and writes no query logs. Secure any external gateway separately.
 
 AI agents: read the [for agents · dogfood](https://specdog.github.io/agents) page before working with dotdog projects.
 

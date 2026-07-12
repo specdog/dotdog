@@ -8,7 +8,9 @@ description: "AI coding agents and tools that work with dotdog."
 
 # Integrations
 
-dotdog serves specs to any MCP-compatible agent. Six tools: `getEntity`, `traverse`, `search`, `schema`, `summary`, `listProjects`.
+dotdog serves specs to any MCP-compatible agent. Eight tools: `getEntity`, `traverse`, `search`, `schema`, `summary`, `listProjects`, `workspace.list`, and `infraVerify`.
+
+The bundled server is local-only stdio: it opens no TCP listener and writes no query logs. Workspace metadata uses repository-relative paths. Generated `.doghouse` graphs and observed facts are ignored by Git by default.
 
 ## Claude Code
 
@@ -111,6 +113,8 @@ servers:
     env:
       HOME: "/home/user"
 ```
+
+The gateway changes the security boundary. Require authentication, bind only to intended interfaces, and grant access only to the repositories the gateway must serve.
 
 ## Homebrew
 
