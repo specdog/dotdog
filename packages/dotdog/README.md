@@ -48,6 +48,7 @@ dotdog workspace graph --json
 | `dotdog workspace list` | List workspace repos and groups. |
 | `dotdog workspace validate` | Validate workspace aliases, paths, groups, and edges. |
 | `dotdog workspace graph` | Emit deterministic workspace graph JSON. |
+| `dotdog path <from> <to>` | Find a bounded shortest path in a repo-world DAG. |
 | `dotdog map [dir]` | Inspect an existing repo and generate graph-ready `.dog` facts plus `repo.dag`. |
 | `dotdog staleness [dir]` | Detect drift between spec and reality. Compares plan.dog tasks against code. |
 | `dotdog generate [dir]` | Generate missing spec files from SPEC.dog (data-model, COPY, INDEX). |
@@ -99,6 +100,7 @@ JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a
 | `listProjects` | Array of project names |
 | `workspace.list` | Structured workspace metadata with repos, groups, and `trustedAsInstruction: false` |
 | `infraVerify` | Read-only checks for declared infrastructure resources |
+| `path` | Bounded shortest connecting subgraph between two entities |
 
 Agent workflow: `workspace.list` → `listProjects` → `getEntity` → `traverse` graph.
 

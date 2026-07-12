@@ -182,11 +182,12 @@ describe('CLI', () => {
       proc.stdin.write(JSON.stringify({jsonrpc:'2.0',id:4,method:'tools/call',params:{name:'search',arguments:{q:'Node'}}})+'\n');
       proc.stdin.write(JSON.stringify({jsonrpc:'2.0',id:5,method:'tools/call',params:{name:'traverse',arguments:{from:'Node',depth:1}}})+'\n');
       proc.stdin.write(JSON.stringify({jsonrpc:'2.0',id:6,method:'tools/call',params:{name:'workspace.list',arguments:{}}})+'\n');
+      proc.stdin.write(JSON.stringify({jsonrpc:'2.0',id:7,method:'tools/call',params:{name:'path',arguments:{from:'Node',to:'Task'}}})+'\n');
       proc.stdin.end();
       const out = await new Response(proc.stdout).text();
       proc.kill();
       const lines = out.split('\n').filter(l => l.trim());
-      expect(lines.length).toBeGreaterThanOrEqual(6);
+      expect(lines.length).toBeGreaterThanOrEqual(7);
       const init = JSON.parse(lines[0]);
       expect(init.result).toBeDefined();
       const entity = JSON.parse(JSON.parse(lines[1]).result.content[0].text);
@@ -201,6 +202,9 @@ describe('CLI', () => {
       const workspace = JSON.parse(JSON.parse(lines[5]).result.content[0].text);
       expect(workspace.repos[0].path).toBe('.');
       expect(workspace.repos[0].cwd).toBe('.');
+      const pathResult = JSON.parse(lines[6]).result.structuredContent;
+      expect(pathResult.ok).toBe(true);
+      expect(pathResult.nodes.map((node: any) => node.label)).toEqual(['Node', 'Task']);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -268,6 +272,31 @@ describe('CLI', () => {
       const graph = JSON.parse(JSON.parse(lines[2]).result.content[0].text);
       expect(graph.nodes.some((node: any) => node.name === 'Deployment')).toBe(true);
       expect(graph.nodes.some((node: any) => node.edges.some((edge: string) => edge.startsWith('RailwayService:includes')))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('path returns a shortest repo-world path as JSON', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-path-'));
+    try {
+      const dagDir = join(dir, '.doghouse', 'compiled');
+      mkdirSync(dagDir, { recursive: true });
+      const dagFile = join(dagDir, 'repo.dag');
+      writeFileSync(dagFile, JSON.stringify({
+        version: '0.1', project: 'path-test', root: '.', generatedAt: '2026-01-01T00:00:00Z',
+        nodes: [
+          { id: 'symbol:user', kind: 'symbol', label: 'User Service', source: 'src/user.ts', confidence: 'certain' },
+          { id: 'symbol:db', kind: 'symbol', label: 'Database Pool', source: 'src/db.ts', confidence: 'likely' },
+        ],
+        edges: [{ id: 'user-calls-db', sourceId: 'symbol:user', targetId: 'symbol:db', verb: 'calls', confidence: 'certain' }],
+        predictions: [], unknowns: [],
+      }));
+      const out = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts path User Database --dag ${dagFile} --json`.text();
+      const result = JSON.parse(out);
+      expect(result.ok).toBe(true);
+      expect(result.hops).toBe(1);
+      expect(result.nodes[0].label).toBe('User Service');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
