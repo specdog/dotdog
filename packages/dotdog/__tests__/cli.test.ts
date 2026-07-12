@@ -301,4 +301,19 @@ describe('CLI', () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  test('design audits a compiled project as JSON', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-design-'));
+    try {
+      setupTempProject(dir, 'testproj');
+      await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts compile`.quiet();
+      const out = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts design --project testproj --json`.text();
+      const reports = JSON.parse(out);
+      expect(reports).toHaveLength(1);
+      expect(reports[0].project).toBe('testproj');
+      expect(reports[0].findings.every((finding: any) => finding.nextStep)).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

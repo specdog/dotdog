@@ -1,10 +1,11 @@
 # Changelog
 
-## 0.8.12 — unreleased
+## 0.8.13 — unreleased
 
 - Add bounded shortest-path queries through `dotdog path` and the MCP `path` tool
 - Resolve exact and full-token endpoint matches before safe fuzzy fallback
 - Return the connecting subgraph with confidence and safe origin metadata
+- Add `dotdog design` for deterministic greenfield data-model audits
 
 ## 0.8.11 — 2026-07-12
 

@@ -54,6 +54,7 @@ You write specs before code. Five minutes to set up. Zero configuration.
 | Describe | edit `.dog` files | Define entities, properties, states, lifecycles, relationships |
 | Validate | `dotdog validate` | Score completeness. Find missing entities and broken links |
 | Compile | `dotdog compile` | Build a positional DAG graph — 94% smaller, optimized for LLM context |
+| Design | `dotdog design` | Find missing data-model decisions and concrete next steps |
 | Expose | `dotdog serve` | Start a local stdio MCP server. AI agents query via nine structured tools |
 
 ## Observed workspace graph
