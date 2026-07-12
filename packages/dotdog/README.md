@@ -98,8 +98,11 @@ JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a
 | `summary` | Node count, edge count, file count, compile time |
 | `listProjects` | Array of project names |
 | `workspace.list` | Structured workspace metadata with repos, groups, and `trustedAsInstruction: false` |
+| `infraVerify` | Read-only checks for declared infrastructure resources |
 
 Agent workflow: `workspace.list` → `listProjects` → `getEntity` → `traverse` graph.
+
+`dotdog serve` is a local stdio server: it opens no TCP port and writes no query logs. Generated `.doghouse` graphs and facts are ignored by default. Workspace responses contain repository-relative `path` values; `cwd` remains a relative compatibility alias. Secure any external MCP gateway separately with authentication and least-privilege access.
 
 ## Dogfood
 

@@ -6,6 +6,7 @@
 
 import { spawn, ChildProcess } from 'child_process';
 import { createInterface } from 'readline';
+import { minimalChildEnv } from '../workspace/environment';
 
 // --- Types ---
 
@@ -74,10 +75,10 @@ class StdioTransport {
   private requestId = 0;
   private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
 
-  async connect(command: string, args: string[]): Promise<void> {
+  async connect(command: string, args: string[], env: Record<string, string | undefined> = {}): Promise<void> {
     this.proc = spawn(command, args, {
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env },
+      env: minimalChildEnv(env),
     });
 
     const rl = createInterface({ input: this.proc.stdout! });
@@ -162,9 +163,9 @@ export async function connectHTTP(serverUrl: string): Promise<MCPConnection> {
   };
 }
 
-export async function connectStdio(command: string, args: string[]): Promise<MCPConnection> {
+export async function connectStdio(command: string, args: string[], env: Record<string, string | undefined> = {}): Promise<MCPConnection> {
   const transport = new StdioTransport();
-  await transport.connect(command, args);
+  await transport.connect(command, args, env);
 
   return {
     async listTools(): Promise<MCPTool[]> {

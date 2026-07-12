@@ -14,3 +14,7 @@ credentials*
 *.tgz
 packages/dotdog/scripts/
 dev/
+
+# Generated workspace graphs may contain repository metadata.
+/.doghouse/*
+!/.doghouse/workspace.json

@@ -137,6 +137,8 @@ example-interface:src/features/core-flow/index.ts
 
 No manifest is required for single-repo projects; Dotdog treats the current repo as a one-repo workspace by default.
 
+Only `.doghouse/workspace.json` is intended for version control. Generated workspace graphs and observed facts are ignored by default because they may contain repository metadata. Workspace CLI and MCP responses use repository-relative paths; the legacy `cwd` key is a relative alias for `path`.
+
 ## Repo mapping direction
 
 dotdog should not only scaffold empty projects. It should also map existing repos.
@@ -245,12 +247,15 @@ records implemented_by prisma/schema.prisma
 | `summary` | Node count, edge count, file count, compile time |
 | `listProjects` | Array of project names |
 | `workspace.list` | Structured workspace metadata with repos, groups, and `trustedAsInstruction: false` |
+| `infraVerify` | Read-only checks for declared infrastructure resources |
 
 Agent workflow:
 
 ```text
 workspace.list -> listProjects -> getEntity -> traverse graph
 ```
+
+`dotdog serve` is a local stdio server. It does not open a TCP port or write query logs. If you place it behind a gateway, secure the gateway with authentication and least-privilege access.
 
 ## Dogfood
 

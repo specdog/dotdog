@@ -8,6 +8,7 @@ import * as readline from 'readline';
 import { parse } from './parser';
 import { resolveUserPath } from './workspace/paths';
 import { resolveWorkspace } from './workspace/resolver';
+import { portableWorkspacePath } from './workspace/graph';
 
 function resolvePath(p: string): string {
   return resolveUserPath(p, process.cwd());
@@ -130,10 +131,14 @@ export function serve(dir: string = '.'): void {
 
       if (name === 'workspace.list') {
         const workspace = resolveWorkspace(root, { requireManifest: false });
+        const repos = workspace.repos.map((repo) => {
+          const path = portableWorkspacePath(workspace, repo.cwd);
+          return { alias: repo.alias, role: repo.role, path, cwd: path };
+        });
         const data = {
           workspace: workspace.config.workspace,
           mode: workspace.mode,
-          repos: workspace.repos.map((repo) => ({ alias: repo.alias, role: repo.role, cwd: repo.cwd })),
+          repos,
           groups: workspace.config.groups || [],
           trustedAsInstruction: false,
           contentKind: 'workspace-metadata',

@@ -12,7 +12,7 @@ import { parse } from './parser';
 import { safeProjectName, writeRepoMap } from './map/repoMapper';
 import { formatQueryResult, formatTrace, loadWorldModel, queryWorldModel, traceWorldNode } from './dag/query';
 import { compileDotdogLayers } from './dag/layers';
-import { buildWorkspaceGraph } from './workspace/graph';
+import { buildWorkspaceGraph, portableWorkspacePath } from './workspace/graph';
 import { resolveWorkspace, WORKSPACE_MANIFEST } from './workspace/resolver';
 import { validateWorkspaceConfig } from './workspace/validator';
 
@@ -1852,13 +1852,17 @@ workspaceCmd
   .option('--json', 'print JSON')
   .action((opts) => {
     const context = resolveWorkspace(process.cwd(), { requireManifest: false });
-    const data = { workspace: context.config.workspace, mode: context.mode, repos: context.repos.map((repo) => ({ alias: repo.alias, role: repo.role, cwd: repo.cwd })), groups: context.config.groups || [] };
+    const repos = context.repos.map((repo) => {
+      const path = portableWorkspacePath(context, repo.cwd);
+      return { alias: repo.alias, role: repo.role, path, cwd: path };
+    });
+    const data = { workspace: context.config.workspace, mode: context.mode, repos, groups: context.config.groups || [] };
     if (opts.json) {
       console.log(JSON.stringify(data, null, 2));
       return;
     }
     console.log(`${data.workspace.id} (${data.mode})`);
-    for (const repo of data.repos) console.log(`  ${repo.alias}\t${repo.role || 'unknown'}\t${repo.cwd}`);
+    for (const repo of data.repos) console.log(`  ${repo.alias}\t${repo.role || 'unknown'}\t${repo.path}`);
     if (data.groups.length) console.log('\nGroups:');
     for (const group of data.groups) console.log(`  ${group.name}\t${group.repos.join(', ')}`);
   });

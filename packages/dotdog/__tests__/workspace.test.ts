@@ -6,6 +6,7 @@ import { buildWorkspaceGraph } from '../src/workspace/graph';
 import { resolveWorkspace } from '../src/workspace/resolver';
 import { validateWorkspaceConfig } from '../src/workspace/validator';
 import { isIgnoredRepoPath, resolveUserPath } from '../src/workspace/paths';
+import { minimalChildEnv } from '../src/workspace/environment';
 
 function fixtureWorkspace() {
   const root = mkdtempSync(path.join(tmpdir(), 'dotdog-workspace-'));
@@ -57,6 +58,7 @@ describe('workspace bridge', () => {
     expect(graph.workspace).toBe('example-workspace');
     expect(graph.nodes.map((node) => node.id)).toContain('repo:example-service');
     expect(graph.edges.map((edge) => edge.type)).toContain('http');
+    expect(graph.nodes.every((node) => !node.path || !path.isAbsolute(node.path))).toBe(true);
   });
 
   test('blocks parent path traversal and ignores secret paths', () => {
@@ -64,5 +66,27 @@ describe('workspace bridge', () => {
     expect(() => resolveUserPath('..', root)).toThrow();
     expect(isIgnoredRepoPath('.env')).toBe(true);
     expect(isIgnoredRepoPath('src/index.ts')).toBe(false);
+  });
+
+  test('child process environment excludes unrelated credentials', () => {
+    const env = minimalChildEnv({ RAILWAY_TOKEN: 'test-token' });
+    expect(env.RAILWAY_TOKEN).toBe('test-token');
+    expect(env.GITHUB_TOKEN).toBeUndefined();
+    expect(env.AWS_SECRET_ACCESS_KEY).toBeUndefined();
+  });
+
+  test('workspace list JSON does not expose absolute paths', () => {
+    const root = fixtureWorkspace();
+    const result = Bun.spawnSync([
+      process.execPath,
+      path.join(import.meta.dir, '../src/cli.ts'),
+      'workspace',
+      'list',
+      '--json',
+    ], { cwd: root });
+    expect(result.exitCode).toBe(0);
+    const output = JSON.parse(result.stdout.toString());
+    expect(output.repos.every((repo: any) => !path.isAbsolute(repo.path))).toBe(true);
+    expect(output.repos.every((repo: any) => repo.cwd === repo.path)).toBe(true);
   });
 });

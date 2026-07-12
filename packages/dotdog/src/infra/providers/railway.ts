@@ -25,7 +25,7 @@ async function verifyResource(resource: InfraResource): Promise<CheckResult> {
   // Try MCP via railway CLI
   let mcp: MCPConnection | null = null;
   try {
-    mcp = await connectStdio('railway', ['mcp']);
+    mcp = await connectStdio('railway', ['mcp'], { RAILWAY_TOKEN: token });
     const tools = await mcp.listTools();
 
     // Check for service-related tools
