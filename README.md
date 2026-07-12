@@ -151,6 +151,8 @@ frontend component -> API route -> backend handler -> schema -> database table -
 
 Target node types include files, directories, packages, frontend components, routes, pages, API endpoints, backend handlers, services, schemas, database tables, migrations, environment variables, cloud resources, CI workflows, tests, tasks, and specs.
 
+For greenfield work, run `dotdog design` after `dotdog compile`. It audits the compiled data model for stable identifiers, relationships, lifecycle, ownership, access patterns, and sensitive-data handling, then gives concrete next steps without inventing domain facts.
+
 Target edge types include imports, calls, renders, reads, writes, depends_on, implements, configured_by, deployed_by, tested_by, documented_by, and owned_by.
 
 See [Spec-Driven Repo Mapping](docs/spec-driven-repo-mapping.md) for the formal plan.
@@ -163,6 +165,7 @@ See [Spec-Driven Repo Mapping](docs/spec-driven-repo-mapping.md) for the formal 
 | `dotdog validate [dir]` | Score spec completeness. Checks file existence, entity descriptions, section counts. |
 | `dotdog compile [dir]` | Compile `.dog` files into a `.dag` graph for agents and tools. |
 | `dotdog analyze [dir]` | Deep analysis. Detects domain, stack, gaps with severity, entity quality audit. |
+| `dotdog design [dir]` | Audit compiled data models and emit actionable JSON with `--json`; use `--strict` in CI. |
 | `dotdog badge [dir]` | Generate a shields.io SVG badge showing token savings. |
 | `dotdog staleness [dir]` | Detect drift between spec and reality. Compares plan.dog tasks against code. |
 | `dotdog tokens [dir]` | Count tokens in `.dog` files and compare to compiled `.dag` savings. |

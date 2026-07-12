@@ -39,6 +39,7 @@ dotdog workspace graph --json
 |---------|-------------|
 | `dotdog validate [dir]` | Score spec completeness. Checks file existence, entity descriptions, section counts. |
 | `dotdog analyze [dir]` | Deep analysis. Detects domain, stack, gaps with severity, entity quality audit. |
+| `dotdog design [dir]` | Audit compiled data models for identifiers, relationships, lifecycle, ownership, access, and sensitive data. |
 | `dotdog parse <file>` | Parse a `.dog` file into sections. |
 | `dotdog compile [dir]` | Compile `.dog` files into a `.dag` graph (JSON). |
 | `dotdog visualize [dir]` | Output Mermaid graph from `.dag`. `--save` writes `.md` for GitHub rendering. |

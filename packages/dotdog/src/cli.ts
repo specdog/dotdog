@@ -13,6 +13,7 @@ import { safeProjectName, writeRepoMap } from './map/repoMapper';
 import { formatQueryResult, formatTrace, loadWorldModel, queryWorldModel, traceWorldNode } from './dag/query';
 import { compileDotdogLayers } from './dag/layers';
 import { shortestGraphPath, type PathDirection } from './graph/path';
+import { auditDesign } from './design/audit';
 import { buildWorkspaceGraph, portableWorkspacePath } from './workspace/graph';
 import { resolveWorkspace, WORKSPACE_MANIFEST } from './workspace/resolver';
 import { validateWorkspaceConfig } from './workspace/validator';
@@ -805,6 +806,40 @@ program.command('analyze [dir]').description('Analyze a spec project : score, ga
   if (!found) console.log(chalk.yellow('No spec projects found. Run: dotdog init <project>'));
   if (hasGaps) process.exit(1);
 });
+
+program.command('design [dir]')
+  .description('Audit compiled entity graphs for data-design gaps')
+  .option('-p, --project <name>', 'audit one project')
+  .option('--json', 'print stable JSON')
+  .option('--strict', 'fail on medium or high findings')
+  .action((d='.', opts) => {
+    const root = resolvePath(d);
+    const reports: any[] = [];
+    for (const dirName of ['projects', 'specs']) {
+      const dir = join(root, dirName);
+      if (!existsSync(dir)) continue;
+      for (const entry of readdirSync(dir, { withFileTypes: true }).filter((item) => item.isDirectory())) {
+        if (opts.project && opts.project !== entry.name) continue;
+        const dagFile = join(dir, entry.name, `${entry.name}.dag`);
+        if (!existsSync(dagFile)) continue;
+        const dag = JSON.parse(readFileSync(dagFile, 'utf-8'));
+        reports.push(auditDesign(dag, entry.name, relative(root, dagFile).replace(/\\/g, '/')));
+      }
+    }
+    reports.sort((a, b) => a.project.localeCompare(b.project));
+    if (opts.json) {
+      console.log(JSON.stringify(reports, null, 2));
+    } else if (!reports.length) {
+      console.log(chalk.yellow('No compiled project DAGs found. Run dotdog compile first.'));
+    } else {
+      for (const report of reports) {
+        console.log(chalk.bold(`\n  ${report.project} : ${report.entities} entities, ${report.relationships} relationships`));
+        if (!report.findings.length) console.log(chalk.green('  Design audit passed.'));
+        for (const item of report.findings) console.log(`  ${item.severity} ${item.code}${item.entity ? ` [${item.entity}]` : ''}: ${item.message}\n    next: ${item.nextStep}`);
+      }
+    }
+    if (opts.strict && reports.some((report) => report.summary.high > 0 || report.summary.medium > 0)) process.exitCode = 1;
+  });
 
 program.command('generate [dir]').description('Generate missing spec files from SPEC.dog').option('-p, --project <name>').action((d='.', opts) => {
   const dir = resolvePath(d);
