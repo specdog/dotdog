@@ -8,7 +8,7 @@ description: "AI coding agents and tools that work with dotdog."
 
 # Integrations
 
-dotdog serves specs to any MCP-compatible agent. Eight tools: `getEntity`, `traverse`, `search`, `schema`, `summary`, `listProjects`, `workspace.list`, and `infraVerify`.
+dotdog serves specs to any MCP-compatible agent. Nine tools: `getEntity`, `traverse`, `search`, `path`, `schema`, `summary`, `listProjects`, `workspace.list`, and `infraVerify`.
 
 The bundled server is local-only stdio: it opens no TCP listener and writes no query logs. Workspace metadata uses repository-relative paths. Generated `.doghouse` graphs and observed facts are ignored by Git by default.
 

@@ -9,6 +9,7 @@ import { parse } from './parser';
 import { resolveUserPath } from './workspace/paths';
 import { resolveWorkspace } from './workspace/resolver';
 import { portableWorkspacePath } from './workspace/graph';
+import { shortestGraphPath, type PathDirection } from './graph/path';
 
 function resolvePath(p: string): string {
   return resolveUserPath(p, process.cwd());
@@ -110,6 +111,7 @@ export function serve(dir: string = '.'): void {
       return { jsonrpc: '2.0', id, result: { tools: [
         { name: 'getEntity', description: 'Get entity: name, type, edges', inputSchema: { type: 'object', properties: { project: { type:'string' }, name: { type:'string' } }, required: ['name'] } },
         { name: 'traverse', description: 'BFS from node, return reachable nodes+edges', inputSchema: { type: 'object', properties: { project: { type:'string' }, from: { type:'string' }, depth: { type:'number', default: 2 }, verb: { type:'string' } }, required: ['from'] } },
+        { name: 'path', description: 'Find the shortest connecting path between two graph entities', inputSchema: { type: 'object', properties: { project: { type:'string' }, from: { type:'string' }, to: { type:'string' }, direction: { type:'string', enum: ['outgoing', 'incoming', 'any'], default: 'any' }, verb: { type:'string' }, maxHops: { type:'number', default: 8 } }, required: ['from', 'to'] } },
         { name: 'search', description: 'Find entities by name', inputSchema: { type: 'object', properties: { project: { type:'string' }, q: { type:'string' }, type: { type:'string' } }, required: ['q'] } },
         { name: 'listProjects', description: 'List loaded projects', inputSchema: { type: 'object', properties: {} } },
         { name: 'workspace.list', description: 'List workspace repos and groups', inputSchema: { type: 'object', properties: {} } },
@@ -193,6 +195,16 @@ export function serve(dir: string = '.'): void {
           }
         }
         return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({ nodes: result }) }] } };
+      }
+
+      if (name === 'path') {
+        if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
+        const pathResult = shortestGraphPath(dag, String(args.from || ''), String(args.to || ''), {
+          direction: (args.direction || 'any') as PathDirection,
+          verb: args.verb ? String(args.verb) : undefined,
+          maxHops: Number(args.maxHops || 8),
+        });
+        return { jsonrpc: '2.0', id, result: { structuredContent: pathResult, content: [{ type: 'text', text: JSON.stringify(pathResult) }] } };
       }
 
       if (name === 'search') {

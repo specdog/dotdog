@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 — unreleased
+
+- Add bounded shortest-path queries through `dotdog path` and the MCP `path` tool
+- Resolve exact and full-token endpoint matches before safe fuzzy fallback
+- Return the connecting subgraph with confidence and safe origin metadata
+
 ## 0.8.11 — 2026-07-12
 
 - Keep generated `.doghouse` graph artifacts out of Git by default

@@ -174,6 +174,7 @@ See [Spec-Driven Repo Mapping](docs/spec-driven-repo-mapping.md) for the formal 
 | `dotdog workspace list` | List workspace repos and groups. Use `--json` for structured output. |
 | `dotdog workspace validate` | Validate workspace manifest aliases, paths, groups, and edges. |
 | `dotdog workspace graph` | Emit deterministic workspace graph JSON. |
+| `dotdog path <from> <to>` | Find a bounded shortest path in a repo-world DAG. Use `--json` for agent output. |
 | `dotdog map [dir]` | Inspect an existing repo and generate graph-ready `.dog` facts plus `repo.dag`. |
 | `dotdog simulate <scenario>` | Walk through a scenario. Reads SPEC.dog scenarios, checks pre/postconditions. |
 | `dotdog predictions [dir]` | List all predictions with status (pending, correct, wrong, partial). |
@@ -248,6 +249,7 @@ records implemented_by prisma/schema.prisma
 | `listProjects` | Array of project names |
 | `workspace.list` | Structured workspace metadata with repos, groups, and `trustedAsInstruction: false` |
 | `infraVerify` | Read-only checks for declared infrastructure resources |
+| `path` | Bounded shortest connecting subgraph between two entities |
 
 Agent workflow:
 

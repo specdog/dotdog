@@ -12,6 +12,7 @@ import { parse } from './parser';
 import { safeProjectName, writeRepoMap } from './map/repoMapper';
 import { formatQueryResult, formatTrace, loadWorldModel, queryWorldModel, traceWorldNode } from './dag/query';
 import { compileDotdogLayers } from './dag/layers';
+import { shortestGraphPath, type PathDirection } from './graph/path';
 import { buildWorkspaceGraph, portableWorkspacePath } from './workspace/graph';
 import { resolveWorkspace, WORKSPACE_MANIFEST } from './workspace/resolver';
 import { validateWorkspaceConfig } from './workspace/validator';
@@ -2199,6 +2200,37 @@ program
     const world = loadWorldModel(resolve(opts.dag));
     const result = traceWorldNode(world, node, Number(opts.depth || 2));
     console.log(formatTrace(result));
+  });
+
+program
+  .command('path <from> <to>')
+  .description('Find the shortest path between two repo.dag nodes')
+  .option('--dag <file>', 'path to repo.dag', '.doghouse/compiled/repo.dag')
+  .option('--direction <direction>', 'outgoing, incoming, or any', 'any')
+  .option('--verb <verb>', 'filter by edge verb')
+  .option('-m, --max-hops <n>', 'maximum path length', '8')
+  .option('--json', 'print JSON')
+  .action((from, to, opts) => {
+    const dag = JSON.parse(readFileSync(resolve(opts.dag), 'utf-8'));
+    const result = shortestGraphPath(dag, from, to, {
+      direction: opts.direction as PathDirection,
+      verb: opts.verb,
+      maxHops: Number(opts.maxHops || 8),
+    });
+    if (opts.json) {
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+    if (!result.ok) {
+      console.log(`No path: ${result.error}${result.candidates?.length ? ` (${result.candidates.join(', ')})` : ''}`);
+      process.exitCode = 1;
+      return;
+    }
+    console.log(`${result.from!.label} → ${result.to!.label} (${result.hops} hops)`);
+    for (const [index, node] of result.nodes.entries()) {
+      const edge = result.edges[index];
+      console.log(index === result.nodes.length - 1 ? `  ${node.label}` : `  ${node.label} --${edge.verb}-->`);
+    }
   });
 
 program.parse();

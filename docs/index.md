@@ -54,7 +54,7 @@ You write specs before code. Five minutes to set up. Zero configuration.
 | Describe | edit `.dog` files | Define entities, properties, states, lifecycles, relationships |
 | Validate | `dotdog validate` | Score completeness. Find missing entities and broken links |
 | Compile | `dotdog compile` | Build a positional DAG graph — 94% smaller, optimized for LLM context |
-| Expose | `dotdog serve` | Start a local stdio MCP server. AI agents query via eight structured tools |
+| Expose | `dotdog serve` | Start a local stdio MCP server. AI agents query via nine structured tools |
 
 ## Observed workspace graph
 
@@ -74,9 +74,9 @@ Read more: [Observed Workspace Graphs](blog/observed-workspace-graphs).
 
 ## For AI agents
 
-Eight MCP tools for structured queries — no scanning, no guessing:
+Nine MCP tools for structured queries — no scanning, no guessing:
 
-`getEntity` · `traverse` · `search` · `schema` · `summary` · `listProjects` · `workspace.list` · `infraVerify`
+`getEntity` · `traverse` · `search` · `path` · `schema` · `summary` · `listProjects` · `workspace.list` · `infraVerify`
 
 ```json
 {
