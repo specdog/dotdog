@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.0 — unreleased
+## 0.8.12 — unreleased
 
 - Add bounded shortest-path queries through `dotdog path` and the MCP `path` tool
 - Resolve exact and full-token endpoint matches before safe fuzzy fallback
