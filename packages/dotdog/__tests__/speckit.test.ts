@@ -224,13 +224,23 @@ describe('Spec Kit integration', () => {
   });
 
 
-  test('rejects output inside repository and Spec Kit source metadata', () => {
+  test('rejects case variants of repository and Spec Kit source metadata paths', () => {
     const dir = mkdtempSync(join(tmpdir(), 'dotdog-speckit-protected-output-'));
     try {
       setupSpecKitProject(dir);
-      expect(() => importSpecKit(dir, { outputDir: '.git/speckit' })).toThrow('cannot overwrite repository or source metadata');
-      expect(() => importSpecKit(dir, { outputDir: 'specs' })).toThrow('cannot overwrite repository or source metadata');
-      expect(() => importSpecKit(dir, { outputDir: '.specify/generated' })).toThrow('cannot overwrite repository or source metadata');
+      for (const outputDir of [
+        '.git/speckit',
+        '.GIT/speckit',
+        'specs',
+        'Specs',
+        '.specify/generated',
+        '.SPECIFY/generated',
+      ]) {
+        expect(() => importSpecKit(dir, { outputDir })).toThrow('cannot overwrite repository or source metadata');
+      }
+      expect(existsSync(join(dir, 'specs', 'import.json'))).toBe(false);
+      expect(existsSync(join(dir, '.git', 'speckit', 'import.json'))).toBe(false);
+      expect(existsSync(join(dir, '.specify', 'generated', 'import.json'))).toBe(false);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

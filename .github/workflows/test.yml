@@ -15,6 +15,7 @@ jobs:
           node-version: '24'
       - uses: oven-sh/setup-bun@v2
       - run: cd packages/dotdog && bun install
+      - run: bun test
       - run: cd packages/dotdog && bun build src/cli.ts --outdir dist --target node
       - run: node packages/dotdog/dist/cli.js --version
       - run: node packages/dotdog/dist/cli.js --help

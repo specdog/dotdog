@@ -69,6 +69,8 @@ type ArtifactWrite = {
   reason?: string;
 };
 
+const PROTECTED_OUTPUT_ROOTS = new Set(['.git', '.specify', 'specs']);
+
 function assertSafeSourcePath(root: string, path: string): void {
   const rel = relative(root, path);
   if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
@@ -313,8 +315,8 @@ function assertInsideRoot(root: string, output: string): void {
   if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
     throw new Error(`Spec Kit output must be a subdirectory of the project root: ${output}`);
   }
-  const topLevel = rel.split(/[\\/]+/)[0];
-  if (['.git', '.specify', 'specs'].includes(topLevel)) {
+  const topLevel = (rel.split(/[\\/]+/)[0] || '').toLowerCase();
+  if (PROTECTED_OUTPUT_ROOTS.has(topLevel)) {
     throw new Error(`Spec Kit output cannot overwrite repository or source metadata: ${output}`);
   }
 
