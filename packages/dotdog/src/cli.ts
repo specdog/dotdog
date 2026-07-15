@@ -17,6 +17,7 @@ import { auditDesign } from './design/audit';
 import { buildWorkspaceGraph, portableWorkspacePath } from './workspace/graph';
 import { resolveWorkspace, WORKSPACE_MANIFEST } from './workspace/resolver';
 import { validateWorkspaceConfig } from './workspace/validator';
+import { formatSpecKitImport, importSpecKit } from './integrations/speckit';
 
 
 function normalizeDag(dag: any): any {
@@ -159,6 +160,26 @@ import { serve } from './serve';
 const program = new Command();
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8'));
 program.name('spec').alias('dotdog').description('CLI for structured software specs : validate .dog, compile .dag, query via MCP').version(pkg.version);
+
+const speckitCmd = program.command('speckit').description('Import GitHub Spec Kit artifacts into dotdog graphs');
+
+speckitCmd
+  .command('import [dir]')
+  .description('Convert specs/<feature> artifacts into queryable .dog projects')
+  .option('-o, --output <dir>', 'output directory relative to the Spec Kit project')
+  .option('--force', 'replace modified or unmanaged generated files')
+  .option('--json', 'print machine-readable import result')
+  .action((d='.', opts: { output?: string; force?: boolean; json?: boolean }) => {
+    try {
+      const result = importSpecKit(resolvePath(d), { outputDir: opts.output, force: opts.force });
+      if (opts.json) console.log(JSON.stringify(result, null, 2));
+      else console.log(formatSpecKitImport(result));
+      if (!result.features.length) process.exitCode = 1;
+    } catch (error) {
+      console.error(chalk.red(String(error instanceof Error ? error.message : error)));
+      process.exitCode = 1;
+    }
+  });
 
 program.command('validate [dir]').action((d='.') => {
   const dir = resolvePath(d);

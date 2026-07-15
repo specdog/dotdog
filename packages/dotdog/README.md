@@ -33,6 +33,16 @@ dotdog workspace validate
 dotdog workspace graph --json
 ```
 
+For a GitHub Spec Kit project:
+
+```bash
+dotdog speckit import .                # import specs/<feature> artifacts
+dotdog compile .doghouse/speckit      # compile the imported local graphs
+dotdog serve .doghouse/speckit        # expose them over local MCP
+```
+
+Imports are local and portable. dotdog makes no network requests, quotes imported Markdown so it cannot create unintended graph syntax, tracks generated artifact hashes, and preserves files you edit; use `--force` only when you intentionally want to replace them.
+
 ## Commands
 
 | Command | Description |
@@ -51,6 +61,7 @@ dotdog workspace graph --json
 | `dotdog workspace graph` | Emit deterministic workspace graph JSON. |
 | `dotdog path <from> <to>` | Find a bounded shortest path in a repo-world DAG. |
 | `dotdog map [dir]` | Inspect an existing repo and generate graph-ready `.dog` facts plus `repo.dag`. |
+| `dotdog speckit import [dir]` | Import local GitHub Spec Kit artifacts into queryable dotdog projects. |
 | `dotdog staleness [dir]` | Detect drift between spec and reality. Compares plan.dog tasks against code. |
 | `dotdog generate [dir]` | Generate missing spec files from SPEC.dog (data-model, COPY, INDEX). |
 | `dotdog simulate <scenario>` | Run a simulation scenario. Reads SPEC.dog scenarios, checks pre/postconditions. |
