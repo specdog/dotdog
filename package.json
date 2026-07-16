@@ -11,6 +11,7 @@
     "lint": "bun run --filter '*' lint",
     "test": "bun test",
     "pack:check": "node scripts/check-pack.mjs",
+    "extension:check": "node scripts/check-speckit-extension.mjs",
     "validate": "bun packages/spec-cli/src/index.ts validate"
   },
   "dependencies": {

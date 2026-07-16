@@ -1,0 +1,78 @@
+name: Release Spec Kit extension
+
+on:
+  push:
+    branches:
+      - 'release/spec-kit-extension-v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: spec-kit-extension-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'specdog/dotdog'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify release source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+          node scripts/check-speckit-extension.mjs
+
+      - name: Build deterministic extension archive
+        id: bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./packages/dotdog/package.json').version")"
+          branch_version="${GITHUB_REF_NAME#release/spec-kit-extension-v}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          test "$branch_version" = "$version"
+
+          stage="$RUNNER_TEMP/dotdog-extension"
+          asset="dotdog-spec-kit-extension-v${version}.zip"
+          rm -rf "$stage"
+          mkdir -p "$stage/commands"
+          cp extension.yml "$stage/extension.yml"
+          cp commands/*.md "$stage/commands/"
+          cp LICENSE CHANGELOG.md "$stage/"
+          awk 'NR==1 && $0=="---" {front=1; next} front && $0=="---" {front=0; next} !front {print}' docs/spec-kit-extension.md > "$stage/README.md"
+
+          (
+            cd "$stage"
+            find . -exec touch -t 202601010000 {} +
+            find . -type f -print | LC_ALL=C sort | zip -X -q "$GITHUB_WORKSPACE/$asset" -@
+          )
+          sha256sum "$asset" > "$asset.sha256"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.bundle.outputs.version }}
+          ASSET: ${{ steps.bundle.outputs.asset }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v${VERSION}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; refusing to replace it." >&2
+            exit 1
+          fi
+          gh release create "$tag" "$ASSET" "$ASSET.sha256" \
+            --target "$GITHUB_SHA" \
+            --title "Dotdog Spec Kit Extension $tag" \
+            --notes "Community extension bundle for GitHub Spec Kit. Local-only import, validation, analysis, and stdio MCP access for Dotdog ${VERSION}."
