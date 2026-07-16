@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "extension": {
+    "id": "dotdog",
+    "name": "Dotdog",
+    "version": "0.9.0",
+    "description": "Import GitHub Spec Kit artifacts into local knowledge graphs for validation, analysis, search, and MCP queries.",
+    "author": "specdog",
+    "repository": "https://github.com/specdog/dotdog",
+    "license": "MIT",
+    "homepage": "https://specdog.github.io/dotdog",
+    "category": "docs",
+    "effect": "read-write"
+  },
+  "requires": {
+    "speckit_version": ">=0.12.0",
+    "tools": [
+      {
+        "name": "dotdog",
+        "version": ">=0.9.0",
+        "required": true
+      }
+    ]
+  },
+  "provides": {
+    "commands": [
+      {
+        "name": "speckit.dotdog.import",
+        "file": "commands/import.md",
+        "description": "Import active Spec Kit feature artifacts into local Dotdog graphs."
+      },
+      {
+        "name": "speckit.dotdog.inspect",
+        "file": "commands/inspect.md",
+        "description": "Compile and inspect imported feature graphs for gaps and model quality."
+      },
+      {
+        "name": "speckit.dotdog.serve",
+        "file": "commands/serve.md",
+        "description": "Expose imported feature graphs through Dotdog's local stdio MCP server."
+      }
+    ]
+  },
+  "tags": [
+    "specification",
+    "knowledge-graph",
+    "validation",
+    "mcp",
+    "local-first"
+  ]
+}
