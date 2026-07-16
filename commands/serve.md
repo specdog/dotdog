@@ -6,28 +6,36 @@ description: "Serve imported Spec Kit graphs over local stdio MCP"
 
 ## Prerequisites
 
-1. Confirm `dotdog --version` is 0.9.0 or newer.
-2. Confirm `.doghouse/speckit/` exists. Run `/speckit.dotdog.import` first when it does not.
+1. Run this command from the root of the intended Spec Kit project.
+2. Confirm `dotdog --version` is 0.9.0 or newer.
+3. Confirm `.doghouse/speckit/` exists. Run `/speckit.dotdog.import` first when it does not.
 
 ## User Input
 
 $ARGUMENTS
 
-Treat the input as an optional project-root path. Use the current directory when it is empty.
+This command accepts no input. Do not interpolate `$ARGUMENTS` into a shell command. Stop when any argument is supplied.
 
 ## Steps
 
-1. Compile the imported graphs:
+1. Verify `.doghouse/speckit/` is a real directory inside the current project root and is not a symlink.
+2. Compile the imported graphs:
 
    ```bash
-   dotdog compile "<project-root>/.doghouse/speckit"
+   dotdog compile .doghouse/speckit
    ```
 
-2. Start the local MCP server in the foreground:
+3. Start the local MCP server in the foreground:
 
    ```bash
-   dotdog serve "<project-root>/.doghouse/speckit"
+   dotdog serve .doghouse/speckit
    ```
 
-3. Keep the process attached to stdio. Do not expose a network listener or add credentials.
-4. When the session ends, stop the process normally and leave generated graph files unchanged.
+4. Keep the process attached exclusively to stdio. When the session ends, stop it normally and leave generated graph files unchanged.
+
+## Safety
+
+- Never execute user input as shell text.
+- Do not expose a TCP, HTTP, WebSocket, or other network listener.
+- Do not add credentials, environment secrets, telemetry, background persistence, or elevated privileges.
+- Do not follow symlinks or read outside `.doghouse/speckit/`.
