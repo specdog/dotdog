@@ -6,16 +6,22 @@ on:
     tags-ignore: ['v*']
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24'
-      - uses: oven-sh/setup-bun@v2
-      - run: cd packages/dotdog && bun install
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+      - run: cd packages/dotdog && bun install --frozen-lockfile
       - run: node scripts/check-speckit-extension.mjs
       - run: bun test
       - run: cd packages/dotdog && bun build src/cli.ts --outdir dist --target node
