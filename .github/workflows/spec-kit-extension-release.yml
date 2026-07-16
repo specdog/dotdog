@@ -52,8 +52,8 @@ jobs:
 
           (
             cd "$stage"
-            find . -type f -print0 | sort -z | xargs -0 touch -t 202601010000
-            zip -X -q -r "$GITHUB_WORKSPACE/$asset" .
+            find . -exec touch -t 202601010000 {} +
+            find . -type f -print | LC_ALL=C sort | zip -X -q "$GITHUB_WORKSPACE/$asset" -@
           )
           sha256sum "$asset" > "$asset.sha256"
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -75,4 +75,4 @@ jobs:
           gh release create "$tag" "$ASSET" "$ASSET.sha256" \
             --target "$GITHUB_SHA" \
             --title "Dotdog Spec Kit Extension $tag" \
-            --notes "Community extension bundle for GitHub Spec Kit. Local-only import, validation, analysis, and stdio MCP access for Dotdog 0.9.0."
+            --notes "Community extension bundle for GitHub Spec Kit. Local-only import, validation, analysis, and stdio MCP access for Dotdog ${VERSION}."
