@@ -65,7 +65,6 @@ jobs:
           manifest = ExtensionManager(project).install_from_zip(
               archive,
               speckit_version="0.12.17",
-              register_commands=False,
           )
           assert manifest.id == "dotdog"
           assert manifest.version == version
