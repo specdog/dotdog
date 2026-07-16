@@ -1,0 +1,7 @@
+*
+!extension.yml
+!commands/
+!commands/**
+!README.md
+!LICENSE
+!CHANGELOG.md
