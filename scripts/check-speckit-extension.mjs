@@ -44,8 +44,18 @@ for (const command of commands) {
   if (!content.includes('$ARGUMENTS')) fail(`${command.file} must document $ARGUMENTS`);
 }
 
-for (const requiredFile of ['README.md', 'LICENSE', 'CHANGELOG.md', 'docs/spec-kit-extension.md']) {
+for (const requiredFile of ['README.md', 'LICENSE', 'CHANGELOG.md', '.extensionignore', 'docs/spec-kit-extension.md']) {
   if (!existsSync(requiredFile)) fail(`${requiredFile} is missing`);
+}
+
+const ignoreLines = new Set(
+  readFileSync('.extensionignore', 'utf8')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean),
+);
+for (const requiredRule of ['*', '!extension.yml', '!commands/', '!commands/**', '!README.md', '!LICENSE', '!CHANGELOG.md']) {
+  if (!ignoreLines.has(requiredRule)) fail(`.extensionignore is missing ${requiredRule}`);
 }
 
 console.log(`Spec Kit extension check passed: ${commands.length} commands, version ${extension.version}`);
