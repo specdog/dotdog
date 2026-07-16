@@ -1,0 +1,94 @@
+name: Verify Spec Kit extension release
+
+on:
+  push:
+    branches:
+      - 'verify/spec-kit-extension-v*'
+  pull_request:
+    paths:
+      - '.github/workflows/verify-spec-kit-extension-release.yml'
+      - 'extension.yml'
+      - 'commands/**'
+      - 'docs/spec-kit-extension.md'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install current GitHub Spec Kit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/spec-kit-venv"
+          "$RUNNER_TEMP/spec-kit-venv/bin/python" -m pip install --disable-pip-version-check \
+            'git+https://github.com/github/spec-kit.git@main'
+
+      - name: Download and verify release asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./packages/dotdog/package.json').version")"
+          asset="dotdog-spec-kit-extension-v${version}.zip"
+          base="https://github.com/specdog/dotdog/releases/download/v${version}"
+          curl --fail --location --proto '=https' --tlsv1.2 --output "$RUNNER_TEMP/$asset" "$base/$asset"
+          curl --fail --location --proto '=https' --tlsv1.2 --output "$RUNNER_TEMP/$asset.sha256" "$base/$asset.sha256"
+          (
+            cd "$RUNNER_TEMP"
+            sha256sum --check "$asset.sha256"
+          )
+
+      - name: Install release through Spec Kit
+        env:
+          VERIFY_VERSION: '0.9.0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/spec-kit-venv/bin/python" - "$RUNNER_TEMP" "$VERIFY_VERSION" <<'PY'
+          import sys
+          from pathlib import Path
+          from specify_cli.extensions import ExtensionManager
+
+          temp = Path(sys.argv[1])
+          version = sys.argv[2]
+          archive = temp / f"dotdog-spec-kit-extension-v{version}.zip"
+          project = temp / "spec-kit-project"
+          project.mkdir()
+
+          manifest = ExtensionManager(project).install_from_zip(
+              archive,
+              speckit_version="0.12.17",
+          )
+          assert manifest.id == "dotdog"
+          assert manifest.version == version
+          assert {command["name"] for command in manifest.commands} == {
+              "speckit.dotdog.import",
+              "speckit.dotdog.inspect",
+              "speckit.dotdog.serve",
+          }
+
+          installed = project / ".specify" / "extensions" / "dotdog"
+          expected = {
+              "CHANGELOG.md",
+              "LICENSE",
+              "README.md",
+              "commands/import.md",
+              "commands/inspect.md",
+              "commands/serve.md",
+              "extension.yml",
+          }
+          actual = {
+              str(path.relative_to(installed))
+              for path in installed.rglob("*")
+              if path.is_file() and path.name != ".registry"
+          }
+          assert actual == expected, (actual, expected)
+          print(f"Installed Dotdog Spec Kit extension {version}: {sorted(actual)}")
+          PY
