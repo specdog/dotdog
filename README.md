@@ -58,6 +58,16 @@ dotdog workspace validate
 dotdog workspace graph --json
 ```
 
+For a project created with GitHub Spec Kit:
+
+```bash
+dotdog speckit import .
+dotdog compile .doghouse/speckit
+dotdog serve .doghouse/speckit
+```
+
+The importer reads local `specs/<feature>` artifacts, writes generated graphs under `.doghouse/speckit`, and preserves edited outputs unless `--force` is explicit. Imported Markdown is quoted inside generated `.dog` files so source content cannot create unintended graph syntax.
+
 ## What init creates
 
 `dotdog init <project>` creates a project spec workspace under `specs/<project>/`.
@@ -179,6 +189,7 @@ See [Spec-Driven Repo Mapping](docs/spec-driven-repo-mapping.md) for the formal 
 | `dotdog workspace graph` | Emit deterministic workspace graph JSON. |
 | `dotdog path <from> <to>` | Find a bounded shortest path in a repo-world DAG. Use `--json` for agent output. |
 | `dotdog map [dir]` | Inspect an existing repo and generate graph-ready `.dog` facts plus `repo.dag`. |
+| `dotdog speckit import [dir]` | Import local GitHub Spec Kit artifacts into queryable dotdog projects. |
 | `dotdog simulate <scenario>` | Walk through a scenario. Reads SPEC.dog scenarios, checks pre/postconditions. |
 | `dotdog predictions [dir]` | List all predictions with status (pending, correct, wrong, partial). |
 | `dotdog resolve <name>` | Mark a prediction as correct, wrong, or partial with evidence. |
