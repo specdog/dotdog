@@ -21,7 +21,7 @@ No. Start with `SPEC.dog` and `data-model.dog` using `dotdog init --minimal`. Ad
 
 ## Which AI agents support dotdog?
 
-Any MCP-compatible agent: Claude Desktop, Cursor, GitHub Copilot, Codex, and others. Configure your agent with the MCP server endpoint and it can query your specs.
+Any MCP-compatible agent: Claude Desktop, Cursor, GitHub Copilot, and others. Configure your agent with the MCP server endpoint and it can query your specs.
 
 ## Is dotdog open source?
 
