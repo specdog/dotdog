@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.0 — unreleased
+## 0.9.0 — 2026-07-18
 
 - Add `dotdog speckit import` to convert GitHub Spec Kit features into local, queryable dotdog projects
 - Track generated artifacts with SHA-256 hashes and preserve user edits by default
