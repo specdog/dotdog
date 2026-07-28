@@ -325,12 +325,10 @@ fn resolve_endpoint<'a>(
         .iter()
         .filter(|node| node.label.to_ascii_lowercase().contains(&needle))
         .collect();
-    if partial.len() == 1 {
-        Ok(partial[0])
-    } else if partial.len() > 1 {
-        Err(Some(sorted_labels(partial)))
-    } else {
-        Err(None)
+    match partial.len() {
+        0 => Err(None),
+        1 => Ok(partial[0]),
+        _ => Err(Some(sorted_labels(partial))),
     }
 }
 
