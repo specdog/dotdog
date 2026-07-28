@@ -301,15 +301,15 @@ fn mcp_transcript_lists_typed_tools_and_ignores_notifications() {
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    let input = [
+    let mut input = [
         serde_json::json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}),
         serde_json::json!({"jsonrpc":"2.0","method":"notifications/initialized"}),
         serde_json::json!({"jsonrpc":"2.0","id":2,"method":"tools/list"}),
         serde_json::json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"listProjects","arguments":{}}}),
     ]
-    .into_iter()
-    .map(|request| format!("{request}\n"))
-    .collect::<String>();
+    .map(|request| request.to_string())
+    .join("\n");
+    input.push('\n');
     server
         .stdin
         .as_mut()
