@@ -1,5 +1,6 @@
 node_modules/
 dist/
+target/
 packages/dotdog/dist/
 packages/dotdog/node_modules/
 

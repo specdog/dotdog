@@ -1,0 +1,26 @@
+Dotdog turns project intent into a graph that people write and AI tools can query.
+
+Human workflow
+  1. Write or import structured specifications in .dog files.
+  2. Run dotdog validate to catch missing project artifacts.
+  3. Run dotdog compile to create compact .dag graphs.
+  4. Run dotdog design, analyze, or search to find gaps.
+  5. Run dotdog visualize <graph.dag> --format html --save so people can inspect node connections.
+  6. Run dotdog serve so an AI coding agent can query the graph over MCP.
+
+The files
+  .dog  Human-readable source: intent, entities, rules, plans, and relationships.
+  .dag  Compiled machine-readable graph. AI agents query this instead of guessing.
+  .idx  Local search index built by dotdog index.
+  .doghouse/  Generated repository maps, observations, and compiled workspace graphs.
+
+Interactive map
+  dotdog visualize path/to/project.dag --format html --save
+  Open the generated HTML. Search nodes, click to trace connections, drag to pan, and scroll to zoom.
+
+Choose a workflow
+  dotdog guide greenfield  Start a new product or repository.
+  dotdog guide existing    Add Dotdog to an existing GitHub repository.
+  dotdog guide speckit     Import a GitHub Spec Kit project.
+
+Start here: dotdog guide greenfield

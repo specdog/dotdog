@@ -24,6 +24,12 @@ bun add -g dotdog         # bun
 
 Requires Node.js >= 20 or Bun >= 1.3.
 
+Rust prerelease contributors can install from a repository checkout:
+
+```bash
+cargo install --path crates/dotdog
+```
+
 ## See it work
 
 ```
@@ -56,6 +62,26 @@ You write specs before code. Five minutes to set up. Zero configuration.
 | Compile | `dotdog compile` | Build a positional DAG graph — 94% smaller, optimized for LLM context |
 | Design | `dotdog design` | Find missing data-model decisions and concrete next steps |
 | Expose | `dotdog serve` | Start a local stdio MCP server. AI agents query via nine structured tools |
+
+## Start with your situation
+
+The terminal guides and interactive HTML map are part of the Rust prerelease while the npm package remains the stable distribution.
+
+```bash
+dotdog guide greenfield  # start a new product with intent before code
+dotdog guide existing    # map an existing GitHub repo before changing it
+dotdog guide speckit     # import GitHub Spec Kit artifacts
+```
+
+After compiling any graph, make it visible to people:
+
+```bash
+dotdog visualize path/to/project.dag --format html --save
+```
+
+The generated HTML is self-contained. Search nodes, drag to pan, scroll to zoom, and click a node to trace its direct connections.
+
+Read [the exact greenfield, existing repository, Spec Kit, and multi-repo workflows](workflows).
 
 ## Observed workspace graph
 
@@ -98,9 +124,10 @@ AI agents: read the [for agents · dogfood](https://specdog.github.io/agents) pa
 
 - [Spec-Driven Development guide](https://specdog.github.io/handbook) — the methodology behind the tool
 - [Tutorial: Build a spec-driven project](tutorial)
+- [Workflows: new, existing, Spec Kit, and multi-repo](workflows)
 - [Contributing Kits](contributing-kits)
 - [FAQ](faq)
 
 ---
 
-dotdog@<span id="version">0.8.1</span> · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE) · [GitHub](https://github.com/specdog/dotdog) · [npm](https://www.npmjs.com/package/dotdog)
+dotdog@<span id="version">0.9.0</span> · [MIT](https://github.com/specdog/dotdog/blob/main/LICENSE) · [GitHub](https://github.com/specdog/dotdog) · [npm](https://www.npmjs.com/package/dotdog)

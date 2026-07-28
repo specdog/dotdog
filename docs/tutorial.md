@@ -185,9 +185,18 @@ This starts an MCP server over stdio. Configure your AI coding agent:
 
 Now AI agents can call `getEntity`, `traverse`, and `search` against your spec — zero hallucination.
 
+## 8. See the graph
+
+```bash
+dotdog visualize payment-app.dag --format html --save
+```
+
+Open `payment-app-graph.html`. Search for a node, click it to highlight direct connections, drag to pan, and scroll to zoom. The file is self-contained and works offline.
+
 ## Next steps
 
 - Run `dotdog analyze` for deep gap analysis
 - Run `dotdog staleness` to detect spec/reality drift
 - Run `dotdog predictions` to track forecasts
 - Add more spec files for completeness (constitution.dog, COPY.dog)
+- Follow the [existing repository, Spec Kit, or multi-repo workflow](workflows)

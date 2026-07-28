@@ -13,7 +13,19 @@ Already have a product, app, or package? Add dotdog next to the codebase so the 
 
 This guide uses an existing support portal as the example. Replace `support-portal` with your project name.
 
-## 1. Initialize specs from the project root
+## 1. Map the repository you already have
+
+Run this from the repository root:
+
+```bash
+dotdog map
+dotdog compile
+dotdog visualize .doghouse/compiled/repo.dag --format html --save
+```
+
+This creates an observed graph under `.doghouse/`. Open the generated HTML to inspect files and connections before describing the change you want.
+
+## 2. Initialize specs from the project root
 
 Run `dotdog init` in the root of the existing repository:
 
@@ -36,7 +48,7 @@ specs/support-portal/
 
 The command writes inside `specs/support-portal/`. It does not rewrite your application source files. If that spec directory already exists, choose a new branch and review the existing files before running init again.
 
-## 2. Fill in SPEC.dog with screens and user stories
+## 3. Fill in SPEC.dog with screens and user stories
 
 Open `specs/support-portal/SPEC.dog` and replace the stub with enough product context for a reviewer or AI agent to understand the current app.
 
@@ -78,7 +90,7 @@ A web app where customers open support tickets and agents triage, assign, and re
 
 Keep the first pass small. Add enough detail to validate the existing product, then expand as gaps appear.
 
-## 3. Define entities in data-model.dog
+## 4. Define entities in data-model.dog
 
 Open `specs/support-portal/data-model.dog` and describe the main objects your code already uses. Add properties, states, and relationships that match the implementation.
 
@@ -142,7 +154,7 @@ required: true
 
 Use the same names that appear in code, database tables, API payloads, or domain classes. That keeps later `search`, `schema`, and `getEntity` calls useful.
 
-## 4. Validate and fix gaps
+## 5. Validate and fix gaps
 
 Run validation from the repository root:
 
@@ -158,7 +170,7 @@ dotdog analyze
 
 Treat critical gaps as blockers before you ask another person or AI agent to rely on the specs. Optional gaps can become follow-up tasks in `plan.dog`.
 
-## 5. Compile and check savings
+## 6. Compile and check savings
 
 Compile the `.dog` files into the compact graph format:
 
@@ -188,7 +200,7 @@ support-portal
 
 Large savings mean an AI agent can load the structured graph instead of re-reading every prose file.
 
-## 6. Serve the graph and verify MCP tools
+## 7. Serve the graph and verify MCP tools
 
 Start the MCP server after compiling:
 
@@ -214,6 +226,7 @@ If `listProjects` is empty, run `dotdog compile` again from the project root and
 - Commit `.dog` source files with the code they describe.
 - Run `dotdog validate` in CI so specs do not silently rot.
 - Run `dotdog compile` before MCP usage so agents read the latest graph.
+- Re-run `dotdog map` when repository structure changes and `dotdog drift` after observations.
 - Review `SPEC.dog` and `data-model.dog` in the same PR as behavior changes.
 - Add missing screens, entities, and flows as follow-up tasks in `plan.dog`.
 

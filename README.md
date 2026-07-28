@@ -24,10 +24,26 @@ It supports three starting points:
 The core flow:
 
 ```text
-plan -> spec workspace -> validation -> repo/workspace graph -> agent execution
+specify -> plan -> tasks -> graph -> implement -> observe -> repeat
 ```
 
 `.dog` files are the human-readable source specs. `.dag` files are compiled implementation graphs for agents and tools.
+
+## Which workflow should I use?
+
+```bash
+dotdog guide greenfield  # new product or repository
+dotdog guide existing    # existing GitHub repository
+dotdog guide speckit     # GitHub Spec Kit project
+```
+
+The rule is:
+
+- New repo: specify intent before code, compile it, then implement one task at a time.
+- Existing repo: map current code first, specify the desired change, then connect intent to reality.
+- Spec Kit: keep using Specify, Plan, Tasks, and Implement; import those artifacts so Dotdog can visualize and serve them as a graph.
+
+See [How to use Dotdog](docs/workflows.md) for the exact commands, files to edit, generated output, Git policy, and daily loop.
 
 ## Install
 
@@ -38,6 +54,14 @@ bun add -g dotdog         # bun
 ```
 
 Requires Node.js >= 20 or Bun >= 1.3.
+
+To test the Rust prerelease from this checkout:
+
+```bash
+cargo install --path crates/dotdog
+```
+
+The `guide` command and interactive HTML visualizer are introduced by the Rust prerelease. The npm package remains the stable distribution until the Rust cutover checklist passes.
 
 ## Quick Start
 
@@ -51,11 +75,11 @@ dotdog serve                # expose the graph to MCP-compatible agents
 For an existing product or organization workspace:
 
 ```bash
-dotdog workspace init --id example-workspace
+dotdog workspace init --id example-workspace --name "Example Workspace"
 dotdog workspace add ../example-service --alias example-service --role api
 dotdog workspace add ../example-interface --alias example-interface --role web
 dotdog workspace validate
-dotdog workspace graph --json
+dotdog workspace graph
 ```
 
 For a project created with GitHub Spec Kit:
@@ -182,8 +206,8 @@ See [Spec-Driven Repo Mapping](docs/spec-driven-repo-mapping.md) for the formal 
 | `dotdog index [dir]` | Build search index for semantic queries across compiled specs. |
 | `dotdog search <query>` | Semantic search across compiled specs using the search index. |
 | `dotdog serve [dir]` | Start MCP server over stdio. AI agents query specs and workspace metadata without hallucination. |
-| `dotdog workspace init --id <id>` | Create `.doghouse/workspace.json` for a repo or product workspace. |
-| `dotdog workspace add <path>` | Add a repository to the workspace manifest with `--alias` and `--role`. |
+| `dotdog workspace init --id <id>` | Create `.doghouse/workspace.json` for a repo or product workspace; `--name` sets a display name. |
+| `dotdog workspace add <path> --alias <alias>` | Add a repository to the workspace manifest with an explicit alias and `--role`. |
 | `dotdog workspace list` | List workspace repos and groups. Use `--json` for structured output. |
 | `dotdog workspace validate` | Validate workspace manifest aliases, paths, groups, and edges. |
 | `dotdog workspace graph` | Emit deterministic workspace graph JSON. |
@@ -194,13 +218,14 @@ See [Spec-Driven Repo Mapping](docs/spec-driven-repo-mapping.md) for the formal 
 | `dotdog predictions [dir]` | List all predictions with status (pending, correct, wrong, partial). |
 | `dotdog resolve <name>` | Mark a prediction as correct, wrong, or partial with evidence. |
 | `dotdog doctor` | Baseline health check. Validates specs, detects stale .dag. |
-| `dotdog visualize [dir]` | Output Mermaid graph from `.dag`. `--save` writes `.md` for GitHub rendering. |
+| `dotdog visualize [dir]` | Output Mermaid. Rust preview: use `--format html --save` for an offline interactive node map with search, pan, zoom, and connection tracing. |
 | `dotdog generate [dir]` | Generate missing spec files from SPEC.dog (data-model, COPY, INDEX). |
 | `dotdog parse <file>` | Parse a `.dog` file into sections (entities, relationships, copy). |
 | `dotdog kit` | List, init, or manage spec kits (starter templates). |
 | `dotdog list` | List all projects and their `.dog` file counts. |
 | `dotdog woof` | Prints "woof" because every good CLI deserves an easter egg. |
 | `dotdog live [entity]` | Test live endpoints + cloud infrastructure against .dog contracts. Hits URLs, diffs responses, backup failover. Verify S3 buckets, Vercel projects, Supabase tables, and more. |
+| `dotdog guide [greenfield\|existing\|speckit]` | Rust preview: print the exact workflow for your starting point. |
 
 Planned:
 
