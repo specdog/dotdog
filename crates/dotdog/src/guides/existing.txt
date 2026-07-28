@@ -1,0 +1,26 @@
+Existing repository workflow: map reality before changing it.
+
+1. From the repository root, map the codebase.
+   dotdog map
+
+2. Compile the generated repository graph.
+   dotdog compile
+
+3. Inspect what Dotdog found.
+   dotdog query repository --dag .doghouse/compiled/repo.dag
+   dotdog visualize .doghouse/compiled/repo.dag --format html --save
+   dotdog serve
+
+4. Create a specification for the feature you want to change.
+   dotdog init feature-name
+
+5. In specs/feature-name/SPEC.dog, write the current behavior, desired behavior, users, constraints, and success conditions.
+
+6. Validate the intent against repository reality.
+   dotdog validate
+   dotdog compile
+   dotdog design --project feature-name
+
+7. Implement one focused task at a time. Re-run dotdog map when code structure changes and dotdog compile when specifications change.
+
+Commit .dog source files. Commit stable .dag artifacts when your team wants agents to query them without rebuilding. Review .doghouse output before committing it.

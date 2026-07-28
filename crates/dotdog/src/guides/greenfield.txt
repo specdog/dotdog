@@ -1,0 +1,29 @@
+Greenfield workflow: start with intent, then code.
+
+1. Create the specification project.
+   dotdog init my-product
+
+2. Open specs/my-product/SPEC.dog and describe:
+   - who uses the product;
+   - what problem it solves;
+   - the user journeys and success conditions;
+   - important entities, rules, and relationships.
+
+3. Add technical constraints to plan.dog and non-negotiable rules to constitution.dog.
+
+4. Check the project.
+   dotdog validate
+   dotdog compile
+   dotdog design --project my-product
+
+5. Inspect the real node connections.
+   dotdog visualize specs/my-product/my-product.dag --format html --save
+
+6. Make the graph available to your AI agent.
+   dotdog serve
+
+7. Implement small tasks. After each change, update the spec when intent changes, then run:
+   dotdog validate
+   dotdog compile
+
+The spec explains what and why. The plan explains how. Tasks define the next reviewable change.

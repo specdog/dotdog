@@ -1,0 +1,14 @@
+pub mod cli;
+pub mod dag;
+pub mod design;
+pub mod grammar;
+pub mod graph;
+pub mod index;
+pub mod infra;
+pub mod mcp;
+pub mod parser;
+pub mod project;
+pub mod repo;
+pub mod speckit;
+pub mod visualization;
+pub mod workspace;

@@ -1,0 +1,18 @@
+GitHub Spec Kit workflow: import Specify, Plan, and Tasks artifacts into Dotdog.
+
+1. Use Spec Kit to create and review the feature artifacts:
+   Specify -> Plan -> Tasks -> Implement
+
+2. From the Spec Kit project root, import them.
+   dotdog speckit import .
+
+3. Compile the imported Dotdog projects.
+   dotdog compile .doghouse/speckit
+
+4. Check the graph and expose it to AI agents.
+   dotdog list
+   dotdog design --project FEATURE_NAME .doghouse/speckit
+   dotdog visualize .doghouse/speckit --format html --save
+   dotdog serve .doghouse/speckit
+
+Spec Kit structures the development phases. Dotdog converts the resulting intent into a compact graph that agents can search, traverse, and validate throughout implementation.
