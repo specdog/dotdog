@@ -35,5 +35,7 @@ jobs:
       - run: bun test
       - run: bun run build
       - run: node scripts/check-pack.mjs
-      - run: node scripts/check-release.mjs
-      - run: cd packages/dotdog && npm publish --access public --provenance
+      - name: Pack once and verify the release artifact
+        run: node scripts/check-release.mjs --output "$RUNNER_TEMP/dotdog-release"
+      - name: Publish only the verified artifact
+        run: node scripts/publish-release.mjs "$RUNNER_TEMP/dotdog-release/release.json"

@@ -1,16 +1,26 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, basename } from 'node:path';
+import { parseArgs } from 'node:util';
+import { npm } from './lib/npm.mjs';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 
 const version = JSON.parse(readFileSync('packages/dotdog/package.json')).version;
+const { values } = parseArgs({ options: { output: { type: 'string' }, tarball: { type: 'string' } } });
+if (values.output && values.tarball) throw new Error('Choose --output or --tarball, not both');
 const temporary = mkdtempSync(join(tmpdir(), 'dotdog-release-'));
+const output = values.output ? resolve(values.output) : temporary;
+if (values.output) mkdirSync(output, { recursive: true });
 try {
-  const packed = JSON.parse(execFileSync('npm', ['pack', '--json', '--pack-destination', temporary], { cwd: 'packages/dotdog', encoding: 'utf8' }))[0];
-  execFileSync('tar', ['-xzf', join(temporary, packed.filename), '-C', temporary]);
-  execFileSync('npm', ['install', '--prefix', join(temporary, 'consumer'), '--ignore-scripts', '--no-audit', '--no-fund', join(temporary, packed.filename)], { encoding: 'utf8' });
+  const packed = values.tarball ? null : JSON.parse(npm(['pack', '--json', '--pack-destination', output], { cwd: 'packages/dotdog' }))[0];
+  const artifact = values.tarball ? resolve(values.tarball) : join(output, packed.filename);
+  const bytes = readFileSync(artifact);
+  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  const integrity = 'sha512-' + createHash('sha512').update(bytes).digest('base64');
+  if (packed) assert.equal(integrity, packed.integrity);
+  npm(['install', '--prefix', join(temporary, 'consumer'), '--ignore-scripts', '--no-audit', '--no-fund', artifact]);
   const cli = join(temporary, 'consumer/node_modules/dotdog/dist/cli.js');
   const project = join(temporary, 'project');
   mkdirSync(join(project, 'src'), { recursive: true });
@@ -45,7 +55,9 @@ try {
   assert.throws(() => run('graph', 'audit', '--dag', '.doghouse/imported/bench-fixture.dag', '--profile', 'embodied', '--json'), error => error.status === 1);
   const bun = execFileSync('bun', [cli, '--version'], { cwd: project, encoding: 'utf8' }).trim();
   assert.equal(bun, version);
-  console.log(`Packed release verified under Node ${process.versions.node} and Bun: ${packed.size} compressed bytes, ${packed.entryCount} files`);
+  const manifest = { version, artifact: basename(artifact), sha256, integrity, size: bytes.length, node: process.versions.node, verified: true };
+  if (values.output) writeFileSync(join(output, 'release.json'), JSON.stringify(manifest, null, 2) + '\n');
+  console.log(JSON.stringify(manifest));
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }
