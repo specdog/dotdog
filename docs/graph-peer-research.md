@@ -33,3 +33,22 @@ Licenses checked at the snapshot: Graphify and Aider Apache-2.0; CodeGraph and R
 ## Release assessment
 
 The strongest fit is a small local evidence/intent graph with predictable automation and bounded agent context, not a replacement for full language servers, robotics middleware or Ghidra. Broader language extraction, graph ranking and reviewed cross-project/source-to-binary reconciliation need their own measured fixtures before becoming release claims.
+
+## Graph/vector systems checked for the 1.0 retrieval assessment
+
+Snapshot: 2026-10-29. These are not all newly created projects. Database engines, memory frameworks and GraphRAG pipelines solve different problems; this is a shortlist, not an adoption decision or benchmark result.
+
+| System | Checked metadata | Relevant mechanism | Dotdog assessment |
+| --- | --- | --- | --- |
+| [LadybugDB](https://github.com/LadybugDB/ladybug) | 1,888 stars; MIT; active; [0.22.0 released Oct 26](https://blog.ladybugdb.com/post/ladybug-0-22-0-release/) | Embedded property graph with [Node bindings](https://docs.ladybugdb.com/installation/) | Candidate for larger local graph persistence; measure native packaging/runtime cost first |
+| [Graphiti](https://github.com/getzep/graphiti) | 32,320 stars; Apache-2.0; active | Temporal validity/provenance and graph/vector/keyword retrieval | Useful temporal/evidence design; it is a Python framework with its own backing-service needs, not a drop-in npm storage library |
+| [LanceDB](https://github.com/lancedb/lancedb) | 11,804 stars; Apache-2.0; active | Local vector/full-text/SQL retrieval and TypeScript APIs | Candidate vector sidecar alongside Dotdog's authored/observed graph; not proof that a separate database is necessary |
+| [Cognee](https://github.com/topoteretes/cognee) | 32,872 stars; Apache-2.0; active | Graph/vector/code context and persistent agent memory; Codex/Claude integrations | Study ingestion, recovery and evidence routing; distinguish base OSS functionality from licensed deployment features |
+| [LightRAG](https://github.com/HKUDS/LightRAG) | 40,405 stars; MIT; active | Dual graph/vector document retrieval and incremental updates | Useful retrieval comparison; Python/LLM ingestion stack is not equivalent to a lightweight code-spec CLI |
+| [sqlite-vec](https://github.com/asg017/sqlite-vec) | Upstream explicitly pre-1.0 | Small C SQLite vector extension; successor to sqlite-vss | Candidate minimal local vector store; pin/test exact extension and ABI, and do not assume alpha ANN behavior is stable |
+
+[Kuzu's repository](https://github.com/kuzudb/kuzu) is archived (API confirmed; last push 2025-10-10). Graphiti also documents its Kuzu backend as deprecated. Do not add Kuzu as a new Dotdog dependency. Existing supported data should be migrated or exported, not silently discarded.
+
+Proposed evaluation: compare current lexical retrieval with semantic candidates plus bounded graph expansion on the same labeled repository tasks. Record relevance, latency, peak memory, index size, deletion/staleness handling, package/platform cost and offline behavior. Embedding metadata must identify model, dimensions and input digest; changed models invalidate their indexes. Remote embeddings require explicit configuration and must respect exclusions. Similarity must never manufacture an authored relationship, verified fact or physical authority.
+
+No listed engine/framework has been installed or benchmarked in Dotdog by this research pass. Native dependencies, model downloads, telemetry, licensing and secret-handling behavior need verification before adoption.

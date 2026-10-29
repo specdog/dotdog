@@ -46,8 +46,8 @@ export function createMcpHandler(dir: string) {
   let invalidProjects: Record<string, string> = Object.create(null);
   function load() {
     const candidates = new Map<string, string>();
-    const compiled = join(root, '.doghouse/compiled/repo.dag');
-    if (existsSync(compiled)) candidates.set(resolveUserPath(compiled, root), 'repo');
+    const compiled = resolveUserPath(join(root, '.doghouse/compiled/repo.dag'), root);
+    if (existsSync(compiled)) candidates.set(compiled, 'repo');
     for (const directory of [join(root, 'projects'), join(root, 'specs'), join(root, '.doghouse/imported'), root]) {
       if (!existsSync(directory)) continue;
       resolveUserPath(directory, root);
