@@ -39,11 +39,11 @@ CI now includes a scheduled and dependency-change advisory audit, frozen lockfil
 
 - `serve` is local stdio, not an HTTP service. Graph content and imported descriptions are untrusted data, not permission or agent instructions.
 - Graph reads/imports use a 32 MiB input cap, 100,000-node/500,000-edge normalization limits; MCP combined graph text is capped at 128 MiB. These are finite processing limits, not CPU/memory guarantees. Local repository mapping and all legacy command outputs are not globally quota-managed.
-- Generated writes and inventory traversal reject static symlink escapes. No claim is made of race-free multi-user filesystem isolation; an OS sandbox remains authoritative.
+- Generated writes and inventory traversal reject static symlink escapes. Generated writes now use fsync plus same-directory atomic replacement, preserving other owners of hard-linked files; cooperating refresh/map/compile writers use an ownership lock with dead-process recovery. No claim is made of race-free multi-user filesystem isolation; an OS sandbox remains authoritative.
 - Credential-file exclusions and output redaction are best-effort. Specs, source, filenames and derived graphs can contain private data. Review exports; do not put credentials in graph properties.
 - `live` explicitly contacts spec-defined HTTP(S) URLs, including permitted local endpoints. Review untrusted contracts before running it. Provider calls use fixed API origins and reject redirects; AWS uses the installed CLI and its existing credential configuration. No blanket SSRF-proof claim is made.
 - Provider tests use mocked API responses and request assertions. Live cloud accounts, current provider permissions, rate limits, Windows and modern client UI sessions were not exercised.
-- REA import passed source-schema fixture validation earlier in this PR; live Ghidra target analysis remains unverified. No separate REA provider was installed or registered.
+- REA import passed source-schema fixture validation and a real Ghidra 12.1.4 → REA 6.8.0 → Dotdog fixture on macOS arm64; broader target/host coverage remains unverified. See [native fixture](../examples/native/README.md). No separate REA provider was installed or registered.
 - Embodied support checks supplied evidence relationships only. It discovers neither missing real-world hazards nor measurement quality and grants no physical authority.
 
 See [migration](v1-migration.md), [peer research](graph-peer-research.md) and [embodied evidence](embodied-systems.md) for supported behavior and explicit limits. The candidate remains unmerged and unpublished until separately released.
@@ -51,3 +51,5 @@ See [migration](v1-migration.md), [peer research](graph-peer-research.md) and [e
 ## Local verification record
 
 The consolidated full suite passed with 96 tests, 391 assertions and one snapshot. Hosted CI status is recorded in PR #332. Typechecking, build, frozen install, skill validation, extension manifest, real demo, and Dotdog's own validate/check/doctor/status checks passed. Packed consumer checks passed under Node 22.12.0, 24.22.1, 26.8.1 and Bun 1.3.14, including a synthetic embodied evidence success/tamper-failure case. The candidate tarball measured 181,077 bytes at that check; this is larger than the original 0.9 artifact and no compression improvement is claimed.
+
+Follow-up security finding: a generated output hard-linked to an external fixture was truncated before atomic-write repair. The regression now preserves the external bytes. A concurrent writer is rejected; killing the owning process leaves a lock that the next graph refresh recovers. These cases were tested locally; Windows gate results are tracked in the PR.

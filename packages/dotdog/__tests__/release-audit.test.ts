@@ -7,6 +7,7 @@ import { createHash } from 'crypto';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { normalizeGraph } from '../src/graph/model';
+import { importReaCallGraph } from '../src/graph/commands';
 import { auditGraph } from '../src/graph/audit';
 import { graphStatus } from '../src/automation';
 import { scenarioCheck, referenceCheck } from '../src/spec/checks';
@@ -106,4 +107,18 @@ test('endpoint contracts compare nested values, scalar types, arrays and false v
   expect(contractMismatches([1, 2], [1])).toEqual(['$']);
   expect(contractMismatches({ ok: true }, { ok: true, extra: 1 })).toEqual([]);
   await expect(endpointBody(new Response('x'.repeat(1024 * 1024 + 1)))).rejects.toThrow('exceeds 1 MiB');
+});
+
+test('the recorded real Ghidra export retains its observed call and coverage in Dotdog', () => {
+  const base = join(import.meta.dir, '../../../examples/native');
+  const verification = JSON.parse(readFileSync(join(base, 'verification.json'), 'utf8'));
+  const bodyBytes = readFileSync(join(base, 'callgraph-ghidra.json'));
+  expect(createHash('sha256').update(bodyBytes).digest('hex')).toBe(verification.exportSha256);
+  const raw = JSON.parse(bodyBytes.toString('utf8'));
+  const imported = importReaCallGraph(raw, 'native-fixture', 'callgraph-ghidra.json', verification.exportSha256, verification.binarySha256);
+  expect(imported.nodes).toHaveLength(2);
+  expect(imported.edges).toHaveLength(1);
+  expect(imported.edges[0].evidence.relationship_coverage.status).toBe('complete');
+  expect(imported.nodes[0].id).toContain(verification.binarySha256);
+  expect(imported.coverage.scope).toBe('supplied REA traversal only');
 });

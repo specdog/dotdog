@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, lstatSync } from 'fs';
+import { atomicWrite } from '../workspace/files';
+import { existsSync, mkdirSync, readdirSync, readFileSync, lstatSync } from 'fs';
 import { execFileSync } from 'child_process';
 import { createHash } from 'crypto';
 import { mapSource } from './source';
@@ -339,7 +340,7 @@ export function writeRepoMap(targetDir: string, projectName: string, specDir: st
   const current = new Set(map.files);
   for (const file of Object.keys(cache)) if (!current.has(file)) delete cache[file];
   mkdirSync(cacheDir, { recursive: true });
-  writeFileSync(cacheFile, JSON.stringify(cache));
+  atomicWrite(targetDir, cacheFile, JSON.stringify(cache));
   mkdirSync(specDir, { recursive: true });
 
   const outFile = join(specDir, 'repo-map.dog');
@@ -347,9 +348,9 @@ export function writeRepoMap(targetDir: string, projectName: string, specDir: st
   const factsFile = join(specDir, 'facts.jsonl');
   const observedFacts = toGraphFacts(map, projectName);
 
-  writeFileSync(outFile, renderRepoMapDog(projectName, targetDir, map));
-  writeFileSync(dagFile, renderRepositoryDag(projectName, targetDir, map));
-  writeFileSync(factsFile, renderGraphFactsJsonl(observedFacts));
+  atomicWrite(targetDir, outFile, renderRepoMapDog(projectName, targetDir, map));
+  atomicWrite(targetDir, dagFile, renderRepositoryDag(projectName, targetDir, map));
+  atomicWrite(targetDir, factsFile, renderGraphFactsJsonl(observedFacts));
 
   return {
     file: outFile,

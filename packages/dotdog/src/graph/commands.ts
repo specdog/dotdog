@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { atomicWrite } from '../workspace/files';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { join, relative } from 'path';
 import { createHash } from 'crypto';
 import type { Command } from 'commander';
@@ -94,7 +95,7 @@ export function registerGraphCommands(program: Command) {
       mkdirSync(directory, { recursive: true });
       const destination = safeOutputPath(join(directory, opts.project + '.dag'));
       if (existsSync(destination) && !opts.force) throw new Error('Imported project exists; use --force to replace it');
-      writeFileSync(destination, JSON.stringify(imported, null, 2) + '\n');
+      atomicWrite(process.cwd(), destination, JSON.stringify(imported, null, 2) + '\n');
       console.log(JSON.stringify({ project: opts.project, file: relative(process.cwd(), destination), sourceSha256: digest, nodes: imported.nodes.length, edges: imported.edges.length }));
     });
   graph.command('export')

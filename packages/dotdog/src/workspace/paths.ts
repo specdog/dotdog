@@ -83,7 +83,7 @@ export function resolveUserPath(inputPath: string, rootPath = process.cwd()): st
 export function isIgnoredRepoPath(relativePath: string): boolean {
   const normalized = relativePath.replace(/\\/g, '/');
   const parts = normalized.split('/').filter(Boolean);
-  if (parts.some((part) => IGNORED_DIRS.has(part))) return true;
+  if (parts.some((part) => IGNORED_DIRS.has(part) || part.startsWith('.dotdog-write-'))) return true;
   const basename = parts[parts.length - 1] || normalized;
   return SECRET_FILE_PATTERNS.some((pattern) => pattern.test(basename));
 }

@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, lstatSync, unlinkSync } from 'fs';
+import { atomicWrite, withRepoLock, lockEnvironment } from './workspace/files';
+import { existsSync, readFileSync, mkdirSync, mkdtempSync, rmSync, lstatSync, unlinkSync } from 'fs';
 import { join, dirname, relative, resolve } from 'path';
 import { tmpdir } from 'os';
 import { createHash } from 'crypto';
@@ -13,7 +14,7 @@ const version = JSON.parse(readFileSync(new URL('../package.json', import.meta.u
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 
 function invoke(root: string, args: string[]) {
-  return execFileSync(process.execPath, [process.argv[1], ...args], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  return execFileSync(process.execPath, [process.argv[1], ...args], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, ...lockEnvironment(root) } });
 }
 
 export function graphStatus(root: string) {
@@ -35,6 +36,10 @@ export function graphStatus(root: string) {
 }
 
 export function refreshGraph(root: string, onlyStale = false) {
+  return withRepoLock(root, () => refreshUnlocked(root, onlyStale));
+}
+
+function refreshUnlocked(root: string, onlyStale = false) {
   const status = graphStatus(root), hash = status.inputHash, unchanged = status.fresh;
   const directory = join(root, '.doghouse'), stateFile = safeOutputPath(join(directory, 'refresh.json'), root);
   const dagFile = resolveUserPath(join(directory, 'compiled/repo.dag'), root);
@@ -56,7 +61,7 @@ export function refreshGraph(root: string, onlyStale = false) {
     removed: [...before.keys()].filter(id => !after.has(id)).sort(),
   };
   const outputHashes = Object.fromEntries(listRepoFiles(root).filter(file => /\.dag$/.test(file)).map(file => [file, digest(readFileSync(join(root, file)))]));
-  writeFileSync(stateFile, JSON.stringify({ ...result, outputHash: digest(readFileSync(dagFile)), outputHashes }, null, 2) + '\n');
+  atomicWrite(root, stateFile, JSON.stringify({ ...result, outputHash: digest(readFileSync(dagFile)), outputHashes }, null, 2) + '\n');
   return result;
 }
 
@@ -67,7 +72,7 @@ function installFile(root: string, path: string, content: string) {
     if (lstatSync(absolute).isSymbolicLink() || readFileSync(absolute, 'utf8') !== content) throw new Error(`Refusing to replace existing file: ${path}`);
     return;
   }
-  writeFileSync(absolute, content, { mode: 0o755 });
+  atomicWrite(root, absolute, content, 0o755);
 }
 
 function readHookManifest(root: string, agent: string, file: string) {
@@ -155,7 +160,7 @@ export function registerAutomation(program: Command) {
       const target = resolve(root, path);
       const content = '#!/bin/sh\nexec dotdog check --staged\n';
       installFile(root, relative(root, target), content);
-      writeFileSync(manifest, JSON.stringify({ path, sha256: digest(content) }));
+      atomicWrite(root, manifest, JSON.stringify({ path, sha256: digest(content) }));
     } else {
       const path = '.claude/settings.json', target = join(root, path);
       safeOutputPath(target, root);
@@ -166,8 +171,8 @@ export function registerAutomation(program: Command) {
       settings.hooks ||= {};
       settings.hooks.PostToolUse ||= [];
       settings.hooks.PostToolUse.push(hook);
-      writeFileSync(target, JSON.stringify(settings, null, 2) + '\n');
-      writeFileSync(manifest, JSON.stringify({ path, hook }));
+      atomicWrite(root, target, JSON.stringify(settings, null, 2) + '\n');
+      atomicWrite(root, manifest, JSON.stringify({ path, hook }));
     }
     console.log(`Installed ${opts.agent} hook; inspect with dotdog hooks status, remove with dotdog hooks remove --agent ${opts.agent}`);
   });
@@ -196,7 +201,7 @@ export function registerAutomation(program: Command) {
       const settings = JSON.parse(readFileSync(target, 'utf8'));
       if (!(settings.hooks?.PostToolUse || []).some((hook: any) => JSON.stringify(hook) === JSON.stringify(owned.hook))) throw new Error('Claude hook was edited; remove it manually without changing unrelated hooks');
       settings.hooks.PostToolUse = settings.hooks.PostToolUse.filter((hook: any) => JSON.stringify(hook) !== JSON.stringify(owned.hook));
-      writeFileSync(target, JSON.stringify(settings, null, 2) + '\n');
+      atomicWrite(root, target, JSON.stringify(settings, null, 2) + '\n');
     }
     unlinkSync(manifest);
     console.log(`Removed ${opts.agent} hook`);

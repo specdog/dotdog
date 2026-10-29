@@ -10,7 +10,7 @@ import type {
 // --- Main entry ---
 
 export function parse(source: string): DocumentNode {
-  const lines = source.split('\n');
+  const lines = source.replace(/\r\n/g, '\n').split('\n');
   const errors: ParseError[] = [];
   const sections = parseSections(lines, errors);
   return { kind: 'document', sections, errors };

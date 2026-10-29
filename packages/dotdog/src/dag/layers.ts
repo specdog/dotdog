@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { atomicWrite } from '../workspace/files';
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'fs';
 import { join, relative, dirname } from 'path';
 import { parse } from '../parser';
 import { resolveUserPath, safeOutputPath } from '../workspace/paths';
@@ -205,7 +206,7 @@ export function compileDotdogLayers(root: string, project: string): LayerCompile
   const compiledDir = resolveUserPath(join(doghouseDir, 'compiled'), root);
   mkdirSync(compiledDir, { recursive: true });
   const outFile = safeOutputPath(join(compiledDir, 'repo.dag'), root);
-  writeFileSync(outFile, serializeWorldModel(compiled));
+  atomicWrite(root, outFile, serializeWorldModel(compiled));
 
   return { file: outFile, nodes: compiled.nodes.length, edges: compiled.edges.length, unknowns: compiled.unknowns.length };
 }

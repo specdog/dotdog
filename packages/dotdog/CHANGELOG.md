@@ -2,6 +2,9 @@
 
 ## 1.0.0 — Unreleased
 
+- Replace generated outputs atomically, preserve hard-linked evidence and serialize refresh/map/compile with recoverable ownership locks; handle CRLF input and add Windows CI.
+- Verify and publish one hashed tarball; add a real SolidState/Ghidra → REA → Dotdog example with recorded provenance.
+
 - Fix static symlink read/write escapes, forged hook ownership, parser hangs and unbounded MCP input; update SDK and vulnerable development dependency resolutions.
 - Replace guessed provider MCP calls with explicit read-only APIs; parameterize Railway IDs, require Cloudflare account identity and disclose unverified Supabase tables.
 - Compare nested endpoint contract values/types with bounded body reads and end-to-end timeouts; strict infrastructure checks fail on unverified results.

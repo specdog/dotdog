@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+import { atomicWrite, withRepoLock } from './workspace/files';
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { existsSync, readdirSync, readFileSync, mkdirSync, writeFileSync as nativeWriteFileSync, statSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, mkdirSync, statSync } from 'fs';
 import { join, relative, resolve, dirname, basename } from 'path';
 import { buildIndex, searchIndex } from './index';
 import { resolveUserPath, safeOutputPath } from './workspace/paths';
@@ -26,7 +27,9 @@ import { registerAutomation } from './automation';
 import { registerGraphCommands } from './graph/commands';
 
 
-const writeFileSync: typeof nativeWriteFileSync = ((file: string, ...args: any[]) => (nativeWriteFileSync as any)(safeOutputPath(file), ...args)) as typeof nativeWriteFileSync;
+function writeFileSync(file: string, data: string | Uint8Array, encoding: BufferEncoding = 'utf8') {
+  atomicWrite(process.cwd(), file, typeof data === 'string' ? Buffer.from(data, encoding) : data);
+}
 
 function normalizeDag(dag: any): any {
   if (Array.isArray(dag)) {
@@ -320,7 +323,7 @@ function buildCompactText(project: string, v2nodes: any[][]): string {
   return lines.join('\n');
 }
 
-program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'Use legacy v2 format').option('--specs-only', 'Compile spec projects without repository layers').action((d='.', opts) => {
+program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'Use legacy v2 format').option('--specs-only', 'Compile spec projects without repository layers').action((d='.', opts) => withRepoLock(resolvePath(d), () => {
   const dir = resolvePath(d);
   const layered = opts.specsOnly ? null : compileDotdogLayers(dir, safeProjectName(dir));
   if (layered) {
@@ -623,7 +626,7 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
     }
   }
   if (!found) console.log(chalk.yellow('No projects found.'));
-});
+}));
 
 program.command('tokens [dir]').action((d='.') => {
   const dir = resolvePath(d);
@@ -1938,7 +1941,7 @@ program
   .description('Map a repository into a machine-readable repo.dag world model')
   .option('-p, --project <name>', 'project name')
   .option('--json', 'print write result as JSON')
-  .action((dir = '.', opts) => {
+  .action((dir = '.', opts) => withRepoLock(resolvePath(dir), () => {
     const projectName = opts.project || safeProjectName(resolve(dir));
     const specDir = resolve(dir, '.doghouse', 'generated');
     const result = writeRepoMap(resolve(dir), projectName, specDir);
@@ -1948,7 +1951,7 @@ program
     }
     console.log(`wrote ${result.dagFile}`);
     console.log(`${result.facts} facts, ${result.edges} edges`);
-  });
+  }));
 
 program
   .command('query <term>')
