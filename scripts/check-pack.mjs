@@ -1,6 +1,6 @@
-import { execFileSync } from 'node:child_process';
+import { npm } from './lib/npm.mjs';
 
-const raw = execFileSync('npm', ['pack', '--dry-run', '--json'], {
+const raw = npm(['pack', '--dry-run', '--json'], {
   cwd: 'packages/dotdog',
   encoding: 'utf8',
 });

@@ -14,6 +14,7 @@ async function restGet(path: string): Promise<{ ok: boolean; status: number; dat
 
   const res = await fetch(`https://api.netlify.com/api/v1${path}`, {
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    redirect: 'error',
     signal: AbortSignal.timeout(15000),
   });
 
@@ -28,7 +29,8 @@ async function verifyResource(resource: InfraResource): Promise<CheckResult> {
     return { entity: resource.entity, provider: 'netlify', resource: resource.resource, status: 'skip', message: 'NETLIFY_AUTH_TOKEN not set' };
   }
 
-  const [type, name] = resource.resource.split(':');
+  const [type, name, extra] = resource.resource.split(':');
+  if (!name || extra || name === '.' || name === '..') return { entity: resource.entity, provider: 'netlify', resource: resource.resource, status: 'fail', message: 'Invalid resource identifier' };
 
   try {
     if (type === 'site') {

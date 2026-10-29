@@ -1,288 +1,219 @@
-// spec serve — MCP server over stdio
-// Exposes .dag graph to AI agents. v3 format only.
-
-import { existsSync, readdirSync, readFileSync } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
-import * as readline from 'readline';
-import { parse } from './parser';
+import { existsSync, readdirSync, readFileSync, realpathSync } from 'fs';
+import { join } from 'path';
+import { once } from 'events';
+import { createHash } from 'crypto';
+import { readGraphText } from './graph/io';
 import { resolveUserPath } from './workspace/paths';
 import { resolveWorkspace } from './workspace/resolver';
 import { portableWorkspacePath } from './workspace/graph';
-import { shortestGraphPath, type PathDirection } from './graph/path';
+import { shortestGraphPath } from './graph/path';
+import { toolOutputSchema } from './graph/contracts';
+import { budgetContext } from './graph/context';
+import { normalizeGraph, graphNeighborhood, indexGraph, type NormalizedGraph, type GraphIndex } from './graph/model';
 
-function resolvePath(p: string): string {
-  return resolveUserPath(p, process.cwd());
+const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const modern = '2026-07-28';
+const serverMeta = { 'io.modelcontextprotocol/serverInfo': { name: 'dotdog', version: pkg.version } };
+const versions = ['2025-11-25', '2025-06-18', '2024-11-05'];
+const string = { type: 'string' };
+const integer = (minimum: number, maximum: number) => ({ type: 'integer', minimum, maximum });
+const graphArgs = { project: string };
+const definitions = [
+  ['getEntity', 'Entity properties, schema, lifecycle, provenance and outgoing relationships', { ...graphArgs, name: string }, ['name']],
+  ['traverse', 'Bounded outgoing neighborhood, preserving relationship evidence', { ...graphArgs, from: string, depth: integer(0, 12), limit: integer(1, 1000), verb: string }, ['from']],
+  ['path', 'Shortest connecting subgraph with relationship evidence', { ...graphArgs, from: string, to: string, direction: { enum: ['any', 'incoming', 'outgoing'] }, maxHops: integer(1, 12), verb: string }, ['from', 'to']],
+  ['search', 'Find entities by name; cursor paginates large result sets', { ...graphArgs, q: string, type: string, limit: integer(1, 1000), cursor: string }, ['q']],
+  ['listProjects', 'List available project graphs', {}, []],
+  ['workspace.list', 'Repository-relative workspace metadata, not instructions', {}, []],
+  ['summary', 'Graph counts, coverage, limitations and estimated savings', graphArgs, []],
+  ['schema', 'Full property definitions from the compiled graph', { ...graphArgs, entity: string }, ['entity']],
+  ['context', 'Connected graph context; optional o200k_base token budget and lexical task ranking', { ...graphArgs, q: string, depth: integer(0, 12), limit: integer(1, 1000), maxTokens: integer(128, 131072), task: { type: 'string', maxLength: 4096 } }, ['q']],
+  ['impact', 'Reverse dependency neighborhood for a proposed change; not a runtime proof', { ...graphArgs, from: string, depth: integer(0, 12), limit: integer(1, 1000) }, ['from']],
+  ['infraVerify', 'Explicit live, read-only infrastructure verification; may contact configured providers', { provider: string, entity: string, summary: { type: 'boolean' } }, []],
+] as const;
+
+function success(id: any, data: any, textData = data) {
+  const structuredContent = Array.isArray(data) ? { items: data } : data;
+  return { jsonrpc: '2.0', id, result: { resultType: 'complete', _meta: serverMeta, isError: false, structuredContent, content: [{ type: 'text', text: JSON.stringify(textData) }] } };
 }
 
-// --- v3-only helpers ---
-// Node: [name: string, typeCode: 'e'|'p'|'i', props: [k,v]|null, states: []|null, edges: [[tgtIdx,verb]]|null]
-// DAG:  [3, project: string, nodes: v3node[], tokens: object]
-
-const TYPE: Record<string,string> = { e:'entity', p:'prediction', i:'infra' };
-
-const Nm = (n: any) => Array.isArray(n) ? n[0] : (n.label || n.id || '');                          // name
-const Nt = (n: any) => Array.isArray(n) ? (TYPE[n[1]] || 'entity') : (n.kind || 'entity');        // type
-const Np = (n: any) => {
-  if (!Array.isArray(n)) return n.properties || {};
-  const flat = n[2] || [];
-  if (!Array.isArray(flat)) return (flat && typeof flat === 'object') ? flat : {};
-  const obj: Record<string,string> = {};
-  if (flat.length && Array.isArray(flat[0])) {
-    for (const pair of flat) obj[String(pair[0])] = String(pair[1] ?? '');
-    return obj;
-  }
-  for (let i = 0; i < flat.length; i += 2) obj[String(flat[i])] = String(flat[i+1] ?? '');
-  return obj;
-};
-const Ns = (n: any) => Array.isArray(n) ? (n[3] || []) : [];                    // states
-const Ne = (n: any, dag?: any) => {
-  if (!Array.isArray(n)) return (dag?.edges || []).filter((e: any) => e.sourceId === n.id).map((e: any) => {
-    const target = nodes(dag || {}).find((node: any) => node.id === e.targetId);
-    return { s: Nm(n), t: target ? Nm(target) : e.targetId, v: e.verb || '', c: '', r: 0 };
-  });
-  return (n[4] || []).map((e: any[]) => ({ s: Nm(n), t: String(e[0]), v: e[1] || '', c: e[2] || '', r: e[3] || 0 }));
-};
-
-const nodes = (dag: any): any[] => dag.nodes || dag.n || (Array.isArray(dag) ? dag[2] : []) || [];
-const project = (dag: any): string => dag.project || dag.p || dag[1] || '';
-const tokens = (dag: any): any => dag.tk || dag.tokens || (Array.isArray(dag) ? dag[3] : {}) || {};
-
-function allEdges(dag: any): any[] {
-  if (Array.isArray(dag.edges)) return dag.edges.map((e: any) => {
-    const source = nodes(dag).find((node: any) => node.id === e.sourceId);
-    const target = nodes(dag).find((node: any) => node.id === e.targetId);
-    return { s: source ? Nm(source) : e.sourceId, t: target ? Nm(target) : e.targetId, v: e.verb || '', c: '', r: 0 };
-  });
-  const seen = new Set<string>();
-  const edges: any[] = [];
-  for (const n of nodes(dag)) {
-    for (const e of Ne(n, dag)) {
-      const key = `${e.s}→${e.t}:${e.v}`;
-      if (!seen.has(key)) { seen.add(key); edges.push(e); }
-    }
-  }
-  return edges;
+function failure(id: any, code: number, message: string) {
+  return { jsonrpc: '2.0', id: id ?? null, error: { code, message } };
 }
 
-export function serve(dir: string = '.'): void {
-  const root = resolvePath(dir);
-  const dagCache: Map<string, any> = new Map();
-  const dagPaths: Map<string, string> = new Map();
-
-  function loadDags(): string[] {
-    const compiledDag = join(root, '.doghouse', 'compiled', 'repo.dag');
-    if (existsSync(compiledDag)) {
-      const dag = JSON.parse(readFileSync(compiledDag, 'utf-8'));
-      const p = project(dag) || 'repo';
-      dagCache.set(p, dag);
-      dagPaths.set(p, join(root, '.doghouse'));
-    }
-
-    const dirs = [join(root,'projects'),join(root,'specs'),root];
-    for (const dd of dirs) {
-      if (!existsSync(dd)) continue;
-      const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
-      for (const p of projects) {
-        const dagFile = join(dd,p,`${p}.dag`);
-        if (existsSync(dagFile)) { dagCache.set(p, JSON.parse(readFileSync(dagFile,'utf-8'))); dagPaths.set(p, join(dd,p)); }
+export function createMcpHandler(dir: string) {
+  const root = realpathSync(dir);
+  let fingerprint = '';
+  let graphs = new Map<string, { graph: NormalizedGraph; raw: any; index: GraphIndex }>();
+  let invalidProjects: Record<string, string> = Object.create(null);
+  function load() {
+    const candidates = new Map<string, string>();
+    const compiled = resolveUserPath(join(root, '.doghouse/compiled/repo.dag'), root);
+    if (existsSync(compiled)) candidates.set(compiled, 'repo');
+    for (const directory of [join(root, 'projects'), join(root, 'specs'), join(root, '.doghouse/imported'), root]) {
+      if (!existsSync(directory)) continue;
+      resolveUserPath(directory, root);
+      for (const entry of readdirSync(directory, { withFileTypes: true })) {
+        if (entry.isSymbolicLink()) continue;
+        if (entry.isDirectory()) {
+          const file = join(directory, entry.name, entry.name + '.dag');
+          if (existsSync(file)) candidates.set(resolveUserPath(file, root), entry.name);
+        } else if (entry.isFile() && entry.name.endsWith('.dag')) {
+          const key = entry.name.slice(0, -4);
+          candidates.set(resolveUserPath(join(directory, entry.name), root), key);
+        }
       }
-      // Also check root-level .dag files
-      try { for (const f of readdirSync(dd)) { if (f.endsWith('.dag')) {
-        const p = f.replace('.dag','');
-        if (!dagCache.has(p)) dagCache.set(p, JSON.parse(readFileSync(join(dd,f),'utf-8')));
-      }}} catch {}
     }
-    return [...dagCache.keys()];
+    const sources: string[][] = [];
+    const digest = createHash('sha256');
+    let bytes = 0;
+    for (const [file, key] of candidates) {
+      const source = readGraphText(file);
+      bytes += Buffer.byteLength(source);
+      if (bytes > 128 * 1024 * 1024) throw new Error('Combined project graphs exceed 128 MiB');
+      sources.push([key, file, source]);
+      digest.update(JSON.stringify([key, file, Buffer.byteLength(source)])).update(source);
+    }
+    const next = digest.digest('hex');
+    if (next === fingerprint) return;
+    const loaded = new Map<string, { graph: NormalizedGraph; raw: any; index: GraphIndex }>();
+    invalidProjects = Object.create(null);
+    for (const [key, file, source] of sources) {
+      try {
+        const raw = JSON.parse(source), graph = normalizeGraph(raw);
+        if (file === compiled) graph.project = (graph.project || 'repository') + ':observed';
+        const name = graph.project || key;
+        if (loaded.has(name) || invalidProjects[name]) { loaded.delete(name); invalidProjects[name] = 'Duplicate project name'; continue; }
+        loaded.set(name, { graph, raw, index: indexGraph(graph) });
+      } catch (error) { invalidProjects[key] = error instanceof Error ? error.message : String(error); }
+    }
+    graphs = loaded;
+    fingerprint = next;
   }
 
-  async function handleRequest(req: any): Promise<any> {
-    const { id, method, params } = req;
-
-    if (method === 'initialize') {
-      return { jsonrpc: '2.0', id, result: {
-        protocolVersion: '2024-11-05',
-        serverInfo: { name: 'spec-serve', version: '0.1.0' },
-        capabilities: { tools: {} }
-      }};
+  return async (req: any): Promise<any> => {
+    if (!req || typeof req !== 'object' || Array.isArray(req) || req.jsonrpc !== '2.0' || typeof req.method !== 'string') return failure(req?.id, -32600, 'Invalid Request');
+    if (!Object.prototype.hasOwnProperty.call(req, 'id')) return undefined;
+    const { id, method } = req;
+    if (typeof id !== 'string' && (typeof id !== 'number' || !Number.isFinite(id))) return failure(null, -32600, 'Invalid request id');
+    const meta = req.params?._meta;
+    if (meta !== undefined) {
+      const version = meta?.['io.modelcontextprotocol/protocolVersion'];
+      if (version !== modern) return { jsonrpc: '2.0', id, error: { code: -32022, message: 'Unsupported protocol version', data: { supported: [modern], requested: version } } };
+      const capabilities = meta['io.modelcontextprotocol/clientCapabilities'];
+      if (!capabilities || typeof capabilities !== 'object' || Array.isArray(capabilities)) return failure(id, -32602, 'clientCapabilities must be an object');
     }
-
-    if (method === 'tools/list') {
-      return { jsonrpc: '2.0', id, result: { tools: [
-        { name: 'getEntity', description: 'Get entity: name, type, edges', inputSchema: { type: 'object', properties: { project: { type:'string' }, name: { type:'string' } }, required: ['name'] } },
-        { name: 'traverse', description: 'BFS from node, return reachable nodes+edges', inputSchema: { type: 'object', properties: { project: { type:'string' }, from: { type:'string' }, depth: { type:'number', default: 2 }, verb: { type:'string' } }, required: ['from'] } },
-        { name: 'path', description: 'Find the shortest connecting path between two graph entities', inputSchema: { type: 'object', properties: { project: { type:'string' }, from: { type:'string' }, to: { type:'string' }, direction: { type:'string', enum: ['outgoing', 'incoming', 'any'], default: 'any' }, verb: { type:'string' }, maxHops: { type:'number', default: 8 } }, required: ['from', 'to'] } },
-        { name: 'search', description: 'Find entities by name', inputSchema: { type: 'object', properties: { project: { type:'string' }, q: { type:'string' }, type: { type:'string' } }, required: ['q'] } },
-        { name: 'listProjects', description: 'List loaded projects', inputSchema: { type: 'object', properties: {} } },
-        { name: 'workspace.list', description: 'List workspace repos and groups', inputSchema: { type: 'object', properties: {} } },
-        { name: 'summary', description: 'Project stats: nodes, edges, savings', inputSchema: { type: 'object', properties: { project: { type:'string' } } } },
-        { name: 'schema', description: 'Entity property schema', inputSchema: { type: 'object', properties: { project: { type:'string' }, entity: { type:'string' } }, required: ['entity'] } },
-        { name: 'infraVerify', description: 'Verify infra resources', inputSchema: { type: 'object', properties: { provider: { type:'string' }, entity: { type:'string' }, summary: { type:'boolean' } } } },
-      ]}};
-    }
-
-    if (method === 'tools/call') {
-      const { name, arguments: args } = params;
-      loadDags();
-
-      const dag = dagCache.get(args.project || [...dagCache.keys()][0] || '');
-
-      if (name === 'listProjects') {
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify([...dagCache.keys()]) }] } };
+    try {
+      if (method === 'server/discover') return { jsonrpc: '2.0', id, result: { resultType: 'complete', _meta: serverMeta, supportedVersions: [modern, ...versions], capabilities: { tools: {} }, ttlMs: 0, cacheScope: 'private' } };
+      if (method === 'initialize') {
+        const requested = req.params?.protocolVersion;
+        return { jsonrpc: '2.0', id, result: { protocolVersion: versions.includes(requested) ? requested : versions[0], serverInfo: { name: 'dotdog', version: pkg.version }, capabilities: { tools: {} } } };
       }
-
+      if (method === 'ping') return { jsonrpc: '2.0', id, result: {} };
+      if (method === 'tools/list') return { jsonrpc: '2.0', id, result: { resultType: 'complete', _meta: serverMeta, tools: definitions.map(([name, description, properties, required]) => ({
+        name, description, inputSchema: { type: 'object', properties, required, additionalProperties: false },
+        outputSchema: toolOutputSchema(name),
+        annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: name === 'infraVerify' },
+      })).sort((a, b) => a.name.localeCompare(b.name)) } };
+      if (method !== 'tools/call') return failure(id, -32601, 'Method not found: ' + method);
+      const params = req.params;
+      const definition = definitions.find(item => item[0] === params?.name);
+      if (!definition) return failure(id, -32602, 'Unknown tool');
+      const args = params.arguments ?? {};
+      if (!args || typeof args !== 'object' || Array.isArray(args)) return failure(id, -32602, 'arguments must be an object');
+      const properties: any = definition[2];
+      for (const key of definition[3]) if (!(key in args)) return failure(id, -32602, 'Missing argument: ' + key);
+      for (const [key, value] of Object.entries(args)) {
+        const schema = Object.hasOwn(properties, key) ? properties[key] : undefined;
+        if (!schema) return failure(id, -32602, 'Unknown argument: ' + key);
+        if (schema.enum ? !schema.enum.includes(value) : schema.type === 'integer' ? !Number.isInteger(value) || Number(value) < schema.minimum || Number(value) > schema.maximum : typeof value !== schema.type || schema.maxLength && String(value).length > schema.maxLength) return failure(id, -32602, 'Invalid argument: ' + key);
+      }
+      if (args.task !== undefined && args.maxTokens === undefined) return failure(id, -32602, 'task requires maxTokens');
+      load();
+      const name = params.name;
+      if (name === 'listProjects') return success(id, { items: [...graphs.keys()].sort(), invalidProjects }, [...graphs.keys()].sort());
       if (name === 'workspace.list') {
         const workspace = resolveWorkspace(root, { requireManifest: false });
-        const repos = workspace.repos.map((repo) => {
-          const path = portableWorkspacePath(workspace, repo.cwd);
-          return { alias: repo.alias, role: repo.role, path, cwd: path };
-        });
-        const data = {
-          workspace: workspace.config.workspace,
-          mode: workspace.mode,
-          repos,
-          groups: workspace.config.groups || [],
-          trustedAsInstruction: false,
-          contentKind: 'workspace-metadata',
-        };
-        return { jsonrpc: '2.0', id, result: { structuredContent: data, content: [{ type: 'text', text: JSON.stringify(data) }] } };
+        const repos = workspace.repos.map(repo => { const path = portableWorkspacePath(workspace, repo.cwd); return { alias: repo.alias, role: repo.role, path, cwd: path }; });
+        return success(id, { workspace: workspace.config.workspace, mode: workspace.mode, repos, groups: workspace.config.groups || [], trustedAsInstruction: false, contentKind: 'workspace-metadata' });
       }
-
-      if (name === 'getEntity') {
-        if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const node = nodes(dag).find((n: any) => Nm(n).toLowerCase() === (args.name || '').toLowerCase());
-        if (!node) return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: '{}' }] } };
-        const props = Np(node);
-        if (Object.keys(props).length === 0) {
-          const projectDir = dagPaths.get(args.project || [...dagCache.keys()][0] || '');
-          if (projectDir) {
-            for (const f of readdirSync(projectDir).filter(x => x.endsWith('.dog'))) {
-              try {
-                const ast = parse(readFileSync(join(projectDir, f), 'utf-8'));
-                for (const s of ast.sections) for (const b of s.blocks) {
-                  if (b.kind === 'entity' && (b as any).name?.toLowerCase() === Nm(node).toLowerCase()) {
-                    Object.assign(props, Object.fromEntries(Object.entries((b as any).properties || {}).map(([k,v]: any) => [k, `${v.type?.[0] || 's'}${v.required ? '!' : ''}`])));
-                  }
-                }
-              } catch {}
-            }
-          }
-        }
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
-          name: Nm(node), type: Nt(node), properties: props, edges: Ne(node, dag).map((e: any) => [e.t, e.v, e.c])
-        }) }] } };
-      }
-
-      if (name === 'traverse') {
-        if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const depth = Math.min(Math.max(1, args.depth || 2), 3);
-        const verbFilter = (args.verb || '').toLowerCase();
-        const visited = new Set<string>();
-        const result: Array<{ name: string; edges: string[] }> = [];
-        const start = nodes(dag).find((n: any) => Nm(n).toLowerCase() === (args.from || '').toLowerCase());
-        const queue = [{ id: start ? Nm(start) : args.from, depth: 0 }];
-        while (queue.length > 0) {
-          const curr = queue.shift()!;
-          if (visited.has(curr.id) || curr.depth > depth) continue;
-          visited.add(curr.id);
-          const node = nodes(dag).find((n: any) => Nm(n) === curr.id);
-          if (node) {
-            const edges = Ne(node, dag).filter((e: any) => !verbFilter || (e.v || '').toLowerCase() === verbFilter);
-            result.push({ name: Nm(node), edges: edges.map((e: any) => `${e.t}:${e.v}${e.c ? '(' + e.c + ')' : ''}`) });
-            for (const e of edges) {
-              if (!visited.has(e.t)) queue.push({ id: e.t, depth: curr.depth + 1 });
-            }
-          }
-        }
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({ nodes: result }) }] } };
-      }
-
-      if (name === 'path') {
-        if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const pathResult = shortestGraphPath(dag, String(args.from || ''), String(args.to || ''), {
-          direction: (args.direction || 'any') as PathDirection,
-          verb: args.verb ? String(args.verb) : undefined,
-          maxHops: Number(args.maxHops || 8),
-        });
-        return { jsonrpc: '2.0', id, result: { structuredContent: pathResult, content: [{ type: 'text', text: JSON.stringify(pathResult) }] } };
-      }
-
-      if (name === 'search') {
-        if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const q = (args.q || '').toLowerCase();
-        const tf = (args.type || '').toLowerCase();
-        const results = nodes(dag)
-          .filter((n: any) => Nm(n).toLowerCase().includes(q) && (!tf || Nt(n).toLowerCase().includes(tf)))
-          .map((n: any) => [Nt(n), Nm(n)]);
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(results) }] } };
-      }
-
-      if (name === 'summary') {
-        if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const tk = tokens(dag);
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
-          project: project(dag), nodes: nodes(dag).length, edges: allEdges(dag).length,
-          savings: tk.sv || 0
-        }) }] } };
-      }
-
-      if (name === 'schema') {
-        if (!dag) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Project not found' } };
-        const node = nodes(dag).find((n: any) => Nm(n).toLowerCase() === (args.entity || '').toLowerCase());
-        if (!node) return { jsonrpc: '2.0', id, error: { code: 404, message: 'Entity not found' } };
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({
-          entity: Nm(node), properties: Np(node)
-        }) }] } };
-      }
-
       if (name === 'infraVerify') {
-        loadDags();
-        const infraNodes: any[] = [];
-        for (const [prj, d] of dagCache) {
-          for (const n of nodes(d)) {
-            if (Nt(n) === 'infra') {
-              const p = Np(n);
-              infraNodes.push({ entity: p.entity || '', provider: p.provider || '', resource: p.resource || '', region: p.region || '', tables: p.tables || '', project: prj });
-            }
-          }
-        }
-        if (infraNodes.length === 0) {
-          const { verifyInfra } = require('./infra/verify');
-          try { const results = await verifyInfra({ dir: root, providerFilter: args.provider, entityFilter: args.entity });
-            return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(results) }] } };
-          } catch (e: any) { return { jsonrpc: '2.0', id, error: { code: 500, message: e.message } }; }
-        }
-        let filtered = infraNodes;
-        if (args.provider) filtered = filtered.filter((n: any) => n.provider.toLowerCase() === String(args.provider).toLowerCase());
-        if (args.entity) filtered = filtered.filter((n: any) => n.entity.toLowerCase() === String(args.entity).toLowerCase());
-        if (args.summary) {
-          const bp: Record<string,number> = {}, be: Record<string,number> = {};
-          for (const n of filtered) { bp[n.provider] = (bp[n.provider] || 0) + 1; be[n.entity] = (be[n.entity] || 0) + 1; }
-          return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify({ total: filtered.length, byProvider: bp, byEntity: be, sample: filtered.slice(0, 3).map((n: any) => ({ entity: n.entity, provider: n.provider, resource: n.resource })) }) }] } };
-        }
-        const { verifyInfra } = require('./infra/verify');
-        const results = [];
-        for (const node of filtered) {
-          try { results.push(...(await verifyInfra({ dir: root, providerFilter: node.provider, entityFilter: node.entity }))); }
-          catch { results.push({ entity: node.entity, provider: node.provider, resource: node.resource, status: 'warn', message: 'check failed' }); }
-        }
-        return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(results) }] } };
+        const { verifyInfra } = await import('./infra/verify');
+        const results = await verifyInfra({ dir: root, providerFilter: args.provider, entityFilter: args.entity });
+        return success(id, args.summary ? { total: results.length, results } : results);
       }
-
-      return { jsonrpc: '2.0', id, error: { code: 404, message: `Unknown tool: ${name}` } };
+      if (!args.project && graphs.size > 1) return failure(id, -32602, 'Multiple projects available; specify project');
+      const entry = graphs.get(args.project || [...graphs.keys()][0]);
+      if (!entry) { const result = success(id, { error: invalidProjects[args.project] || 'project_not_found' }); result.result.isError = true; return result; }
+      const { graph, raw, index } = entry;
+      const { byId } = index;
+      const find = (query: string) => {
+        const exact = byId.get(query);
+        if (exact) return exact;
+        const matches = index.byFoldedName.get(query.toLowerCase()) || [];
+        if (matches.length > 1) throw new Error('Ambiguous entity; query an exact ID: ' + matches.slice(0, 100).map(node => node.id).join(', '));
+        return matches[0];
+      };
+      if (name === 'getEntity' || name === 'schema') {
+        const node = find(args.name || args.entity);
+        if (!node) return success(id, { error: 'entity_not_found' });
+        const properties = Object.keys(node.schema).length ? Object.fromEntries(Object.entries(node.schema).map(([key, value]) => [key, `${(value as any).type?.[0] || 's'}${(value as any).required ? '!' : ''}`])) : node.properties;
+        if (name === 'schema') return success(id, { entity: node.label, properties, schema: node.schema });
+        return success(id, { name: node.label, type: node.kind, properties, schema: node.schema, states: node.states, lifecycle: node.lifecycle, description: node.description,
+          origin: node.origin, confidence: node.confidence, evidence: node.evidence,
+          edges: (index.incident.get(node.id) || []).filter(edge => edge.sourceId === node.id).map(edge => [byId.get(edge.targetId)!.label, edge.verb, edge.cardinality || '']) });
+      }
+      if (name === 'summary') {
+        const tk = Array.isArray(raw) ? raw[3] : raw.tk || raw.tokens || {};
+        return success(id, { project: graph.project, nodes: graph.nodes.length, edges: graph.edges.length, savings: tk.sv || 0, savingsMethod: 'bytes/4 estimate', coverage: graph.coverage, limitations: graph.limitations });
+      }
+      if (name === 'search') {
+        const offset = args.cursor === undefined ? 0 : Number(args.cursor);
+        if (!Number.isSafeInteger(offset) || offset < 0) return failure(id, -32602, 'Invalid cursor');
+        const matches = graph.nodes.filter(node => node.label.toLowerCase().includes(args.q.toLowerCase()) && (!args.type || node.kind.toLowerCase().includes(args.type.toLowerCase())));
+        const limit = args.limit || 100;
+        const items = matches.slice(offset, offset + limit).map(node => [node.kind, node.label]);
+        return success(id, { items, total: matches.length, nextCursor: offset + limit < matches.length ? String(offset + limit) : null }, items);
+      }
+      if (name === 'path') return success(id, shortestGraphPath(raw, args.from, args.to, { direction: args.direction, maxHops: args.maxHops, verb: args.verb }));
+      if (name === 'context') {
+        const idMatch = byId.get(args.q);
+        const exact = idMatch ? [idMatch] : index.byLabel.get(args.q) || [];
+        const matches = exact.length ? exact : graph.nodes.filter(node => `${node.label} ${node.description || ''}`.toLowerCase().includes(args.q.toLowerCase()));
+        const context = matches.length !== 1
+          ? { ok: false, error: matches.length ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: matches.slice(0, args.limit || 100).map(node => node.label) }
+          : graphNeighborhood(graph, matches[0].id, { depth: args.depth, limit: args.limit }, index);
+        return success(id, args.maxTokens === undefined ? context : await budgetContext(context, args.maxTokens, args.task));
+      }
+      const neighborhood = graphNeighborhood(graph, args.from, { direction: name === 'impact' ? 'incoming' : 'outgoing', depth: args.depth, limit: args.limit, verb: args.verb }, index);
+      if (name === 'impact') return success(id, neighborhood);
+      return success(id, { ...neighborhood, nodes: neighborhood.nodes.map(node => ({ name: node.label, edges: neighborhood.edges.filter(edge => edge.sourceId === node.id).map(edge => `${byId.get(edge.targetId)!.label}:${edge.verb}${edge.cardinality ? '(' + edge.cardinality + ')' : ''}`) })) });
+    } catch (error) {
+      return { jsonrpc: '2.0', id, result: { resultType: 'complete', _meta: serverMeta, isError: true, content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }] } };
     }
+  };
+}
 
-    return { jsonrpc: '2.0', id, error: { code: 404, message: `Unknown method: ${method}` } };
+export async function serve(dir = '.') {
+  const handle = createMcpHandler(dir);
+  const write = async (response: any) => {
+    if (response !== undefined && !process.stdout.write(JSON.stringify(response) + '\n')) await once(process.stdout, 'drain');
+  };
+  process.stdin.setEncoding('utf8');
+  let buffer = '';
+  for await (const chunk of process.stdin) {
+    buffer += chunk;
+    let newline: number;
+    while ((newline = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, newline);
+      buffer = buffer.slice(newline + 1);
+      if (Buffer.byteLength(line) > 1024 * 1024) { await write(failure(null, -32600, 'Request exceeds 1 MiB')); return; }
+      let request;
+      try { request = JSON.parse(line); }
+      catch { await write(failure(null, -32700, 'Parse error')); continue; }
+      await write(await handle(request));
+    }
+    if (Buffer.byteLength(buffer) > 1024 * 1024) { await write(failure(null, -32600, 'Request exceeds 1 MiB')); return; }
   }
-
-  const rl = readline.createInterface({ input: process.stdin });
-  loadDags();
-  console.error(`[spec-serve] Loaded ${dagCache.size} projects`);
-  rl.on('line', async (line: string) => {
-    try {
-      const req = JSON.parse(line);
-      const res = await handleRequest(req);
-      process.stdout.write(JSON.stringify(res) + '\n');
-    } catch (e) { process.stderr.write(`[spec-serve] Error: ${e}\n`); }
-  });
+  if (buffer.trim()) await write(failure(null, -32700, 'Unterminated JSON-RPC line'));
 }

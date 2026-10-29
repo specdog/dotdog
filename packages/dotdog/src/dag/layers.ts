@@ -1,6 +1,8 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { atomicWrite } from '../workspace/files';
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'fs';
+import { join, relative, dirname } from 'path';
 import { parse } from '../parser';
+import { resolveUserPath, safeOutputPath } from '../workspace/paths';
 import {
   makeEdge,
   makeNode,
@@ -102,7 +104,8 @@ function loadDogLayer(dir: string, originType: 'semantic' | 'overlay', labelToId
 
   const files = readdirSync(dir).filter((file) => file.endsWith('.dog')).sort();
   for (const file of files) {
-    const fullPath = join(dir, file);
+    const fullPath = resolveUserPath(join(dir, file), dirname(dirname(dir)));
+    const sourcePath = relative(dirname(dirname(dir)), fullPath).replace(/\\/g, '/');
     const ast = parse(readFileSync(fullPath, 'utf-8'));
 
     for (const section of ast.sections) {
@@ -117,11 +120,11 @@ function loadDogLayer(dir: string, originType: 'semantic' | 'overlay', labelToId
           id,
           kind,
           label: name,
-          source: fullPath,
+          source: sourcePath,
           description: (block as any).description || '',
           properties: compactProperties(block),
           confidence: 'certain',
-          origin: { type: originType, file: fullPath },
+          origin: { type: originType, file: sourcePath },
         }));
       }
     }
@@ -137,13 +140,13 @@ function loadDogLayer(dir: string, originType: 'semantic' | 'overlay', labelToId
         if (!sourceId) {
           sourceId = idForLabel(sourceLabel, 'unknown');
           labelToId.set(sourceLabel, sourceId);
-          nodes.push(makeNode({ id: sourceId, kind: 'unknown', label: sourceLabel, source: fullPath, description: 'Referenced by authored graph but not found', confidence: 'unknown', origin: { type: originType, file: fullPath } }));
+          nodes.push(makeNode({ id: sourceId, kind: 'unknown', label: sourceLabel, source: sourcePath, description: 'Referenced by authored graph but not found', confidence: 'unknown', origin: { type: originType, file: sourcePath } }));
           unknowns.push(`${sourceLabel} referenced by ${file}`);
         }
         if (!targetId) {
           targetId = idForLabel(targetLabel, 'unknown');
           labelToId.set(targetLabel, targetId);
-          nodes.push(makeNode({ id: targetId, kind: 'unknown', label: targetLabel, source: fullPath, description: 'Referenced by authored graph but not found', confidence: 'unknown', origin: { type: originType, file: fullPath } }));
+          nodes.push(makeNode({ id: targetId, kind: 'unknown', label: targetLabel, source: sourcePath, description: 'Referenced by authored graph but not found', confidence: 'unknown', origin: { type: originType, file: sourcePath } }));
           unknowns.push(`${targetLabel} referenced by ${file}`);
         }
         edges.push(makeEdge({
@@ -151,9 +154,9 @@ function loadDogLayer(dir: string, originType: 'semantic' | 'overlay', labelToId
           targetId,
           verb: edgeVerbFrom((block as any).verb || ''),
           description: (block as any).description || '',
-          source: fullPath,
+          source: sourcePath,
           confidence: 'certain',
-          origin: { type: originType, file: fullPath },
+          origin: { type: originType, file: sourcePath },
         }));
       }
     }
@@ -163,12 +166,14 @@ function loadDogLayer(dir: string, originType: 'semantic' | 'overlay', labelToId
 }
 
 export function compileDotdogLayers(root: string, project: string): LayerCompileResult | null {
-  const doghouseDir = join(root, '.doghouse');
+  const doghouseDir = resolveUserPath('.doghouse', root);
   const generatedFile = join(doghouseDir, 'generated', 'repo.dag');
   const semanticDir = join(doghouseDir, 'semantic');
   const overlayDir = join(doghouseDir, 'overlays');
   if (!existsSync(generatedFile) && !existsSync(semanticDir) && !existsSync(overlayDir)) return null;
 
+  if (existsSync(generatedFile)) resolveUserPath(generatedFile, root);
+  for (const directory of [semanticDir, overlayDir]) if (existsSync(directory)) resolveUserPath(directory, root);
   const base = readGeneratedWorld(generatedFile, project, root);
   const labelToId = new Map<string, string>();
   const nodesById = new Map<string, WorldNode>();
@@ -190,7 +195,7 @@ export function compileDotdogLayers(root: string, project: string): LayerCompile
   const compiled: RepositoryWorldModel = {
     version: '0.1',
     project,
-    root,
+    root: '.',
     generatedAt: new Date().toISOString(),
     nodes: [...nodesById.values()],
     edges: [...edgesById.values()],
@@ -198,10 +203,10 @@ export function compileDotdogLayers(root: string, project: string): LayerCompile
     unknowns: [...base.unknowns, ...semantic.unknowns, ...overlay.unknowns],
   };
 
-  const compiledDir = join(doghouseDir, 'compiled');
+  const compiledDir = resolveUserPath(join(doghouseDir, 'compiled'), root);
   mkdirSync(compiledDir, { recursive: true });
-  const outFile = join(compiledDir, 'repo.dag');
-  writeFileSync(outFile, serializeWorldModel(compiled));
+  const outFile = safeOutputPath(join(compiledDir, 'repo.dag'), root);
+  atomicWrite(root, outFile, serializeWorldModel(compiled));
 
   return { file: outFile, nodes: compiled.nodes.length, edges: compiled.edges.length, unknowns: compiled.unknowns.length };
 }

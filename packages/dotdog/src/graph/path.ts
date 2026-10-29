@@ -1,25 +1,6 @@
-import { isAbsolute } from 'path';
+import { normalizeGraph, type GraphNode, type GraphEdge, type NormalizedGraph } from './model';
 
 export type PathDirection = 'outgoing' | 'incoming' | 'any';
-
-type GraphNode = {
-  id: string;
-  label: string;
-  kind?: string;
-  confidence?: string;
-  origin?: Record<string, unknown>;
-};
-
-type GraphEdge = {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  verb: string;
-  confidence?: string;
-  origin?: Record<string, unknown>;
-};
-
-type NormalizedGraph = { nodes: GraphNode[]; edges: GraphEdge[]; compiled: boolean };
 
 export type GraphPathResult = {
   ok: boolean;
@@ -33,70 +14,9 @@ export type GraphPathResult = {
   candidates?: string[];
 };
 
-function compactKind(code: unknown): string {
-  return code === 'p' ? 'prediction' : code === 'i' ? 'infra' : 'entity';
-}
-
-function safeOrigin(origin: unknown): Record<string, unknown> | undefined {
-  if (!origin || typeof origin !== 'object') return undefined;
-  const value = origin as Record<string, unknown>;
-  const result: Record<string, unknown> = {};
-  if (typeof value.type === 'string') result.type = value.type;
-  if (typeof value.line === 'number') result.line = value.line;
-  if (typeof value.file === 'string' && !isAbsolute(value.file)) result.file = value.file;
-  return Object.keys(result).length ? result : undefined;
-}
-
-function normalizeGraph(dag: any): NormalizedGraph {
-  const rawNodes: any[] = dag?.nodes || dag?.n || (Array.isArray(dag) ? dag[2] : []) || [];
-  const compiled = Array.isArray(dag);
-  const nodes: GraphNode[] = rawNodes.map((node: any, index) => {
-    if (Array.isArray(node)) {
-      return { id: String(node[0] ?? index), label: String(node[0] ?? index), kind: compactKind(node[1]), confidence: 'certain', origin: { type: 'compiled' } };
-    }
-    const id = String(node.id || node.i || node.label || index);
-    return {
-      id,
-      label: String(node.label || node.l || node.id || node.i || id),
-      kind: String(node.kind || node.g || node.type || node.t || 'entity'),
-      confidence: node.confidence,
-      origin: safeOrigin(node.origin),
-    };
-  });
-  const byIndex = new Map(rawNodes.map((node, index) => [index, nodes[index].id]));
-  const byName = new Map(nodes.map((node) => [node.label.toLowerCase(), node.id]));
-  const edges: GraphEdge[] = [];
-  const addEdge = (sourceId: unknown, targetId: unknown, verb: unknown, extra: any = {}) => {
-    const source = String(sourceId ?? '');
-    const targetRef = typeof targetId === 'number' ? byIndex.get(targetId) || '' : String(targetId ?? '');
-    const target = byName.get(targetRef.toLowerCase()) || targetRef;
-    if (!source || !target || !verb) return;
-    edges.push({
-      id: String(extra.id || `${source}:${String(verb)}:${target}`),
-      sourceId: source,
-      targetId: target,
-      verb: String(verb),
-      confidence: extra.confidence,
-      origin: safeOrigin(extra.origin),
-    });
-  };
-
-  if (Array.isArray(dag?.edges)) {
-    for (const edge of dag.edges) addEdge(edge.sourceId || edge.source, edge.targetId || edge.target, edge.verb || edge.type, edge);
-  } else {
-    for (const [index, node] of rawNodes.entries()) {
-      const source = nodes[index].id;
-      const rawEdges = Array.isArray(node) ? node[4] || [] : node.edges || node.es || [];
-      for (const edge of rawEdges) {
-        if (Array.isArray(edge)) addEdge(source, edge[0], edge[1], { confidence: 'certain', origin: { type: compiled ? 'compiled' : 'generated' } });
-        else addEdge(source, edge.targetId || edge.target, edge.verb || edge.type, edge);
-      }
-    }
-  }
-  return { nodes, edges, compiled };
-}
-
 function endpoint(graph: NormalizedGraph, query: string): { node?: GraphNode; candidates?: string[] } {
+  const byId = graph.nodes.find(node => node.id === query);
+  if (byId) return { node: byId };
   const needle = query.trim().toLowerCase();
   if (!needle) return {};
   const exact = graph.nodes.filter((node) => node.id.toLowerCase() === needle || node.label.toLowerCase() === needle);
@@ -121,18 +41,23 @@ export function shortestGraphPath(
   options: { direction?: PathDirection; verb?: string; maxHops?: number } = {},
 ): GraphPathResult {
   const direction = options.direction || 'any';
+  if (!['outgoing', 'incoming', 'any'].includes(direction)) throw new Error('Invalid path direction');
   const graph = normalizeGraph(dag);
   const from = endpoint(graph, fromQuery);
   const to = endpoint(graph, toQuery);
-  const base = { direction, hops: 0, nodes: [], edges: [] } as GraphPathResult;
+  const base = { ok: false, direction, hops: 0, nodes: [], edges: [] } as GraphPathResult;
   if (!from.node) return { ...base, ok: false, error: from.candidates ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: from.candidates };
   if (!to.node) return { ...base, ok: false, error: to.candidates ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: to.candidates };
   const fromInfo = { query: fromQuery, id: from.node.id, label: from.node.label };
   const toInfo = { query: toQuery, id: to.node.id, label: to.node.label };
-  const maxHops = Math.min(Math.max(Number(options.maxHops || 8), 1), 12);
+  const maxHops = options.maxHops ?? 8;
+  if (!Number.isInteger(maxHops) || maxHops < 1 || maxHops > 12) throw new Error('maxHops must be an integer from 1 to 12');
   const verb = (options.verb || '').toLowerCase();
   const adjacency = new Map<string, Array<{ edge: GraphEdge; next: string }>>();
-  const add = (id: string, edge: GraphEdge, next: string) => adjacency.set(id, [...(adjacency.get(id) || []), { edge, next }]);
+  const add = (id: string, edge: GraphEdge, next: string) => {
+    if (!adjacency.has(id)) adjacency.set(id, []);
+    adjacency.get(id)!.push({ edge, next });
+  };
   for (const edge of graph.edges) {
     if (verb && edge.verb.toLowerCase() !== verb) continue;
     if (direction === 'outgoing' || direction === 'any') add(edge.sourceId, edge, edge.targetId);
@@ -140,8 +65,8 @@ export function shortestGraphPath(
   }
   const queue: Array<{ id: string; nodes: string[]; edges: GraphEdge[] }> = [{ id: from.node.id, nodes: [from.node.id], edges: [] }];
   const visited = new Set([from.node.id]);
-  while (queue.length) {
-    const current = queue.shift()!;
+  for (let cursor = 0; cursor < queue.length; cursor++) {
+    const current = queue[cursor];
     if (current.id === to.node.id) {
       const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
       return { ok: true, direction, hops: current.edges.length, from: fromInfo, to: toInfo, nodes: current.nodes.map((id) => nodeById.get(id)!).filter(Boolean), edges: current.edges };

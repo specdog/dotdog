@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "labeling": "Manually reviewed source declarations and MCP graph neighborhoods before budget implementation. Discovery cohort may inform implementation; held-out cohort must be reported separately. These are structural evidence tasks, not executed application answers.",
+  "repositories": [
+    {
+      "name": "commander",
+      "url": "https://github.com/tj/commander.js",
+      "revision": "8247364da749736570161e95682b07fc2d72497b",
+      "license": "MIT",
+      "tasks": [
+        { "id": "commander-inspector", "cohort": "discovery", "q": "file:lib/command.js", "task": "Review Node inspector port changes when launching subcommands", "maxTokens": 2000,
+          "required": ["file:lib/command.js", "symbol:lib/command.js#Command", "symbol:lib/command.js#incrementNodeInspectorPort"], "distractors": ["symbol:lib/command.js#useColor"] },
+        { "id": "commander-suggestions", "cohort": "held-out", "q": "file:lib/suggestSimilar.js", "task": "Review suggestion edit distance threshold and matching", "maxTokens": 1800,
+          "required": ["file:lib/suggestSimilar.js", "symbol:lib/suggestSimilar.js#editDistance", "symbol:lib/suggestSimilar.js#maxDistance", "symbol:lib/suggestSimilar.js#suggestSimilar"], "distractors": [] },
+        { "id": "commander-flags", "cohort": "held-out", "q": "file:lib/option.js", "task": "Check flag splitting and option definitions", "maxTokens": 1800,
+          "required": ["file:lib/option.js", "symbol:lib/option.js#Option", "symbol:lib/option.js#splitOptionFlags"], "distractors": ["symbol:lib/option.js#camelcase"] },
+        { "id": "commander-missing", "cohort": "held-out", "q": "file:lib/nonexistent-dotdog-component.js", "task": "Find the nonexistent component", "maxTokens": 512, "required": [], "distractors": [], "expectedError": "endpoint_not_found" }
+      ]
+    },
+    {
+      "name": "typescript-sdk",
+      "url": "https://github.com/modelcontextprotocol/typescript-sdk",
+      "revision": "39ae8e6192cf43273aaaf2de4169dfa9f7216e28",
+      "license": "MIT",
+      "tasks": [
+        { "id": "sdk-environment", "cohort": "discovery", "q": "file:packages/client/src/client/stdio.ts", "task": "Review inherited environment variables and default environment for the stdio client transport", "maxTokens": 3000,
+          "required": ["file:packages/client/src/client/stdio.ts", "symbol:packages/client/src/client/stdio.ts#DEFAULT_INHERITED_ENV_VARS", "symbol:packages/client/src/client/stdio.ts#getDefaultEnvironment", "symbol:packages/client/src/client/stdio.ts#StdioClientTransport"], "distractors": ["file:packages/client/src/client/client.examples.ts"] },
+        { "id": "sdk-input-limit", "cohort": "discovery", "q": "file:packages/server/src/server/mcp.ts", "task": "Review tool input element limits and counting", "maxTokens": 3000,
+          "required": ["file:packages/server/src/server/mcp.ts", "symbol:packages/server/src/server/mcp.ts#toolInputElementCount", "symbol:packages/server/src/server/mcp.ts#resolveMaxToolInputElements"], "distractors": ["symbol:packages/server/src/server/mcp.ts#ResourceTemplate", "symbol:packages/server/src/server/mcp.ts#PromptCallback"] },
+        { "id": "sdk-stdio-close", "cohort": "held-out", "q": "file:packages/server/src/server/stdio.ts", "task": "Check whether a closed server stdio transport swallows errors", "maxTokens": 2400,
+          "required": ["file:packages/server/src/server/stdio.ts", "symbol:packages/server/src/server/stdio.ts#StdioServerTransport", "symbol:packages/server/src/server/stdio.ts#swallowsErrorsAfterClose"], "distractors": ["file:packages/server/src/server/stdio.examples.ts"] },
+        { "id": "sdk-output-schema", "cohort": "held-out", "q": "file:packages/server/src/server/mcp.ts", "task": "Review output schema conversion and schema shape", "maxTokens": 3000,
+          "required": ["file:packages/server/src/server/mcp.ts", "symbol:packages/server/src/server/mcp.ts#convertOutputSchemaJson", "symbol:packages/server/src/server/mcp.ts#getSchemaShape"], "distractors": ["symbol:packages/server/src/server/mcp.ts#PromptCallback", "symbol:packages/server/src/server/mcp.ts#ListResourcesCallback"] },
+        { "id": "sdk-missing", "cohort": "held-out", "q": "file:packages/server/src/server/nonexistent-dotdog-component.ts", "task": "Find the nonexistent component", "maxTokens": 512, "required": [], "distractors": [], "expectedError": "endpoint_not_found" }
+      ]
+    }
+  ]
+}

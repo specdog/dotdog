@@ -1,3 +1,5 @@
+import { normalizeGraph } from '../graph/model';
+
 export type DesignSeverity = 'HIGH' | 'MEDIUM' | 'LOW';
 
 export type DesignFinding = {
@@ -21,49 +23,13 @@ export type DesignReport = {
 type DesignNode = { name: string; kind: string; properties: Record<string, string>; states: string[] };
 type DesignEdge = { source: string; target: string; verb: string };
 
-function nodeName(node: any, index: number): string {
-  return String(Array.isArray(node) ? node[0] ?? index : node.label || node.name || node.id || index);
-}
-
-function nodeKind(node: any): string {
-  if (Array.isArray(node)) return node[1] === 'e' ? 'entity' : node[1] === 'p' ? 'prediction' : node[1] === 'i' ? 'infra' : String(node[1] || 'unknown');
-  return String(node.kind || node.type || node.t || 'unknown').toLowerCase();
-}
-
-function properties(node: any): Record<string, string> {
-  const raw = Array.isArray(node) ? node[2] || [] : node.properties || {};
-  if (!Array.isArray(raw)) return Object.fromEntries(Object.entries(raw).map(([key, value]) => [key, String(value)]));
-  if (raw.length && Array.isArray(raw[0])) return Object.fromEntries(raw.map((pair: any[]) => [String(pair[0]), String(pair[1] ?? '')]));
-  const result: Record<string, string> = {};
-  for (let index = 0; index < raw.length; index += 2) result[String(raw[index])] = String(raw[index + 1] ?? '');
-  return result;
-}
-
-function states(node: any): string[] {
-  const raw = Array.isArray(node) ? node[3] : node.states;
-  return Array.isArray(raw) ? raw.map(String).filter(Boolean) : [];
-}
-
-function entitiesAndEdges(dag: any): { nodes: DesignNode[]; edges: DesignEdge[] } {
-  const rawNodes: any[] = dag?.nodes || dag?.n || (Array.isArray(dag) ? dag[2] : []) || [];
-  const nodes = rawNodes.map((node, index) => ({ name: nodeName(node, index), kind: nodeKind(node), properties: properties(node), states: states(node) }));
-  const byName = new Map(nodes.map((node) => [node.name.toLowerCase(), node.name]));
-  const edges: DesignEdge[] = [];
-  const add = (source: unknown, target: unknown, verb: unknown) => {
-    const sourceName = byName.get(String(source || '').toLowerCase()) || String(source || '');
-    const targetName = byName.get(String(target || '').toLowerCase()) || String(target || '');
-    if (sourceName && targetName && verb) edges.push({ source: sourceName, target: targetName, verb: String(verb) });
+function entitiesAndEdges(dag: unknown): { nodes: DesignNode[]; edges: DesignEdge[] } {
+  const graph = normalizeGraph(dag);
+  const byId = new Map(graph.nodes.map(node => [node.id, node.label]));
+  return {
+    nodes: graph.nodes.filter(node => node.kind === 'entity').map(node => ({ name: node.label, kind: node.kind, properties: Object.keys(node.schema).length ? node.schema : node.properties, states: node.states })),
+    edges: graph.edges.map(edge => ({ source: byId.get(edge.sourceId)!, target: byId.get(edge.targetId)!, verb: edge.verb })),
   };
-  if (Array.isArray(dag?.edges)) {
-    for (const edge of dag.edges) add(edge.sourceId || edge.source, edge.targetId || edge.target, edge.verb || edge.type);
-  } else {
-    for (const [index, raw] of rawNodes.entries()) {
-      const rawEdges = Array.isArray(raw) ? raw[4] || [] : raw.edges || raw.es || [];
-      for (const edge of rawEdges) add(nodes[index].name, Array.isArray(edge) ? edge[0] : edge.targetId || edge.target, Array.isArray(edge) ? edge[1] : edge.verb || edge.type);
-    }
-  }
-  const unique = new Map(edges.map((edge) => [`${edge.source}\0${edge.target}\0${edge.verb}`, edge]));
-  return { nodes: nodes.filter((node) => node.kind === 'entity'), edges: [...unique.values()] };
 }
 
 function finding(severity: DesignSeverity, code: string, entity: string | undefined, message: string, nextStep: string): DesignFinding {

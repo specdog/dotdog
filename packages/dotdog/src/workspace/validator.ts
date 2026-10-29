@@ -23,7 +23,7 @@ export function validateWorkspaceConfig(
     return { valid: false, errors: [issue('invalid_config', 'Workspace config must be an object.')], warnings };
   }
 
-  const config = input as WorkspaceConfig;
+  const config = input as unknown as WorkspaceConfig;
   if (config.version !== 1) errors.push(issue('invalid_version', 'Only workspace manifest version 1 is supported.', 'version'));
   if (!isRecord(config.workspace)) errors.push(issue('missing_workspace', 'workspace is required.', 'workspace'));
   if (!config.workspace?.id || typeof config.workspace.id !== 'string') errors.push(issue('missing_workspace_id', 'workspace.id is required.', 'workspace.id'));

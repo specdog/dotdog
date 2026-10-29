@@ -50,7 +50,38 @@
           "connects",
           "N:M"
         ]
-      ]
+      ],
+      null,
+      {
+        "kind": "entity",
+        "description": "A typed node in the spec knowledge graph. Every entity, task, prediction, and concept is a Node.",
+        "schema": {
+          "id": {
+            "type": "string",
+            "required": true
+          },
+          "type": {
+            "type": "enum",
+            "required": true
+          },
+          "name": {
+            "type": "string",
+            "required": true
+          },
+          "description": {
+            "type": "string",
+            "required": false
+          },
+          "properties": {
+            "type": "json",
+            "required": false
+          }
+        },
+        "lifecycle": [
+          "created → updated",
+          "updated → archived"
+        ]
+      }
     ],
     [
       "Task",
@@ -69,10 +100,60 @@
           "depends_on",
           "N:M"
         ]
-      ]
+      ],
+      null,
+      {
+        "kind": "entity",
+        "description": "A unit of work. Has dependencies, assignment, effort estimates, and a computed completion probability.",
+        "schema": {
+          "id": {
+            "type": "string",
+            "required": true
+          },
+          "name": {
+            "type": "string",
+            "required": true
+          },
+          "status": {
+            "type": "enum",
+            "required": true
+          },
+          "priority": {
+            "type": "enum",
+            "required": true
+          },
+          "estimated_hours": {
+            "type": "number",
+            "required": false
+          },
+          "actual_hours": {
+            "type": "number",
+            "required": false
+          },
+          "depends_on": {
+            "type": "string[]",
+            "required": false
+          },
+          "assigned_to": {
+            "type": "string",
+            "required": false
+          },
+          "completion_probability": {
+            "type": "number",
+            "required": false,
+            "constraints": "0.0-1.0, computed from velocity"
+          }
+        },
+        "lifecycle": [
+          "specified → building",
+          "building → built",
+          "built → verified",
+          "verified → shipped"
+        ]
+      }
     ],
     [
-      "Prediction",
+      "Prediction@data-model",
       "e",
       null,
       [
@@ -85,7 +166,93 @@
           "measures",
           "1:N"
         ]
-      ]
+      ],
+      null,
+      {
+        "kind": "prediction",
+        "description": "A forecast about the future state of the project. Has a trigger, timeframe, confidence score, and is scored against actual outcomes.",
+        "schema": {
+          "id": {
+            "type": "string",
+            "required": true
+          },
+          "statement": {
+            "type": "string",
+            "required": true
+          },
+          "trigger": {
+            "type": "string",
+            "required": false
+          },
+          "timeframe": {
+            "type": "string",
+            "required": false
+          },
+          "confidence": {
+            "type": "number",
+            "required": true,
+            "constraints": "0.0-1.0"
+          },
+          "measurement": {
+            "type": "string",
+            "required": false
+          },
+          "actual_outcome": {
+            "type": "enum",
+            "required": false
+          }
+        },
+        "lifecycle": [
+          "pending → resolved"
+        ]
+      }
+    ],
+    [
+      "Prediction@machine-first-world-model",
+      "e",
+      null,
+      [
+        "proposed",
+        "verified",
+        "rejected",
+        "unknown"
+      ],
+      null,
+      null,
+      {
+        "kind": "prediction",
+        "description": "A modeled outcome from graph facts or heuristics.",
+        "schema": {
+          "id": {
+            "type": "string",
+            "required": true
+          },
+          "trigger": {
+            "type": "string",
+            "required": true
+          },
+          "outcome": {
+            "type": "string",
+            "required": true
+          },
+          "affected_nodes": {
+            "type": "string[]",
+            "required": true
+          },
+          "required_checks": {
+            "type": "string[]",
+            "required": true
+          },
+          "confidence": {
+            "type": "enum",
+            "required": true,
+            "constraints": "values: [certain, likely, unknown]"
+          }
+        },
+        "lifecycle": [
+          "proposed → verified"
+        ]
+      }
     ],
     [
       "Compile",
@@ -98,11 +265,33 @@
       ],
       [
         [
-          7,
+          8,
           "produces",
           "1:1"
         ]
-      ]
+      ],
+      null,
+      {
+        "kind": "event",
+        "description": "The compilation process. Reads all .dog files, parses entities and relationships, outputs a .dag graph with integrity hash and token savings report.",
+        "schema": {
+          "source_files": {
+            "type": "number",
+            "required": true
+          },
+          "output_hash": {
+            "type": "string",
+            "required": true
+          },
+          "token_savings_pct": {
+            "type": "number",
+            "required": false
+          }
+        },
+        "lifecycle": [
+          "running → completed"
+        ]
+      }
     ],
     [
       "DAG",
@@ -112,7 +301,2101 @@
         "current",
         "stale"
       ],
-      null
+      null,
+      null,
+      {
+        "kind": "entity",
+        "description": "The compiled graph output. A deterministic JSON structure with typed nodes, edges, integrity metadata, and provable token savings. Queryable by AI agents via MCP.",
+        "schema": {
+          "version": {
+            "type": "string",
+            "required": true
+          },
+          "sha256": {
+            "type": "string",
+            "required": true
+          },
+          "source_files": {
+            "type": "number",
+            "required": true
+          },
+          "token_savings_pct": {
+            "type": "number",
+            "required": false
+          }
+        },
+        "lifecycle": [
+          "current → stale"
+        ]
+      }
+    ],
+    [
+      "RepositoryWorldModel",
+      "e",
+      null,
+      [
+        "empty",
+        "mapped",
+        "compiled",
+        "queried",
+        "simulated",
+        "explained",
+        "stale"
+      ],
+      [
+        [
+          10,
+          "contains",
+          "1:N",
+          1
+        ]
+      ],
+      null,
+      {
+        "kind": "entity",
+        "description": "A structured model of repository state that can be queried, checked, explained, and simulated.",
+        "schema": {
+          "id": {
+            "type": "string",
+            "required": true
+          },
+          "root_path": {
+            "type": "string",
+            "required": true
+          },
+          "graph_version": {
+            "type": "string",
+            "required": true
+          },
+          "generated_at": {
+            "type": "string",
+            "required": true
+          },
+          "confidence": {
+            "type": "enum",
+            "required": true,
+            "constraints": "values: [certain, likely, unknown]"
+          }
+        },
+        "lifecycle": [
+          "empty → mapped",
+          "mapped → compiled",
+          "compiled → queried"
+        ]
+      }
+    ],
+    [
+      "WorldNode",
+      "e",
+      null,
+      [
+        "observed",
+        "inferred",
+        "stale",
+        "unknown"
+      ],
+      [
+        [
+          11,
+          "connects",
+          "1:N",
+          1
+        ]
+      ],
+      null,
+      {
+        "kind": "node",
+        "description": "A typed node in the repository graph.",
+        "schema": {
+          "id": {
+            "type": "string",
+            "required": true
+          },
+          "kind": {
+            "type": "enum",
+            "required": true,
+            "constraints": "values: [file, symbol, command, package, spec, test, doc, build, output, external, unknown]"
+          },
+          "label": {
+            "type": "string",
+            "required": true
+          },
+          "source": {
+            "type": "string",
+            "required": true
+          },
+          "hash": {
+            "type": "string",
+            "required": false
+          }
+        },
+        "lifecycle": [
+          "observed → stale"
+        ]
+      }
+    ],
+    [
+      "WorldEdge",
+      "e",
+      null,
+      [
+        "active",
+        "stale",
+        "conflicting"
+      ],
+      null,
+      null,
+      {
+        "kind": "relationship",
+        "description": "A typed relation between two world nodes.",
+        "schema": {
+          "id": {
+            "type": "string",
+            "required": true
+          },
+          "source_id": {
+            "type": "string",
+            "required": true
+          },
+          "target_id": {
+            "type": "string",
+            "required": true
+          },
+          "verb": {
+            "type": "enum",
+            "required": true,
+            "constraints": "values: [imports, exports, defines, mentions, tests, builds, documents, depends_on, generated_by, changed_with, conflicts_with]"
+          },
+          "confidence": {
+            "type": "enum",
+            "required": true,
+            "constraints": "values: [certain, likely, unknown]"
+          }
+        },
+        "lifecycle": [
+          "active → stale"
+        ]
+      }
+    ],
+    [
+      "DotdogCommand",
+      "e",
+      null,
+      [
+        "planned",
+        "implemented",
+        "documented",
+        "tested"
+      ],
+      [
+        [
+          9,
+          "produces",
+          "N:1",
+          1
+        ]
+      ],
+      null,
+      {
+        "kind": "entity",
+        "description": "A public CLI command exposed by the npm package.",
+        "schema": {
+          "name": {
+            "type": "string",
+            "required": true
+          },
+          "purpose": {
+            "type": "string",
+            "required": true
+          },
+          "reads": {
+            "type": "string[]",
+            "required": true
+          },
+          "writes": {
+            "type": "string[]",
+            "required": true
+          },
+          "public": {
+            "type": "boolean",
+            "required": true
+          }
+        },
+        "lifecycle": [
+          "planned → implemented",
+          "implemented → documented",
+          "documented → tested"
+        ]
+      }
+    ],
+    [
+      "repository",
+      "e",
+      null,
+      null,
+      [
+        [
+          22,
+          "configured_by",
+          "N:1"
+        ],
+        [
+          64,
+          "configured_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "repo",
+        "description": "",
+        "schema": {},
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:.github/ISSUE_TEMPLATE/bug.md",
+      "e",
+      [
+        "path",
+        ".github/ISSUE_TEMPLATE/bug.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": ".github/ISSUE_TEMPLATE/bug.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:.github/ISSUE_TEMPLATE/feature_request.md",
+      "e",
+      [
+        "path",
+        ".github/ISSUE_TEMPLATE/feature_request.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": ".github/ISSUE_TEMPLATE/feature_request.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:.github/PULL_REQUEST_TEMPLATE.md",
+      "e",
+      [
+        "path",
+        ".github/PULL_REQUEST_TEMPLATE.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": ".github/PULL_REQUEST_TEMPLATE.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:.github/workflows/publish.yml",
+      "e",
+      [
+        "path",
+        ".github/workflows/publish.yml"
+      ],
+      null,
+      [
+        [
+          13,
+          "deployed_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "ci_workflow",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": ".github/workflows/publish.yml"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:.github/workflows/test.yml",
+      "e",
+      [
+        "path",
+        ".github/workflows/test.yml"
+      ],
+      null,
+      [
+        [
+          13,
+          "deployed_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "ci_workflow",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": ".github/workflows/test.yml"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:.github/workflows/version-check.yml",
+      "e",
+      [
+        "path",
+        ".github/workflows/version-check.yml"
+      ],
+      null,
+      [
+        [
+          13,
+          "deployed_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "ci_workflow",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": ".github/workflows/version-check.yml"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:agent-bench/README.md",
+      "e",
+      [
+        "path",
+        "agent-bench/README.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "agent-bench/README.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:AGENTS.md",
+      "e",
+      [
+        "path",
+        "AGENTS.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "AGENTS.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:bun.lock",
+      "e",
+      [
+        "path",
+        "bun.lock"
+      ],
+      null,
+      null,
+      null,
+      {
+        "kind": "lockfile",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "bun.lock"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:CHANGELOG.md",
+      "e",
+      [
+        "path",
+        "CHANGELOG.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "CHANGELOG.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:CLAUDE.md",
+      "e",
+      [
+        "path",
+        "CLAUDE.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "CLAUDE.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:CODE_OF_CONDUCT.md",
+      "e",
+      [
+        "path",
+        "CODE_OF_CONDUCT.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "CODE_OF_CONDUCT.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:CONTRIBUTING.md",
+      "e",
+      [
+        "path",
+        "CONTRIBUTING.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "CONTRIBUTING.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/adopting.md",
+      "e",
+      [
+        "path",
+        "docs/adopting.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/adopting.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/agent-first-documentation.md",
+      "e",
+      [
+        "path",
+        "docs/blog/agent-first-documentation.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/agent-first-documentation.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/ai-coding-agents-need-structured-specs.md",
+      "e",
+      [
+        "path",
+        "docs/blog/ai-coding-agents-need-structured-specs.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/ai-coding-agents-need-structured-specs.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/building-mcp-servers.md",
+      "e",
+      [
+        "path",
+        "docs/blog/building-mcp-servers.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/building-mcp-servers.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/dogfooding-predictions.md",
+      "e",
+      [
+        "path",
+        "docs/blog/dogfooding-predictions.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/dogfooding-predictions.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/dotdog-badge-homebrew.md",
+      "e",
+      [
+        "path",
+        "docs/blog/dotdog-badge-homebrew.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/dotdog-badge-homebrew.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/dotdog-claude-code.md",
+      "e",
+      [
+        "path",
+        "docs/blog/dotdog-claude-code.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/dotdog-claude-code.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/dotdog-copilot.md",
+      "e",
+      [
+        "path",
+        "docs/blog/dotdog-copilot.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/dotdog-copilot.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/dotdog-cursor.md",
+      "e",
+      [
+        "path",
+        "docs/blog/dotdog-cursor.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/dotdog-cursor.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/dotdog-vs-alternatives.md",
+      "e",
+      [
+        "path",
+        "docs/blog/dotdog-vs-alternatives.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/dotdog-vs-alternatives.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/google-ard-dotdog.md",
+      "e",
+      [
+        "path",
+        "docs/blog/google-ard-dotdog.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/google-ard-dotdog.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/index.md",
+      "e",
+      [
+        "path",
+        "docs/blog/index.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/index.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/infra-verify-launch.md",
+      "e",
+      [
+        "path",
+        "docs/blog/infra-verify-launch.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/infra-verify-launch.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/introducing-dotdog.md",
+      "e",
+      [
+        "path",
+        "docs/blog/introducing-dotdog.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/introducing-dotdog.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/karpathy-wiki-brain.md",
+      "e",
+      [
+        "path",
+        "docs/blog/karpathy-wiki-brain.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/karpathy-wiki-brain.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/knowledge-graphs-for-code-dag-format.md",
+      "e",
+      [
+        "path",
+        "docs/blog/knowledge-graphs-for-code-dag-format.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/knowledge-graphs-for-code-dag-format.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/live-contracts.md",
+      "e",
+      [
+        "path",
+        "docs/blog/live-contracts.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/live-contracts.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/md-to-dog-to-dag.md",
+      "e",
+      [
+        "path",
+        "docs/blog/md-to-dog-to-dag.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/md-to-dog-to-dag.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/spec-driven-vs-test-driven.md",
+      "e",
+      [
+        "path",
+        "docs/blog/spec-driven-vs-test-driven.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/spec-driven-vs-test-driven.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/specs-as-living-documentation.md",
+      "e",
+      [
+        "path",
+        "docs/blog/specs-as-living-documentation.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/specs-as-living-documentation.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/blog/what-is-spec-driven-development.md",
+      "e",
+      [
+        "path",
+        "docs/blog/what-is-spec-driven-development.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/blog/what-is-spec-driven-development.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/contributing-kits.md",
+      "e",
+      [
+        "path",
+        "docs/contributing-kits.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/contributing-kits.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/CONTRIBUTING-QUICKSTART.md",
+      "e",
+      [
+        "path",
+        "docs/CONTRIBUTING-QUICKSTART.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/CONTRIBUTING-QUICKSTART.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/dotdog-machine-first-implementation-plan.md",
+      "e",
+      [
+        "path",
+        "docs/dotdog-machine-first-implementation-plan.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/dotdog-machine-first-implementation-plan.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/faq.md",
+      "e",
+      [
+        "path",
+        "docs/faq.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/faq.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/handbook.md",
+      "e",
+      [
+        "path",
+        "docs/handbook.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/handbook.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/index.md",
+      "e",
+      [
+        "path",
+        "docs/index.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/index.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/integrations.md",
+      "e",
+      [
+        "path",
+        "docs/integrations.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/integrations.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/live-endpoint-testing.md",
+      "e",
+      [
+        "path",
+        "docs/live-endpoint-testing.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/live-endpoint-testing.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/machine-first-thesis.md",
+      "e",
+      [
+        "path",
+        "docs/machine-first-thesis.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/machine-first-thesis.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/spec-driven-repo-mapping.md",
+      "e",
+      [
+        "path",
+        "docs/spec-driven-repo-mapping.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/spec-driven-repo-mapping.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/troubleshooting.md",
+      "e",
+      [
+        "path",
+        "docs/troubleshooting.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/troubleshooting.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/tutorial.md",
+      "e",
+      [
+        "path",
+        "docs/tutorial.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/tutorial.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/use-cases.md",
+      "e",
+      [
+        "path",
+        "docs/use-cases.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/use-cases.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/v0.9-plan.md",
+      "e",
+      [
+        "path",
+        "docs/v0.9-plan.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/v0.9-plan.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:docs/why-dotdog.md",
+      "e",
+      [
+        "path",
+        "docs/why-dotdog.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "docs/why-dotdog.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:LICENSE",
+      "e",
+      [
+        "path",
+        "LICENSE"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "LICENSE"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:package.json",
+      "e",
+      [
+        "path",
+        "package.json"
+      ],
+      null,
+      [
+        [
+          65,
+          "defines",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "manifest",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "package.json"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "package:spec-platform",
+      "e",
+      [
+        "version",
+        "0.1.0"
+      ],
+      null,
+      null,
+      null,
+      {
+        "kind": "package",
+        "description": "",
+        "schema": {
+          "version": {
+            "type": "string",
+            "required": true,
+            "default": "0.1.0"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:packages/dotdog/__tests__/__snapshots__/cli.test.ts.snap",
+      "e",
+      [
+        "path",
+        "packages/dotdog/__tests__/__snapshots__/cli.test.ts.snap"
+      ],
+      null,
+      [
+        [
+          13,
+          "tested_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "test",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "packages/dotdog/__tests__/__snapshots__/cli.test.ts.snap"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:packages/dotdog/__tests__/cli.test.ts",
+      "e",
+      [
+        "path",
+        "packages/dotdog/__tests__/cli.test.ts"
+      ],
+      null,
+      [
+        [
+          13,
+          "tested_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "test",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "packages/dotdog/__tests__/cli.test.ts"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:packages/dotdog/__tests__/commands.test.ts",
+      "e",
+      [
+        "path",
+        "packages/dotdog/__tests__/commands.test.ts"
+      ],
+      null,
+      [
+        [
+          13,
+          "tested_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "test",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "packages/dotdog/__tests__/commands.test.ts"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:packages/dotdog/__tests__/fixtures/live-test.dog",
+      "e",
+      [
+        "path",
+        "packages/dotdog/__tests__/fixtures/live-test.dog"
+      ],
+      null,
+      [
+        [
+          13,
+          "tested_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "test",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "packages/dotdog/__tests__/fixtures/live-test.dog"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:packages/dotdog/__tests__/helpers.ts",
+      "e",
+      [
+        "path",
+        "packages/dotdog/__tests__/helpers.ts"
+      ],
+      null,
+      [
+        [
+          13,
+          "tested_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "test",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "packages/dotdog/__tests__/helpers.ts"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:packages/dotdog/__tests__/parser.test.ts",
+      "e",
+      [
+        "path",
+        "packages/dotdog/__tests__/parser.test.ts"
+      ],
+      null,
+      [
+        [
+          13,
+          "tested_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "test",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "packages/dotdog/__tests__/parser.test.ts"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:packages/dotdog/__tests__/regression.test.ts",
+      "e",
+      [
+        "path",
+        "packages/dotdog/__tests__/regression.test.ts"
+      ],
+      null,
+      [
+        [
+          13,
+          "tested_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "test",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "packages/dotdog/__tests__/regression.test.ts"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:packages/dotdog/README.md",
+      "e",
+      [
+        "path",
+        "packages/dotdog/README.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "packages/dotdog/README.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:README.md",
+      "e",
+      [
+        "path",
+        "README.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "README.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:SECURITY.md",
+      "e",
+      [
+        "path",
+        "SECURITY.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "SECURITY.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:specs/dotdog/repo-audit.md",
+      "e",
+      [
+        "path",
+        "specs/dotdog/repo-audit.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "specs/dotdog/repo-audit.md"
+          }
+        },
+        "lifecycle": []
+      }
+    ],
+    [
+      "file:templates/CLAUDE.md",
+      "e",
+      [
+        "path",
+        "templates/CLAUDE.md"
+      ],
+      null,
+      [
+        [
+          13,
+          "documented_by",
+          "N:1"
+        ]
+      ],
+      null,
+      {
+        "kind": "doc",
+        "description": "",
+        "schema": {
+          "path": {
+            "type": "string",
+            "required": true,
+            "default": "templates/CLAUDE.md"
+          }
+        },
+        "lifecycle": []
+      }
     ],
     [
       "aws:s3:dotdog-assets",
@@ -126,12 +2409,13 @@
         "DAG",
         "region",
         "us-east-1",
-        "tables"
+        "tables",
+        ""
       ],
       null,
       [
         [
-          7,
+          8,
           "maps_to",
           "1:1",
           1
@@ -140,21 +2424,12 @@
     ]
   ],
   {
-    "m": "chars/4",
-    "st": 9235,
-    "ct": 9219,
-    "dt": 426,
-    "sv": 95.4,
-    "cs": 95.4,
-    "saved": 8809
-  },
-  {
-    "m": "chars/4",
-    "st": 9235,
-    "ct": 9219,
-    "dt": 426,
-    "sv": 95.4,
-    "cs": 95.4,
-    "saved": 8809
+    "m": "bytes/4",
+    "st": 18372,
+    "ct": 18356,
+    "dt": 5707,
+    "sv": 68.9,
+    "cs": 71,
+    "saved": 12665
   }
 ]

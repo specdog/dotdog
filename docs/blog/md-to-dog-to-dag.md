@@ -6,6 +6,9 @@ author: Justin Diclemente
 description: "Every .md file is a valid .dog file. Add entities. Compile to .dag. Agents stop hallucinating."
 ---
 
+> Historical pre-1.0 post. Commands, provider support and savings/hallucination claims below are not current guarantees. See the [1.0 migration guide](../v1-migration) and [security audit](../v1-security-audit).
+
+
 ← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
 
 

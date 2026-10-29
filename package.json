@@ -8,17 +8,24 @@
   ],
   "scripts": {
     "build": "bun run --cwd packages/dotdog build",
-    "lint": "bun run --filter '*' lint",
+    "lint": "bun run --cwd packages/dotdog lint",
     "test": "bun test",
     "pack:check": "node scripts/check-pack.mjs",
     "extension:check": "node scripts/check-speckit-extension.mjs",
-    "validate": "bun packages/spec-cli/src/index.ts validate"
-  },
-  "dependencies": {
-    "chalk": "^5.6.2",
-    "commander": "^15.0.0"
+    "validate": "bun packages/dotdog/src/cli.ts validate",
+    "release:check": "node scripts/check-release.mjs"
   },
   "devDependencies": {
     "dotdog": "workspace:*"
+  },
+  "overrides": {
+    "@hono/node-server": "^2.1.5",
+    "body-parser": "^2.4.0",
+    "fast-uri": "^3.1.6",
+    "ip-address": "^10.7.5",
+    "proxy-addr": "^2.0.8",
+    "qs": "^6.17.1",
+    "zod": "^4.6.7",
+    "hono": "^4.13.14"
   }
 }
