@@ -1,8 +1,11 @@
 // infra/verify.ts — parse Infrastructure blocks from .dog files, verify cloud resources
-// Dispatches to provider-specific verifiers. Zero credential exposure.
+// Dispatches to explicit read-only provider checks; output redaction is best-effort.
 
 import { readFileSync, existsSync } from 'fs';
 import { join, resolve } from 'path';
+import { listRepoFiles } from '../map/repoMapper';
+import { resolveUserPath } from '../workspace/paths';
+import { redactSecrets } from '../workspace/redact';
 import { parse } from '../parser';
 import type { InfraResource, CheckResult, Provider } from './providers/types';
 import { cloudflareProvider } from './providers/cloudflare';
@@ -124,17 +127,12 @@ function parseInfraBlock(yamlContent: string): InfraResource[] {
 function findInfraResources(dir: string): InfraResource[] {
   const resources: InfraResource[] = [];
 
-  function scan(d: string) {
-    const { readdirSync } = require('fs');
-    for (const entry of readdirSync(d, { withFileTypes: true })) {
-      if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
-      const p = join(d, entry.name);
-      if (entry.isDirectory()) { scan(p); continue; }
-      if (!entry.name.endsWith('.dog')) continue;
-
+  for (const file of listRepoFiles(dir).filter(file => file.endsWith('.dog'))) {
+      const p = resolveUserPath(file, dir);
       try {
         const content = readFileSync(p, 'utf-8');
         const ast = parse(content);
+        if (ast.errors.length) throw new Error(ast.errors.map(error => error.message).join('; '));
 
         // Look for ### Infrastructure sections with YAML blocks
         for (const section of ast.sections) {
@@ -173,11 +171,8 @@ function findInfraResources(dir: string): InfraResource[] {
             }
           }
         }
-      } catch { /* skip unparseable files */ }
-    }
+      } catch (error) { throw new Error(`Cannot inspect infrastructure in ${file}: ${error instanceof Error ? error.message : String(error)}`); }
   }
-
-  scan(dir);
   return resources;
 }
 
@@ -192,30 +187,8 @@ export interface VerifyOptions {
 export async function verifyInfra(opts: VerifyOptions): Promise<CheckResult[]> {
   const resources = findInfraResources(opts.dir);
 
-  if (opts.providerFilter) {
-    const pf = opts.providerFilter.toLowerCase();
-    const filtered = resources.filter(r => r.provider.toLowerCase() === pf);
-    if (filtered.length === 0) {
-      return [{
-        entity: '', provider: opts.providerFilter, resource: '',
-        status: 'skip', message: `No ${opts.providerFilter} resources found in specs`,
-      }];
-    }
-    return runChecks(filtered, opts);
-  }
-
-  if (opts.entityFilter) {
-    const ef = opts.entityFilter.toLowerCase();
-    const filtered = resources.filter(r => r.entity.toLowerCase() === ef);
-    if (filtered.length === 0) {
-      return [{
-        entity: opts.entityFilter, provider: '', resource: '',
-        status: 'skip', message: `No entity "${opts.entityFilter}" has infrastructure mappings`,
-      }];
-    }
-    return runChecks(filtered, opts);
-  }
-
+  const filtered = resources.filter(resource => (!opts.providerFilter || resource.provider.toLowerCase() === opts.providerFilter.toLowerCase()) && (!opts.entityFilter || resource.entity.toLowerCase() === opts.entityFilter.toLowerCase()));
+  if ((opts.providerFilter || opts.entityFilter) && !filtered.length) return [{ entity: opts.entityFilter || '', provider: opts.providerFilter || '', resource: '', status: 'skip', message: 'No infrastructure mappings match all filters' }];
   if (resources.length === 0) {
     return [{
       entity: '', provider: '', resource: '',
@@ -224,14 +197,18 @@ export async function verifyInfra(opts: VerifyOptions): Promise<CheckResult[]> {
     }];
   }
 
-  return runChecks(resources, opts);
+  return verifyInfraResources(filtered);
 }
 
-async function runChecks(resources: InfraResource[], _opts: VerifyOptions): Promise<CheckResult[]> {
+function redactCheck(result: CheckResult): CheckResult {
+  return Object.fromEntries(Object.entries(result).map(([key, value]) => [key, typeof value === 'string' ? redactSecrets(value) : key === 'children' && Array.isArray(value) ? value.map(redactCheck) : value])) as unknown as CheckResult;
+}
+
+export async function verifyInfraResources(resources: InfraResource[]): Promise<CheckResult[]> {
   const results: CheckResult[] = [];
 
   for (const resource of resources) {
-    const provider = providers[resource.provider.toLowerCase()];
+    const provider = Object.hasOwn(providers, resource.provider.toLowerCase()) ? providers[resource.provider.toLowerCase()] : undefined;
     if (!provider) {
       results.push({
         entity: resource.entity, provider: resource.provider, resource: resource.resource,
@@ -242,12 +219,12 @@ async function runChecks(resources: InfraResource[], _opts: VerifyOptions): Prom
 
     try {
       const result = await provider.verify(resource);
-      results.push(result);
+      results.push(redactCheck(result));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       results.push({
         entity: resource.entity, provider: resource.provider, resource: resource.resource,
-        status: 'fail', message: `Error: ${msg}`,
+        status: 'fail', message: `Error: ${redactSecrets(msg)}`,
       });
     }
   }

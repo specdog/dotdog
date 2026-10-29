@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, realpathSync } from 'fs';
 import { join } from 'path';
-import { createInterface } from 'readline';
+import { once } from 'events';
+import { readGraphText } from './graph/io';
 import { resolveUserPath } from './workspace/paths';
 import { resolveWorkspace } from './workspace/resolver';
 import { portableWorkspacePath } from './workspace/graph';
@@ -42,7 +43,7 @@ export function createMcpHandler(dir: string) {
   const root = realpathSync(dir);
   let fingerprint = '';
   let graphs = new Map<string, { graph: NormalizedGraph; raw: any }>();
-  let invalidProjects: Record<string, string> = {};
+  let invalidProjects: Record<string, string> = Object.create(null);
   function load() {
     const candidates = new Map<string, string>();
     const compiled = join(root, '.doghouse/compiled/repo.dag');
@@ -61,11 +62,18 @@ export function createMcpHandler(dir: string) {
         }
       }
     }
-    const sources = [...candidates].map(([file, key]) => [key, file, readFileSync(file, 'utf8')]);
+    const sources: string[][] = [];
+    let bytes = 0;
+    for (const [file, key] of candidates) {
+      const source = readGraphText(file);
+      bytes += Buffer.byteLength(source);
+      if (bytes > 128 * 1024 * 1024) throw new Error('Combined project graphs exceed 128 MiB');
+      sources.push([key, file, source]);
+    }
     const next = JSON.stringify(sources);
     if (next === fingerprint) return;
     const loaded = new Map<string, { graph: NormalizedGraph; raw: any }>();
-    invalidProjects = {};
+    invalidProjects = Object.create(null);
     for (const [key, file, source] of sources) {
       try {
         const raw = JSON.parse(source), graph = normalizeGraph(raw);
@@ -112,7 +120,7 @@ export function createMcpHandler(dir: string) {
       const properties: any = definition[2];
       for (const key of definition[3]) if (!(key in args)) return failure(id, -32602, 'Missing argument: ' + key);
       for (const [key, value] of Object.entries(args)) {
-        const schema = properties[key];
+        const schema = Object.hasOwn(properties, key) ? properties[key] : undefined;
         if (!schema) return failure(id, -32602, 'Unknown argument: ' + key);
         if (schema.enum ? !schema.enum.includes(value) : schema.type === 'integer' ? !Number.isInteger(value) || Number(value) < schema.minimum || Number(value) > schema.maximum : typeof value !== schema.type) return failure(id, -32602, 'Invalid argument: ' + key);
       }
@@ -134,7 +142,13 @@ export function createMcpHandler(dir: string) {
       if (!entry) { const result = success(id, { error: invalidProjects[args.project] || 'project_not_found' }); result.result.isError = true; return result; }
       const { graph, raw } = entry;
       const byId = new Map(graph.nodes.map(node => [node.id, node]));
-      const find = (query: string) => graph.nodes.find(node => node.id.toLowerCase() === query.toLowerCase() || node.label.toLowerCase() === query.toLowerCase());
+      const find = (query: string) => {
+        const exact = graph.nodes.find(node => node.id === query);
+        if (exact) return exact;
+        const matches = graph.nodes.filter(node => node.label.toLowerCase() === query.toLowerCase() || node.id.toLowerCase() === query.toLowerCase());
+        if (matches.length > 1) throw new Error('Ambiguous entity; query an exact ID: ' + matches.slice(0, 100).map(node => node.id).join(', '));
+        return matches[0];
+      };
       if (name === 'getEntity' || name === 'schema') {
         const node = find(args.name || args.entity);
         if (!node) return success(id, { error: 'entity_not_found' });
@@ -158,7 +172,9 @@ export function createMcpHandler(dir: string) {
       }
       if (name === 'path') return success(id, shortestGraphPath(raw, args.from, args.to, { direction: args.direction, maxHops: args.maxHops, verb: args.verb }));
       if (name === 'context') {
-        const matches = graph.nodes.filter(node => `${node.label} ${node.description || ''}`.toLowerCase().includes(args.q.toLowerCase()));
+        const idMatches = graph.nodes.filter(node => node.id === args.q);
+        const exact = idMatches.length ? idMatches : graph.nodes.filter(node => node.label === args.q);
+        const matches = exact.length ? exact : graph.nodes.filter(node => `${node.label} ${node.description || ''}`.toLowerCase().includes(args.q.toLowerCase()));
         if (matches.length !== 1) return success(id, { ok: false, error: matches.length ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: matches.slice(0, args.limit || 100).map(node => node.label) });
         return success(id, graphNeighborhood(graph, matches[0].id, { depth: args.depth, limit: args.limit }));
       }
@@ -171,17 +187,26 @@ export function createMcpHandler(dir: string) {
   };
 }
 
-export function serve(dir = '.') {
+export async function serve(dir = '.') {
   const handle = createMcpHandler(dir);
-  const input = createInterface({ input: process.stdin });
-  let pending = Promise.resolve();
-  input.on('line', line => {
-    pending = pending.then(async () => {
+  const write = async (response: any) => {
+    if (response !== undefined && !process.stdout.write(JSON.stringify(response) + '\n')) await once(process.stdout, 'drain');
+  };
+  process.stdin.setEncoding('utf8');
+  let buffer = '';
+  for await (const chunk of process.stdin) {
+    buffer += chunk;
+    let newline: number;
+    while ((newline = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, newline);
+      buffer = buffer.slice(newline + 1);
+      if (Buffer.byteLength(line) > 1024 * 1024) { await write(failure(null, -32600, 'Request exceeds 1 MiB')); return; }
       let request;
       try { request = JSON.parse(line); }
-      catch { process.stdout.write(JSON.stringify(failure(null, -32700, 'Parse error')) + '\n'); return; }
-      const response = await handle(request);
-      if (response !== undefined) process.stdout.write(JSON.stringify(response) + '\n');
-    });
-  });
+      catch { await write(failure(null, -32700, 'Parse error')); continue; }
+      await write(await handle(request));
+    }
+    if (Buffer.byteLength(buffer) > 1024 * 1024) { await write(failure(null, -32600, 'Request exceeds 1 MiB')); return; }
+  }
+  if (buffer.trim()) await write(failure(null, -32700, 'Unterminated JSON-RPC line'));
 }

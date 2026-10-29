@@ -1,4 +1,4 @@
-import { existsSync, realpathSync } from 'fs';
+import { existsSync, realpathSync, lstatSync } from 'fs';
 import { homedir } from 'os';
 import path from 'path';
 
@@ -8,6 +8,8 @@ const SECRET_FILE_PATTERNS = [
   /\.key$/i,
   /\.p12$/i,
   /\.crt$/i,
+  /^\.(npmrc|pypirc|netrc)$/,
+  /^(credentials|service[-_]?account)(?:\.[^.]+)?\.json$/i,
   /^id_rsa$/,
   /^id_ed25519$/,
 ];
@@ -59,6 +61,14 @@ export function resolveUserPath(inputPath: string, rootPath = process.cwd()): st
   const root = realPath(rootPath);
   const resolved = path.resolve(root, expanded);
 
+  let component = resolved;
+  while (component !== path.dirname(component)) {
+    try {
+      if (lstatSync(component).isSymbolicLink() && !existsSync(component)) throw new Error(`Dangling symlink: ${component}`);
+    } catch (error: any) { if (error.code !== 'ENOENT') throw error; }
+    component = path.dirname(component);
+  }
+
   if (!existsSync(resolved)) {
     let parent = path.dirname(resolved);
     while (!existsSync(parent)) parent = path.dirname(parent);
@@ -76,4 +86,22 @@ export function isIgnoredRepoPath(relativePath: string): boolean {
   if (parts.some((part) => IGNORED_DIRS.has(part))) return true;
   const basename = parts[parts.length - 1] || normalized;
   return SECRET_FILE_PATTERNS.some((pattern) => pattern.test(basename));
+}
+
+export function safeOutputPath(inputPath: string, rootPath = process.cwd()): string {
+  const root = realPath(rootPath);
+  const expanded = expandHome(inputPath);
+  const lexicalRoot = path.resolve(rootPath);
+  const absolute = path.resolve(lexicalRoot, expanded);
+  const relative = path.relative(lexicalRoot, absolute);
+  const resolved = relative !== '..' && !relative.startsWith('..' + path.sep) && !path.isAbsolute(relative) ? path.resolve(root, relative) : absolute;
+  resolveUserPath(resolved, root);
+  let current = resolved;
+  while (current !== path.dirname(current)) {
+    try { if (lstatSync(current).isSymbolicLink()) throw new Error(`Refusing symlinked output: ${current}`); }
+    catch (error: any) { if (error.code !== 'ENOENT') throw error; }
+    if (current === root) break;
+    current = path.dirname(current);
+  }
+  return resolved;
 }

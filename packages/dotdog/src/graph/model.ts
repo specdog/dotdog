@@ -53,9 +53,7 @@ function properties(value: any): Record<string, any> {
   }
   if (value.length % 2 && !(value.length && Array.isArray(value[0]))) throw new Error('Odd-length graph property array');
   if (value.length && Array.isArray(value[0])) return Object.fromEntries(value);
-  const result: Record<string, any> = {};
-  for (let i = 0; i + 1 < value.length; i += 2) result[String(value[i])] = value[i + 1];
-  return result;
+  return Object.fromEntries(Array.from({ length: value.length / 2 }, (_, i) => [String(value[i * 2]), value[i * 2 + 1]]));
 }
 
 export function normalizeGraph(dag: any): NormalizedGraph {
@@ -63,6 +61,7 @@ export function normalizeGraph(dag: any): NormalizedGraph {
   if (Array.isArray(dag) && dag[0] !== 3) throw new Error('Unsupported compact graph version');
   const rawNodes = Array.isArray(dag) ? dag[2] : dag.nodes ?? dag.n;
   if (!Array.isArray(rawNodes)) throw new Error('Graph nodes must be an array');
+  if (rawNodes.length > 100000) throw new Error('Graph exceeds 100000 nodes');
   const compiled = Array.isArray(dag);
   const positional = !compiled && rawNodes.some((node: any) => Array.isArray(node) && typeof node[0] === 'number');
   const nodes: GraphNode[] = rawNodes.map((node: any, index: number) => {
@@ -94,10 +93,23 @@ export function normalizeGraph(dag: any): NormalizedGraph {
     };
   });
   const byIndex = new Map(nodes.map((node, index) => [index, node.id]));
-  const byName = new Map(nodes.flatMap(node => [[node.label, node.id], [node.id, node.id]] as [string, string][]));
-  const ref = (value: any) => typeof value === 'number' ? byIndex.get(value) ?? String(value) : byName.get(String(value)) ?? String(value ?? '');
+  const ids = new Set(nodes.map(node => node.id));
+  const labels = new Map<string, string[]>();
+  for (const node of nodes) {
+    if (!labels.has(node.label)) labels.set(node.label, []);
+    labels.get(node.label)!.push(node.id);
+  }
+  const ref = (value: any) => {
+    if (typeof value === 'number' && (compiled || positional)) return byIndex.get(value) ?? String(value);
+    const key = String(value ?? '');
+    if (ids.has(key)) return key;
+    const matches = labels.get(key) || [];
+    if (matches.length > 1) throw new Error(`Ambiguous edge endpoint: ${key}`);
+    return matches[0] ?? key;
+  };
   const edges: GraphEdge[] = [];
   const add = (source: any, target: any, verb: any, extra: any = {}) => {
+    if (edges.length >= 500000) throw new Error('Graph exceeds 500000 edges');
     const sourceId = ref(source), targetId = ref(target);
     if (!sourceId || !targetId || !verb) throw new Error('Graph edge requires source, target, and verb');
     edges.push({ id: String(extra.id ?? `${sourceId}:${verb}:${targetId}`), sourceId, targetId, verb: String(verb),
@@ -105,6 +117,7 @@ export function normalizeGraph(dag: any): NormalizedGraph {
       confidence: extra.confidence, origin: safeOrigin(extra.origin), evidence: extra.evidence });
   };
   const topEdges = dag.edges ?? dag.e;
+  if (topEdges !== undefined && !Array.isArray(topEdges)) throw new Error('Graph edges must be an array');
   if (Array.isArray(topEdges)) {
     for (const edge of topEdges) add(edge.sourceId ?? edge.source ?? edge.s, edge.targetId ?? edge.target ?? edge.t, edge.verb ?? edge.type ?? edge.v, edge);
   } else {
@@ -120,6 +133,7 @@ export function normalizeGraph(dag: any): NormalizedGraph {
     project: String(Array.isArray(dag) ? dag[1] : dag.project ?? dag.p ?? ''), nodes, edges, compiled,
     coverage: dag.coverage, limitations: Array.isArray(dag.limitations) ? dag.limitations : Array.isArray(dag.unknowns) ? dag.unknowns : [],
   };
+  if (graph.limitations.some((item: unknown) => typeof item !== 'string')) throw new Error('Graph limitations must be strings');
   const errors = graphErrors(graph);
   if (errors.length) throw new Error(errors.join('; '));
   return graph;
@@ -130,6 +144,7 @@ export function graphErrors(graph: NormalizedGraph): string[] {
   for (const node of graph.nodes) {
     if (!node.id || ids.has(node.id)) errors.push(`Duplicate or empty node id: ${node.id}`);
     ids.add(node.id);
+    if (!node.schema || typeof node.schema !== 'object' || Array.isArray(node.schema)) errors.push(`Invalid schema: ${node.id}`);
     if (!Array.isArray(node.states) || node.states.some(state => typeof state !== 'string')) errors.push(`Invalid states: ${node.id}`);
     if (!Array.isArray(node.lifecycle) || node.lifecycle.some(state => typeof state !== 'string')) errors.push(`Invalid lifecycle: ${node.id}`);
   }
@@ -142,8 +157,9 @@ export function graphErrors(graph: NormalizedGraph): string[] {
 }
 
 export function graphNeighborhood(graph: NormalizedGraph, query: string, options: { direction?: 'incoming' | 'outgoing' | 'any'; depth?: number; limit?: number; verb?: string } = {}) {
-  const exact = graph.nodes.filter(node => node.id.toLowerCase() === query.toLowerCase() || node.label.toLowerCase() === query.toLowerCase());
-  if (exact.length !== 1) return { ok: false, error: exact.length ? 'ambiguous_endpoint' : 'endpoint_not_found', nodes: [], edges: [], truncated: false };
+  const byIdMatch = graph.nodes.filter(node => node.id === query);
+  const exact = byIdMatch.length ? byIdMatch : graph.nodes.filter(node => node.label.toLowerCase() === query.toLowerCase() || node.id.toLowerCase() === query.toLowerCase());
+  if (exact.length !== 1) return { ok: false, error: exact.length ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: exact.slice(0, 100).map(node => node.id), nodes: [], edges: [], truncated: false };
   const direction = options.direction || 'any', depth = options.depth ?? 2, limit = options.limit ?? 100;
   if (!Number.isInteger(depth) || depth < 0 || depth > 12 || !Number.isInteger(limit) || limit < 1 || limit > 1000) throw new Error('depth must be 0–12 and limit 1–1000');
   const byId = new Map(graph.nodes.map(node => [node.id, node]));

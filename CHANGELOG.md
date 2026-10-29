@@ -2,6 +2,13 @@
 
 ## 1.0.0 — Unreleased
 
+- Fix static symlink read/write escapes, forged hook ownership, parser hangs and unbounded MCP input; update SDK and vulnerable development dependency resolutions.
+- Replace guessed provider MCP calls with explicit read-only APIs; parameterize Railway IDs, require Cloudflare account identity and disclose unverified Supabase tables.
+- Compare nested endpoint contract values/types with bounded body reads and end-to-end timeouts; strict infrastructure checks fail on unverified results.
+- Add read-only status, named scenario/reference diagnostics and advisory evidence/embodied coverage audits; deprecate misleading compatibility names and retire verify --init.
+- Remove unused @spec packages, unwired scripts, scratch copies and invalid benchmark harness; replace the simulated demo with real CLI/MCP operations.
+- Add dependency security CI, Bun/Actions Dependabot updates, extractor-aware cache invalidation and linear adjacency construction for high-fanout path queries.
+
 - Add repository-scoped Codex and Claude skills, opt-in removable hooks and staged-index CI checks.
 - Add content-hash refresh, cached JS/TS AST extraction, named context and reverse-impact queries.
 - Unify legacy/current graph readers, preserve schemas and evidence, validate graph identity and references, and scope conflicting declarations by source.

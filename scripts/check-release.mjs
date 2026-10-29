@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { createHash } from 'node:crypto';
 
 const version = JSON.parse(readFileSync('packages/dotdog/package.json')).version;
 const temporary = mkdtempSync(join(tmpdir(), 'dotdog-release-'));
@@ -27,6 +28,21 @@ try {
   const impact = JSON.parse(run('impact', 'file:src/b.ts', '--json'));
   assert.ok(impact.nodes.some(node => node.label === 'file:src/a.ts'));
   assert.equal(JSON.parse(run('check', '--json')).ok, true);
+  assert.equal(JSON.parse(run('status', '--json')).fresh, true);
+  const evidence = 'Synthetic release fixture only; not a hardware measurement.\n';
+  writeFileSync(join(project, 'evidence.txt'), evidence);
+  const system = { project: 'bench-fixture', nodes: [
+    { id: 'bench', kind: 'asset' }, { id: 'requirement', kind: 'requirement' },
+    { id: 'record', kind: 'evidence', properties: { file: 'evidence.txt', sha256: createHash('sha256').update(evidence).digest('hex'), observedAt: new Date().toISOString(), result: 'pass' } },
+  ], edges: [
+    { sourceId: 'requirement', targetId: 'bench', verb: 'applies_to' },
+    { sourceId: 'requirement', targetId: 'record', verb: 'verified_by' },
+  ] };
+  writeFileSync(join(project, 'system.json'), JSON.stringify(system));
+  run('graph', 'import', 'system.json', '--project', 'bench-fixture');
+  assert.equal(JSON.parse(run('graph', 'audit', '--dag', '.doghouse/imported/bench-fixture.dag', '--profile', 'embodied', '--json')).ok, true);
+  writeFileSync(join(project, 'evidence.txt'), 'changed fixture');
+  assert.throws(() => run('graph', 'audit', '--dag', '.doghouse/imported/bench-fixture.dag', '--profile', 'embodied', '--json'), error => error.status === 1);
   const bun = execFileSync('bun', [cli, '--version'], { cwd: project, encoding: 'utf8' }).trim();
   assert.equal(bun, version);
   console.log(`Packed release verified under Node ${process.versions.node} and Bun: ${packed.size} compressed bytes, ${packed.entryCount} files`);

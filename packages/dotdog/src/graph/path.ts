@@ -15,6 +15,8 @@ export type GraphPathResult = {
 };
 
 function endpoint(graph: NormalizedGraph, query: string): { node?: GraphNode; candidates?: string[] } {
+  const byId = graph.nodes.find(node => node.id === query);
+  if (byId) return { node: byId };
   const needle = query.trim().toLowerCase();
   if (!needle) return {};
   const exact = graph.nodes.filter((node) => node.id.toLowerCase() === needle || node.label.toLowerCase() === needle);
@@ -52,7 +54,10 @@ export function shortestGraphPath(
   if (!Number.isInteger(maxHops) || maxHops < 1 || maxHops > 12) throw new Error('maxHops must be an integer from 1 to 12');
   const verb = (options.verb || '').toLowerCase();
   const adjacency = new Map<string, Array<{ edge: GraphEdge; next: string }>>();
-  const add = (id: string, edge: GraphEdge, next: string) => adjacency.set(id, [...(adjacency.get(id) || []), { edge, next }]);
+  const add = (id: string, edge: GraphEdge, next: string) => {
+    if (!adjacency.has(id)) adjacency.set(id, []);
+    adjacency.get(id)!.push({ edge, next });
+  };
   for (const edge of graph.edges) {
     if (verb && edge.verb.toLowerCase() !== verb) continue;
     if (direction === 'outgoing' || direction === 'any') add(edge.sourceId, edge, edge.targetId);
@@ -60,8 +65,8 @@ export function shortestGraphPath(
   }
   const queue: Array<{ id: string; nodes: string[]; edges: GraphEdge[] }> = [{ id: from.node.id, nodes: [from.node.id], edges: [] }];
   const visited = new Set([from.node.id]);
-  while (queue.length) {
-    const current = queue.shift()!;
+  for (let cursor = 0; cursor < queue.length; cursor++) {
+    const current = queue[cursor];
     if (current.id === to.node.id) {
       const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
       return { ok: true, direction, hops: current.edges.length, from: fromInfo, to: toInfo, nodes: current.nodes.map((id) => nodeById.get(id)!).filter(Boolean), edges: current.edges };

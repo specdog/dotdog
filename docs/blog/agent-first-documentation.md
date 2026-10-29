@@ -6,6 +6,9 @@ author: Justin Diclemente
 description: "Write .dog for humans. Compile .dag for agents. Never let an AI read prose again."
 ---
 
+> Historical pre-1.0 post. Commands, provider support and savings/hallucination claims below are not current guarantees. See the [1.0 migration guide](../v1-migration) and [security audit](../v1-security-audit).
+
+
 ← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
 
 

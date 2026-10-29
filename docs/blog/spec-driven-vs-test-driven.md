@@ -6,6 +6,9 @@ author: Justin Diclemente
 description: "TDD verifies code works. SDD tells AI agents what to build. You need both."
 ---
 
+> Historical pre-1.0 post. Commands, provider support and savings/hallucination claims below are not current guarantees. See the [1.0 migration guide](../v1-migration) and [security audit](../v1-security-audit).
+
+
 ← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents · dogfood](https://specdog.github.io/agents)
 
 

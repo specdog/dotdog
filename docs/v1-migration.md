@@ -54,4 +54,12 @@ Legacy initialization revisions and modern 2026-07-28 discovery/per-request meta
 
 Repository extraction covers inventory plus JS/TS top-level declarations and static relative imports/re-exports. Alias resolution, dynamic calls, whole-program behavior and non-JS/TS symbol extraction remain unverified. Git ignore rules are honored when a Git root is present. Scan/read errors fail rather than justify deleting an unseen suffix.
 
-`analyze`, `simulate`, `staleness` and text-based `verify` remain heuristic helpers, not correctness proofs. Search is lexical TF-IDF, not an embedding model. Reported token figures use a byte-based estimate; savings vary and can be negative when retained metadata exceeds the source size.
+`analyze` remains a heuristic helper. `staleness`, `simulate`, and `verify` are deprecated aliases for read-only `status`, `scenario-check`, and `reference-check`. Stale, absent, ambiguous or unmatched inputs return nonzero. `verify --init` is retired; author explicit mappings instead. These commands do not prove application correctness. Search is lexical TF-IDF, not an embedding model. Reported token figures use a byte-based estimate; savings vary and can be negative when retained metadata exceeds the source size.
+
+## Security and provider changes
+
+Generated destinations reject symlinks; Git inventory cannot follow redirected directories outside the repository. Hook ownership metadata must match the expected installation, not arbitrary file/hash claims. MCP lines are capped at 1 MiB and graph inputs at 32 MiB. Regenerate graphs after upgrading.
+
+Provider verification no longer launches guessed MCP tools or unauthenticated remote MCP sessions. Cloudflare requires both `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`; D1/KV mappings use IDs. Railway uses `service:<service-id>`, `RAILWAY_API_TOKEN` for account/workspace tokens or `RAILWAY_TOKEN` for project tokens. Supabase project checks do not claim table validation. Strict `live --exit-code` fails for skipped/warning infrastructure checks. Endpoint JSON contracts now compare nested values/types, not merely field presence; redirects are rejected and response bodies/timeouts are bounded.
+
+`graph audit` adds recorded-evidence identity/freshness checks and an optional advisory `embodied` coverage profile. See [security audit](v1-security-audit.md) and [embodied evidence](embodied-systems.md). Legacy `@spec/*` packages, the unwired keyword scanner, duplicate version script, scratch parser dumps and invalid historical-log benchmark harness were removed; none was in the published npm package.

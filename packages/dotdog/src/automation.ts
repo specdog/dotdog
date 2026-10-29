@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, lstatSync, unlinkSync } from 'fs';
-import { join, dirname, relative } from 'path';
+import { join, dirname, relative, resolve } from 'path';
 import { tmpdir } from 'os';
 import { createHash } from 'crypto';
 import { execFileSync } from 'child_process';
@@ -7,7 +7,7 @@ import type { Command } from 'commander';
 import { listRepoFiles, safeProjectName, writeRepoMap } from './map/repoMapper';
 import { compileDotdogLayers } from './dag/layers';
 import { normalizeGraph } from './graph/model';
-import { resolveUserPath } from './workspace/paths';
+import { resolveUserPath, safeOutputPath } from './workspace/paths';
 
 const version = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
@@ -16,7 +16,7 @@ function invoke(root: string, args: string[]) {
   return execFileSync(process.execPath, [process.argv[1], ...args], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 }
 
-export function refreshGraph(root: string, onlyStale = false) {
+export function graphStatus(root: string) {
   const files = listRepoFiles(root).filter(file => !/\.(dag|idx)$/.test(file) && file !== 'dotdog-badge.svg');
   for (const directory of ['semantic', 'overlays']) {
     const base = join(root, '.doghouse', directory);
@@ -25,12 +25,20 @@ export function refreshGraph(root: string, onlyStale = false) {
   }
   files.sort();
   const hash = digest(version + '\n' + files.map(file => `${file}\0${digest(readFileSync(join(root, file)))}`).join('\n'));
-  const directory = join(root, '.doghouse'), stateFile = join(directory, 'refresh.json');
-  const dagFile = join(directory, 'compiled/repo.dag');
+  const directory = join(root, '.doghouse'), stateFile = resolveUserPath(join(directory, 'refresh.json'), root);
+  const dagFile = resolveUserPath(join(directory, 'compiled/repo.dag'), root);
   let previous: any = null;
   try { previous = JSON.parse(readFileSync(stateFile, 'utf8')); } catch {}
-  const unchanged = previous?.inputHash === hash && existsSync(dagFile) && previous.outputHash === digest(readFileSync(dagFile)) && Object.entries(previous.outputHashes || {}).every(([file, hash]) => existsSync(join(root, file)) && digest(readFileSync(join(root, file))) === hash);
-  if (onlyStale && unchanged) return { ok: true, changed: false, inputHash: hash, nodes: previous.nodes, edges: previous.edges, added: [], changedIds: [], removed: [] };
+  let unchanged = false;
+  try { unchanged = previous?.inputHash === hash && existsSync(dagFile) && previous.outputHash === digest(readFileSync(dagFile)) && Object.entries(previous.outputHashes || {}).every(([file, hash]) => existsSync(resolveUserPath(file, root)) && digest(readFileSync(resolveUserPath(file, root))) === hash); } catch {}
+  return { ok: Boolean(unchanged), fresh: Boolean(unchanged), inputHash: hash, nodes: previous?.nodes ?? 0, edges: previous?.edges ?? 0 };
+}
+
+export function refreshGraph(root: string, onlyStale = false) {
+  const status = graphStatus(root), hash = status.inputHash, unchanged = status.fresh;
+  const directory = join(root, '.doghouse'), stateFile = safeOutputPath(join(directory, 'refresh.json'), root);
+  const dagFile = resolveUserPath(join(directory, 'compiled/repo.dag'), root);
+  if (onlyStale && unchanged) return { ok: true, changed: false, inputHash: hash, nodes: status.nodes, edges: status.edges, added: [], changedIds: [], removed: [] };
   let oldGraph: ReturnType<typeof normalizeGraph> | { nodes: []; edges: [] } = { nodes: [], edges: [] };
   let diffAvailable = true;
   try { if (existsSync(dagFile)) oldGraph = normalizeGraph(JSON.parse(readFileSync(dagFile, 'utf8'))); }
@@ -53,8 +61,7 @@ export function refreshGraph(root: string, onlyStale = false) {
 }
 
 function installFile(root: string, path: string, content: string) {
-  const absolute = join(root, path);
-  resolveUserPath(absolute, root);
+  const absolute = safeOutputPath(path, root);
   mkdirSync(dirname(absolute), { recursive: true });
   if (existsSync(absolute)) {
     if (lstatSync(absolute).isSymbolicLink() || readFileSync(absolute, 'utf8') !== content) throw new Error(`Refusing to replace existing file: ${path}`);
@@ -63,7 +70,26 @@ function installFile(root: string, path: string, content: string) {
   writeFileSync(absolute, content, { mode: 0o755 });
 }
 
+function readHookManifest(root: string, agent: string, file: string) {
+  safeOutputPath(file, root);
+  const owned = JSON.parse(readFileSync(file, 'utf8'));
+  const expected = agent === 'claude' ? '.claude/settings.json' : execFileSync('git', ['rev-parse', '--git-path', 'hooks/pre-commit'], { cwd: root, encoding: 'utf8' }).trim();
+  if (typeof owned.path !== 'string' || resolve(root, owned.path) !== resolve(root, expected)) throw new Error('Invalid hook ownership path');
+  if (agent === 'git' && owned.sha256 !== digest('#!/bin/sh\nexec dotdog check --staged\n')) throw new Error('Invalid Git hook ownership digest');
+  if (agent === 'claude' && JSON.stringify(owned.hook) !== JSON.stringify({ matcher: 'Write|Edit|MultiEdit', hooks: [{ type: 'command', command: 'dotdog refresh --if-stale', timeout: 30 }] })) throw new Error('Invalid Claude hook ownership');
+  return owned;
+}
+
 export function registerAutomation(program: Command) {
+  for (const name of ['status', 'staleness']) {
+    program.command(`${name} [dir]`).description('Read-only content-hash freshness; does not prove spec correctness')
+      .option('--json', 'print JSON').action((dir = '.', opts) => {
+        if (name === 'staleness') console.error('Deprecated: use dotdog status. Refresh stale graphs with dotdog refresh.');
+        const status = graphStatus(resolveUserPath(dir));
+        if (!status.fresh) process.exitCode = 1;
+        console.log(opts.json ? JSON.stringify(status) : `${status.fresh ? 'Current' : 'Stale or not indexed'}: ${status.nodes} nodes, ${status.edges} edges`);
+      });
+  }
   program.command('refresh').description('Refresh observed graphs and specs; report deterministic graph changes')
     .option('--if-stale', 'skip graph extraction when content hashes match')
     .option('--json', 'print JSON')
@@ -122,17 +148,17 @@ export function registerAutomation(program: Command) {
     }
     const manifestDir = resolveUserPath('.doghouse/hooks', root);
     mkdirSync(manifestDir, { recursive: true });
-    const manifest = join(manifestDir, opts.agent + '.json');
+    const manifest = safeOutputPath(join(manifestDir, opts.agent + '.json'), root);
     if (existsSync(manifest)) { console.log('Hook already installed; use hooks status to inspect it.'); return; }
     if (opts.agent === 'git') {
       const path = execFileSync('git', ['rev-parse', '--git-path', 'hooks/pre-commit'], { cwd: root, encoding: 'utf8' }).trim();
-      const target = join(root, path);
+      const target = resolve(root, path);
       const content = '#!/bin/sh\nexec dotdog check --staged\n';
       installFile(root, relative(root, target), content);
       writeFileSync(manifest, JSON.stringify({ path, sha256: digest(content) }));
     } else {
       const path = '.claude/settings.json', target = join(root, path);
-      resolveUserPath(target, root);
+      safeOutputPath(target, root);
       mkdirSync(dirname(target), { recursive: true });
       const settings = existsSync(target) ? JSON.parse(readFileSync(target, 'utf8')) : {};
       const command = 'dotdog refresh --if-stale';
@@ -149,7 +175,7 @@ export function registerAutomation(program: Command) {
     for (const agent of ['git', 'claude']) {
       const root = process.cwd(), file = join(root, '.doghouse/hooks', agent + '.json');
       if (!existsSync(file)) { console.log(JSON.stringify({ agent, installed: false })); continue; }
-      const owned = JSON.parse(readFileSync(file, 'utf8')), target = resolveUserPath(owned.path, root);
+      const owned = readHookManifest(root, agent, file), target = safeOutputPath(owned.path, root);
       let active = false;
       if (existsSync(target)) {
         active = agent === 'git' ? digest(readFileSync(target)) === owned.sha256 : (JSON.parse(readFileSync(target, 'utf8')).hooks?.PostToolUse || []).some((hook: any) => JSON.stringify(hook) === JSON.stringify(owned.hook));
@@ -161,7 +187,7 @@ export function registerAutomation(program: Command) {
     if (!['git', 'claude'].includes(opts.agent)) throw new Error('Expected git or claude');
     const root = process.cwd(), manifest = join(root, '.doghouse/hooks', opts.agent + '.json');
     if (!existsSync(manifest)) return;
-    const owned = JSON.parse(readFileSync(manifest, 'utf8')), target = resolveUserPath(owned.path, root);
+    const owned = readHookManifest(root, opts.agent, manifest), target = safeOutputPath(owned.path, root);
     if (!existsSync(target)) { unlinkSync(manifest); console.log('Removed stale hook registration'); return; }
     if (opts.agent === 'git') {
       if (digest(readFileSync(target)) !== owned.sha256) throw new Error('Hook was edited; preserve it and remove the Dotdog line manually');

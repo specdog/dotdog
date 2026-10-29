@@ -122,6 +122,19 @@ dotdog serve .doghouse/speckit
 
 Workspaces retain `workspace init`, `add`, `list`, `validate`, `graph`, `observe`, `ask`, and `drift`. `refresh` operates on the current repository; it does not infer cross-repository calls. Use the workspace commands for explicit multi-repo manifests.
 
+## Freshness, references and recorded evidence
+
+```sh
+dotdog status --json
+dotdog scenario-check checkout --project shop --json
+dotdog reference-check --project shop --json
+dotdog graph audit --dag .doghouse/imported/system.dag --profile embodied --json
+```
+
+`status` is read-only and exits nonzero when graphs are stale or absent. `scenario-check` checks one named Scenario/Flow for lexical compiled-entity references. `reference-check` checks explicit Verify file/property mappings without writing human plans. None proves application correctness. `staleness`, `simulate` and `verify` are deprecated compatibility names; `verify --init` is retired.
+
+`graph audit` checks recorded artifact hashes, timestamps and results. Its optional embodied profile reports missing asset/requirement/sensor/actuator/hazard links. It does not operate hardware, run simulations or certify safety. See the embodied evidence guide for the exact graph conventions.
+
 ## Limits and migration
 
 - AST extraction covers JS/TS top-level declarations and static relative imports/re-exports. It does not resolve arbitrary aliases, dynamic calls, runtime execution, or every language's semantics. Other files are inventoried.
@@ -131,7 +144,7 @@ Workspaces retain `workspace init`, `add`, `list`, `validate`, `graph`, `observe
 - Missing paths and high-severity drift return nonzero exits, including JSON output.
 - No fixed token-savings percentage or hallucination guarantee is claimed.
 
-See [migration](docs/v1-migration.md), [audit and research](docs/npm-0.9-audit.md), and [integrations](docs/integrations.md). The independent Rust port remains in [PR #330](https://github.com/specdog/dotdog/pull/330); npm/Bun delivery is not being replaced by it.
+See [security audit](docs/v1-security-audit.md), [peer research](docs/graph-peer-research.md), [embodied evidence](docs/embodied-systems.md), [migration](docs/v1-migration.md), [audit and research](docs/npm-0.9-audit.md), and [integrations](docs/integrations.md). The independent Rust port remains in [PR #330](https://github.com/specdog/dotdog/pull/330); npm/Bun delivery is not being replaced by it.
 
 ## Development
 

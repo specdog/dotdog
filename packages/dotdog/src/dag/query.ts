@@ -1,4 +1,5 @@
-import { readFileSync } from 'fs';
+import { readGraphText } from '../graph/io';
+import { normalizeGraph } from '../graph/model';
 import type { RepositoryWorldModel, WorldEdge, WorldNode, WorldPrediction } from './schema';
 
 export type WorldQueryResult = {
@@ -22,15 +23,18 @@ function haystack(node: WorldNode): string {
 }
 
 export function loadWorldModel(path: string): RepositoryWorldModel {
-  const raw = readFileSync(path, 'utf-8');
+  const raw = readGraphText(path);
   const parsed = JSON.parse(raw);
   if (!parsed || parsed.version !== '0.1' || !Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
     throw new Error(`Not a dotdog repo.dag file: ${path}`);
   }
+  normalizeGraph(parsed);
+  if (!Array.isArray(parsed.predictions) || !Array.isArray(parsed.unknowns) || parsed.unknowns.some((item: any) => typeof item !== 'string') || parsed.predictions.some((prediction: any) => !Array.isArray(prediction.affectedNodes))) throw new Error('Invalid world predictions or unknowns');
   return parsed as RepositoryWorldModel;
 }
 
 export function queryWorldModel(model: RepositoryWorldModel, query: string, limit = 20): WorldQueryResult {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 1000) throw new Error('limit must be an integer from 1 to 1000');
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   const matches = (text: string) => terms.every((term) => text.includes(term));
 
@@ -54,11 +58,11 @@ export function queryWorldModel(model: RepositoryWorldModel, query: string, limi
 
 export function traceWorldNode(model: RepositoryWorldModel, idOrLabel: string): WorldTrace | null {
   const needle = idOrLabel.toLowerCase();
-  const node = model.nodes.find((candidate) =>
-    candidate.id.toLowerCase() === needle ||
-    candidate.label.toLowerCase() === needle ||
-    candidate.label.toLowerCase().includes(needle)
-  );
+  const exactId = model.nodes.find(candidate => candidate.id === idOrLabel);
+  const exact = model.nodes.filter(candidate => candidate.id.toLowerCase() === needle || candidate.label.toLowerCase() === needle);
+  const matches = exactId ? [exactId] : exact.length ? exact : model.nodes.filter(candidate => candidate.label.toLowerCase().includes(needle));
+  if (matches.length > 1) throw new Error('Ambiguous node; use an exact ID: ' + matches.slice(0, 100).map(node => node.id).join(', '));
+  const node = matches[0];
 
   if (!node) return null;
 

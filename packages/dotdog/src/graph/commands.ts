@@ -2,7 +2,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, relative } from 'path';
 import { createHash } from 'crypto';
 import type { Command } from 'commander';
-import { resolveUserPath } from '../workspace/paths';
+import { auditGraph } from './audit';
+import { readGraphText } from './io';
+import { resolveUserPath, safeOutputPath } from '../workspace/paths';
 import { normalizeGraph, graphNeighborhood, type GraphNode, type GraphEdge } from './model';
 
 export function importReaCallGraph(input: any, project: string, source: string, digest: string, artifact?: string) {
@@ -53,7 +55,7 @@ export function registerGraphCommands(program: Command) {
       .option('--limit <n>', 'maximum returned nodes', '100')
       .option('--json', 'print JSON')
       .action((node, opts) => {
-        const graph = normalizeGraph(JSON.parse(readFileSync(resolveUserPath(opts.dag), 'utf8')));
+        const graph = normalizeGraph(JSON.parse(readGraphText(resolveUserPath(opts.dag))));
         const result = graphNeighborhood(graph, node, { direction: command === 'impact' ? 'incoming' : 'any', depth: Number(opts.depth), limit: Number(opts.limit) });
         if (!result.ok) process.exitCode = 1;
         if (opts.json) console.log(JSON.stringify(result, null, 2));
@@ -65,6 +67,16 @@ export function registerGraphCommands(program: Command) {
       });
   }
   const graph = program.command('graph').description('Import, export and inspect interoperable evidence-linked graphs');
+  graph.command('audit').description('Read-only evidence identity/freshness and optional embodied-system coverage')
+    .option('--dag <file>', 'graph to inspect', '.doghouse/compiled/repo.dag')
+    .option('--profile <profile>', 'evidence or embodied', 'evidence')
+    .option('--max-age-days <days>', 'evidence freshness window', '30')
+    .option('--json', 'print JSON').action(opts => {
+      const data = normalizeGraph(JSON.parse(readGraphText(resolveUserPath(opts.dag))));
+      const result = auditGraph(data, process.cwd(), { profile: opts.profile, maxAgeDays: Number(opts.maxAgeDays) });
+      if (!result.ok) process.exitCode = 1;
+      console.log(opts.json ? JSON.stringify(result, null, 2) : `${result.ok ? 'Evidence checks passed' : 'Evidence gaps found'}: ${result.validEvidence}/${result.evidence} current artifacts\n${result.findings.map(item => `${item.node}: ${item.code}: ${item.message}`).join('\n')}\nAdvisory only; not safety certification or actuation permission.`);
+    });
   graph.command('import <file>')
     .option('--format <format>', 'dotdog or rea-callgraph', 'dotdog')
     .requiredOption('--project <name>', 'project namespace')
@@ -73,14 +85,14 @@ export function registerGraphCommands(program: Command) {
     .action((file, opts) => {
       if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(opts.project)) throw new Error('Invalid project name');
       const input = resolveUserPath(file), source = relative(process.cwd(), input).replace(/\\/g, '/');
-      const bytes = readFileSync(input), raw = JSON.parse(bytes.toString('utf8'));
+      const bytes = readGraphText(input), raw = JSON.parse(bytes);
       const digest = createHash('sha256').update(bytes).digest('hex');
       const imported = opts.format === 'rea-callgraph' ? importReaCallGraph(raw, opts.project, source, digest, opts.artifactSha256) : opts.format === 'dotdog' ? { ...normalizeGraph(raw), project: opts.project } : undefined;
       if (!imported) throw new Error('Unsupported graph format');
       normalizeGraph(imported);
       const directory = resolveUserPath('.doghouse/imported');
       mkdirSync(directory, { recursive: true });
-      const destination = resolveUserPath(join(directory, opts.project + '.dag'));
+      const destination = safeOutputPath(join(directory, opts.project + '.dag'));
       if (existsSync(destination) && !opts.force) throw new Error('Imported project exists; use --force to replace it');
       writeFileSync(destination, JSON.stringify(imported, null, 2) + '\n');
       console.log(JSON.stringify({ project: opts.project, file: relative(process.cwd(), destination), sourceSha256: digest, nodes: imported.nodes.length, edges: imported.edges.length }));
@@ -89,7 +101,7 @@ export function registerGraphCommands(program: Command) {
     .option('--dag <file>', 'compiled graph', '.doghouse/compiled/repo.dag')
     .option('--format <format>', 'json or mermaid', 'json')
     .action(opts => {
-      const data = normalizeGraph(JSON.parse(readFileSync(resolveUserPath(opts.dag), 'utf8')));
+      const data = normalizeGraph(JSON.parse(readGraphText(resolveUserPath(opts.dag))));
       if (opts.format === 'json') console.log(JSON.stringify({ version: '1.0', ...data }, null, 2));
       else if (opts.format === 'mermaid') {
         const ids = new Map(data.nodes.map((node, index) => [node.id, `n${index}`]));

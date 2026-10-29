@@ -6,6 +6,9 @@ author: Justin Diclemente
 description: "Andrej Karpathy's LLM OS concept maps agents to an operating system. The missing module? A wiki brain — structured knowledge agents query instead of scan. Here's why flat files fail and entity graphs win."
 ---
 
+> Historical pre-1.0 post. Commands, provider support and savings/hallucination claims below are not current guarantees. See the [1.0 migration guide](../v1-migration) and [security audit](../v1-security-audit).
+
+
 # Karpathy's LLM OS Needs a Brain. Here's What That Looks Like.
 
 Andrej Karpathy gave us the [LLM OS](https://twitter.com/karpathy/status/1723140519554105733) — the idea that large language models are becoming the kernel of a new operating system. Memory is RAM. Tools are I/O devices. Context windows are addressable memory.

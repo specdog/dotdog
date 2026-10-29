@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, relative, dirname } from 'path';
 import { parse } from '../parser';
-import { resolveUserPath } from '../workspace/paths';
+import { resolveUserPath, safeOutputPath } from '../workspace/paths';
 import {
   makeEdge,
   makeNode,
@@ -103,7 +103,7 @@ function loadDogLayer(dir: string, originType: 'semantic' | 'overlay', labelToId
 
   const files = readdirSync(dir).filter((file) => file.endsWith('.dog')).sort();
   for (const file of files) {
-    const fullPath = join(dir, file);
+    const fullPath = resolveUserPath(join(dir, file), dirname(dirname(dir)));
     const sourcePath = relative(dirname(dirname(dir)), fullPath).replace(/\\/g, '/');
     const ast = parse(readFileSync(fullPath, 'utf-8'));
 
@@ -204,7 +204,7 @@ export function compileDotdogLayers(root: string, project: string): LayerCompile
 
   const compiledDir = resolveUserPath(join(doghouseDir, 'compiled'), root);
   mkdirSync(compiledDir, { recursive: true });
-  const outFile = join(compiledDir, 'repo.dag');
+  const outFile = safeOutputPath(join(compiledDir, 'repo.dag'), root);
   writeFileSync(outFile, serializeWorldModel(compiled));
 
   return { file: outFile, nodes: compiled.nodes.length, edges: compiled.edges.length, unknowns: compiled.unknowns.length };

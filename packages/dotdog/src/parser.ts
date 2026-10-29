@@ -29,8 +29,10 @@ function parseSections(lines: string[], errors: ParseError[]): SectionNode[] {
 
   // Root section (content before first heading — skip lines under ## to avoid double-counting in named sections)
   let firstHeading = lines.length;
+  let fenced = false;
   for (let j = 0; j < lines.length; j++) {
-    if (/^##\s/.test(lines[j])) { firstHeading = j; break; }
+    if (lines[j].startsWith('```')) fenced = !fenced;
+    if (!fenced && /^##\s/.test(lines[j])) { firstHeading = j; break; }
   }
   const rootBlocks = parseBlocks(lines, 0, firstHeading, errors);
   if (rootBlocks.length > 0) {
@@ -78,9 +80,11 @@ function parseSections(lines: string[], errors: ParseError[]): SectionNode[] {
 }
 
 function findSectionEnd(lines: string[], start: number, currentLevel: number): number {
+  let fenced = false;
   for (let i = start; i < lines.length; i++) {
     const line = lines[i];
-    if (/^##\s/.test(line) || /^###\s/.test(line)) return i;  // Any heading ends current section
+    if (line.startsWith('```')) fenced = !fenced;
+    if (!fenced && (/^##\s/.test(line) || /^###\s/.test(line))) return i;  // Any heading ends current section
   }
   return lines.length;
 }
@@ -285,6 +289,7 @@ function parseBlocks(lines: string[], start: number, end: number, errors?: Parse
     if (lines[i].startsWith('```')) {
       let fenceEnd = i + 1;
       while (fenceEnd < end && !lines[fenceEnd].startsWith('```')) fenceEnd++;
+      if (fenceEnd >= end && errors) errors.push({ message: 'Unclosed fenced block', line: i + 1, context: line });
       const blockEnd = fenceEnd < end ? fenceEnd + 1 : end;
       blocks.push({
         kind: 'prose',
@@ -298,6 +303,7 @@ function parseBlocks(lines: string[], start: number, end: number, errors?: Parse
 
     // Collect prose
     const proseStart = i;
+    i++;
     while (i < end && !isBlockStart(lines[i]) && !lines[i].startsWith('```')) {
       i++;
     }
@@ -558,9 +564,9 @@ function parseTable(lines: string[], start: number, end: number): TableNode | nu
 // --- Simple YAML parser (handles our subset) ---
 
 function parseSimpleYAML(lines: string[]): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
+  const result: Record<string, unknown> = Object.create(null);
   let currentKey = '';
-  let currentObj: Record<string, unknown> = {};
+  let currentObj: Record<string, unknown> = Object.create(null);
   let inNested = false;
   let nestedKey = '';
 
@@ -580,14 +586,14 @@ function parseSimpleYAML(lines: string[]): Record<string, unknown> {
           result[currentKey] = currentObj;
         }
         inNested = false;
-        currentObj = {};
+        currentObj = Object.create(null);
       }
       currentKey = topMatch[1];
       const value = (topMatch[2] || '').trim();
 
       if (value === '') {
         inNested = true;
-        currentObj = {};
+        currentObj = Object.create(null);
       } else if (value === 'true') {
         result[currentKey] = true;
       } else if (value === 'false') {
@@ -611,7 +617,7 @@ function parseSimpleYAML(lines: string[]): Record<string, unknown> {
       const value = (nestedMatch[2] || '').trim();
 
       if (value === '' || value === '{') {
-        currentObj[nestedKey] = {};
+        currentObj[nestedKey] = Object.create(null);
       } else if (value === 'true') {
         currentObj[nestedKey] = true;
       } else if (value === 'false') {
@@ -690,7 +696,7 @@ function parseInlineObject(value: string): Record<string, unknown> | null {
   const match = value.match(/^\{(.+)\}$/);
   if (!match) return null;
 
-  const obj: Record<string, unknown> = {};
+  const obj: Record<string, unknown> = Object.create(null);
   const pairs = match[1].split(',').map(s => s.trim());
   for (const pair of pairs) {
     const [k, ...vParts] = pair.split(':');

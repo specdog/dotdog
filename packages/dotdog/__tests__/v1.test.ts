@@ -112,8 +112,8 @@ describe('1.0 CLI and automation', () => {
   });
 
   test('fresh v3 endpoint contracts work and reject non-JSON bodies', async () => {
-    let json = true;
-    const server = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => json ? Response.json({ ok: true }) : new Response('not-json') });
+    let json = true, ok = true;
+    const server = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => json ? Response.json({ ok }) : new Response('not-json') });
     try {
       const dir = fixture(), project = join(dir, 'specs/live');
       mkdirSync(project, { recursive: true });
@@ -127,6 +127,8 @@ describe('1.0 CLI and automation', () => {
       const good = await live();
       expect(good.code).toBe(0);
       expect(good.out).toContain('1 passed');
+      ok = false;
+      expect((await live()).code).toBe(1);
       json = false;
       expect((await live()).code).not.toBe(0);
     } finally {

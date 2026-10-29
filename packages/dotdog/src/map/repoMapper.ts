@@ -5,7 +5,9 @@ import { mapSource } from './source';
 import { join, basename } from 'path';
 import { renderRepositoryDag } from '../dag/repoWorld';
 import { stableId } from '../dag/schema';
-import { isIgnoredRepoPath, resolveUserPath } from '../workspace/paths';
+import { isIgnoredRepoPath, resolveUserPath, safeOutputPath } from '../workspace/paths';
+
+const extractorKey = `${require('../../package.json').version}:${require('@babel/parser/package.json').version}:source-v2`;
 
 export type RepoMapFact = {
   name: string;
@@ -75,7 +77,7 @@ export function safeProjectName(dir: string): string {
 export function listRepoFiles(root: string): string[] {
   if (existsSync(join(root, '.git'))) {
     const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).split('\0').filter(Boolean);
-    return [...new Set(files)].filter(file => !file.split('/').some(part => REPO_MAP_IGNORES.has(part)) && !isIgnoredRepoPath(file) && existsSync(join(root, file)) && lstatSync(join(root, file)).isFile()).sort();
+    return [...new Set(files)].filter(file => !file.split('/').some(part => REPO_MAP_IGNORES.has(part)) && !isIgnoredRepoPath(file) && existsSync(join(root, file)) && lstatSync(join(root, file)).isFile() && (() => { try { safeOutputPath(file, root); return true; } catch { return false; } })()).sort();
   }
   const out: string[] = [];
 
@@ -221,7 +223,7 @@ export function detectRepoMap(root: string, cache?: Record<string, any>): RepoMa
   }
 
   for (const file of files.filter(file => /\.[cm]?[jt]sx?$/.test(file))) {
-    const key = `${hashes.get(file)}:${inventoryHash}:babel7-v1`;
+    const key = `${hashes.get(file)}:${inventoryHash}:${extractorKey}`;
     const mapped = cache?.[file]?.key === key ? cache[file].mapped : mapSource(file, readFileSync(join(root, file), 'utf8'), fileSet);
     if (cache) cache[file] = { key, mapped };
     for (const fact of mapped.facts) addFact(fact);
@@ -327,9 +329,10 @@ export function renderRepoMapDog(project: string, root: string, map: RepoMap): s
 }
 
 export function writeRepoMap(targetDir: string, projectName: string, specDir: string): RepoMapWriteResult {
-  resolveUserPath(specDir, targetDir);
+  safeOutputPath(specDir, targetDir);
+  for (const file of ['repo-map.dog', 'repo.dag', 'facts.jsonl']) safeOutputPath(join(specDir, file), targetDir);
   const cacheDir = resolveUserPath('.doghouse/cache', targetDir), cacheFile = join(cacheDir, 'sources.json');
-  resolveUserPath(cacheFile, targetDir);
+  safeOutputPath(cacheFile, targetDir);
   let cache: Record<string, any> = {};
   try { cache = JSON.parse(readFileSync(cacheFile, 'utf8')); } catch {}
   const map = detectRepoMap(targetDir, cache);

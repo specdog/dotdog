@@ -1,180 +1,61 @@
 ---
 layout: default
-title: "Live Testing — dotdog live"
-description: "Test live endpoints and cloud infrastructure against .dog contracts. Hit URLs, diff responses, verify S3 buckets, Vercel projects, Supabase tables, and more."
+title: Live endpoint and infrastructure checks
+description: Explicit HTTP contract checks and read-only cloud resource lookups, with bounded requests and verification limits.
 ---
 
 # dotdog live
 
-> Your `.dog` spec is the contract. `dotdog live` enforces it against reality.
+`live` explicitly contacts URLs or cloud providers declared in the selected repository. Review untrusted contracts before running it. Local graph queries do not perform these checks automatically.
 
-Two modes: **endpoint testing** (HTTP) and **infrastructure verification** (cloud resources). One command. DAG-powered for speed.
-
-## Quick Start
-
-```bash
-dotdog live                    # test everything (endpoints + infra)
-dotdog live --type endpoint    # HTTP endpoints only
-dotdog live --type infra       # cloud infrastructure only  
-dotdog live my-api             # filter by entity name
-dotdog live --exit-code        # CI mode: non-zero on drift/unreachable
-dotdog live --timeout 5        # 5-second timeout per request
+```sh
+dotdog live --type endpoint --exit-code --timeout 5
+dotdog live --type infra --exit-code
+dotdog live Health --type endpoint --exit-code
 ```
 
----
+`--type` accepts `endpoint`, `infra` or `all` (default). Timeouts must be greater than zero and at most 300 seconds. Credentials stay in the existing provider environment/configuration, not graph properties.
 
-## Endpoint Testing
+## Endpoint contracts
 
-Define an endpoint entity in any `.dog` file, and `dotdog live` hits the URL, diffs the response against your expected schema, and reports drift.
+Compile a spec endpoint with `type: endpoint` and property defaults `url`, optional `backup_url`, `expect_status` (default 200), and optional `expect_body`. For example, a health contract can expect `{ ok: true }` from a repository-owned HTTP(S) URL.
 
-### Define a contract
+1. Load endpoint definitions from compiled `.dag` graphs. If none are loaded, inspect source specs.
+2. Contact the primary URL; on failure, try an explicitly configured backup.
+3. Check HTTP status and the supplied expected JSON values recursively. Expected objects are subsets: extra actual object keys are allowed. Expected arrays must match length/order. Scalars, null, false and zero are compared exactly.
+4. Reject embedded URL credentials and redirects. When JSON is required, read at most 1 MiB and retain the timeout through body reads.
+5. Report a matching backup as degraded, not healthy primary service.
 
-```yaml
-### Endpoint: memory-api
+This is comparison against supplied examples, not JSON Schema validation or proof that an API is correct. Do not use example values such as IDs/timestamps when only their types should vary. A broken or incomplete contract can still miss application defects.
 
-```yaml
-entity: memory-api
-type: endpoint
-properties:
-  url:
-    type: string
-    default: https://api.example.com/v1/memory
-  backup_url:
-    type: string
-    default: https://backup.example.com/v1/memory
-  expect_status:
-    type: number
-    default: 200
-  expect_body:
-    type: json
-    default:
-      memory_enabled: true
-      recall_validate: true
-```
-```
+## Infrastructure mappings
 
-### How endpoint testing works
+An Infrastructure resources block records `provider`, `resource`, `entity`, optional AWS `region`, and optional Supabase `tables`. Compile before live checks when using `.dag` mappings.
 
-1. Scans `.dag` (compiled graph) for `type: endpoint` entities — token-efficient, no re-parsing
-2. For each endpoint, hits the primary URL
-3. If primary fails, tries the backup URL
-4. Diffs the JSON response against `expect_body`
-5. Missing fields → drift (fail). Extra fields → warn.
+| Provider | Supported resource mapping | Credentials | Check |
+| --- | --- | --- | --- |
+| Cloudflare | `r2:<bucket-name>`, `d1:<database-id>`, `worker:<script-name>`, `kv:<namespace-id>` | `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` | Explicit account-scoped REST GET |
+| Supabase | `project:<ref>` | `SUPABASE_ACCESS_TOKEN` | Project-list metadata; requested tables remain unverified |
+| Vercel | `project:<name-or-id>`, `deployment:<id>` | `VERCEL_TOKEN` | REST metadata GET |
+| Netlify | `site:<id>`, `deploy:<id>` | `NETLIFY_AUTH_TOKEN` | REST metadata GET |
+| Railway | `service:<service-id>` | `RAILWAY_API_TOKEN` for account/workspace tokens, or `RAILWAY_TOKEN` for project tokens | Fixed GraphQL query with ID variable |
+| AWS | `s3:<name>`, `lambda:<name-or-arn>`, `rds:<id>`, `dynamodb:<name>` | Installed AWS CLI credential configuration | Read-only CLI metadata lookup |
 
----
+No provider MCP server is launched or probed. HTTP provider calls use fixed API origins and refuse redirects. AWS S3 verification checks bucket metadata, not a recursive object listing. Existence does not prove healthy deployment, authorization policy, data correctness or required table schemas. Output redaction is best-effort; do not include secrets in mapped names.
 
-## Infrastructure Verification
-
-Map spec entities to live cloud resources. `dotdog live --type infra` verifies they exist — no credentials stored, no secrets exposed.
-
-### Define infrastructure
-
-Add an `### Infrastructure` block to any `.dog` file:
-
-```yaml
-### Infrastructure
-
-```yaml
-resources:
-  - provider: cloudflare
-    resource: r2:user-avatars
-    entity: FileStorage
-  - provider: supabase
-    resource: project:abc123xyz
-    entity: Database
-    tables: [users, posts, sessions]
-  - provider: vercel
-    resource: project:my-frontend
-    entity: WebApp
-  - provider: netlify
-    resource: site:my-landing-page
-    entity: LandingPage
-  - provider: railway
-    resource: service:api
-    entity: ApiServer
-  - provider: aws
-    resource: s3:uploads-prod
-    entity: FileStorage
-    region: us-east-1
-```
-```
-
-### Supported providers
-
-| Provider | Resource types | Auth | Method |
-|----------|---------------|------|--------|
-| **Cloudflare** | R2 buckets, D1 databases, Workers, KV namespaces | `CLOUDFLARE_API_TOKEN` | MCP-first, REST fallback |
-| **Supabase** | Projects, database tables, storage buckets | `SUPABASE_ACCESS_TOKEN` | MCP-first, REST fallback |
-| **Vercel** | Projects, deployments | `VERCEL_TOKEN` | REST API |
-| **Netlify** | Sites, deploys | `NETLIFY_AUTH_TOKEN` | REST API |
-| **Railway** | Services | `RAILWAY_TOKEN` | MCP (bundled in CLI), REST fallback |
-| **AWS** | S3 buckets, Lambda functions, RDS instances, DynamoDB tables | `AWS_PROFILE` or `~/.aws/credentials` | AWS CLI |
-
-### How infra verification works
-
-1. Compile your specs: `dotdog compile` — infra resources become `.dag` nodes with `maps_to` edges
-2. `dotdog live --type infra` queries the `.dag` (94% smaller than raw `.dog` files)
-3. For each resource, connects to the provider's MCP server or REST API
-4. Verifies the resource exists, reports status
-5. Zero credential exposure — reads from env vars, output is masked
-
-### Example output
-
-```
-Infrastructure
-  ✓ FileStorage    cloudflare r2:user-avatars     exists (12 objects)
-  ✓ Database       supabase project:abc123        healthy
-  ✓ Database       → table users                   5 columns
-  ✓ Database       → table posts                   8 columns
-  ✗ WebApp         vercel project:my-frontend     not found (404)
-  ✓ ApiServer      railway service:api            healthy (us-west1)
-  ✓ FileStorage    aws s3:uploads-prod            exists (us-east-1)
-
-  6/7 checks passed. 1 resource missing.
-```
-
----
+`live` uses loaded `.dag` infrastructure mappings directly, deduplicates them before provider calls, and falls back to source scanning only when no graph was loaded. MCP `infraVerify` uses a source scan and intersects optional provider/entity filters. Malformed source inputs fail rather than becoming an empty successful scan.
 
 ## Exit codes
 
+Without `--exit-code`, results are diagnostic output; do not treat process success as verified contracts. With `--exit-code`:
+
 | Code | Meaning |
-|------|---------|
-| 0 | All contracts match / all resources verified |
-| 1 | Schema drift (missing field, wrong value) or resource missing |
-| 2 | Unreachable (both primary and backup down) |
-| 3 | Degraded (backup used, primary failed) |
+| --- | --- |
+| 0 | Requested checks passed |
+| 1 | Contract mismatch, no matching requested checks, or infrastructure failed/warned/skipped |
+| 2 | An endpoint could not be reached or a required body could not be read/parsed |
+| 3 | Only a configured backup matched |
 
-Use `--exit-code` for CI pipelines.
+Malformed CLI/input errors return nonzero. Infrastructure results take precedence over endpoint status when both are requested. Provider fixtures test request construction and failure handling; live cloud account checks were not run for this candidate.
 
-```yaml
-# GitHub Actions
-- run: dotdog live --exit-code
-```
-
----
-
-## DAG-powered performance
-
-`dotdog live` queries the compiled `.dag` graph — not raw `.dog` files. This means:
-
-- **Token savings**: `.dag` is 53-94% smaller than raw `.dog` files
-- **Speed**: pre-parsed, no re-scanning the filesystem
-- **Agent-friendly**: MCP `infraVerify` tool reads directly from the loaded `.dag`
-
-Always run `dotdog compile` before `dotdog live` for maximum speed.
-
----
-
-## MCP integration
-
-Agents can run infra verification without the CLI:
-
-```
-Tool: infraVerify
-Description: Verify infrastructure resources against live cloud
-Parameters:
-  provider (optional): cloudflare, supabase, vercel, netlify, railway, aws
-  entity (optional): filter by spec entity name
-```
-
-Connect via `npx dotdog serve` — same MCP server, now with 7 tools.
+See [security audit](v1-security-audit.md) for verified findings and remaining boundaries.

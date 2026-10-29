@@ -1,14 +1,12 @@
-// AWS provider — aws CLI + community MCP fallback
+// AWS provider — read-only aws CLI metadata checks
 // S3: aws s3api head-bucket
 // Lambda: aws lambda get-function
 // RDS: aws rds describe-db-instances
 // Auth: AWS_PROFILE env var or ~/.aws/credentials (handled by aws CLI)
-// Community MCP: aws-s3-mcp (samuraikun/aws-s3-mcp)
 
 import { execFileSync } from 'child_process';
 import { redactSecrets } from '../../workspace/redact';
 import type { InfraResource, CheckResult, Provider } from './types';
-import { connectStdio, type MCPConnection, type MCPTool } from '../mcp-client';
 
 function aws(args: string[]): { ok: boolean; output: string } {
   try {
@@ -26,12 +24,13 @@ function aws(args: string[]): { ok: boolean; output: string } {
 }
 
 function hasAwsCli(): boolean {
-  try { execFileSync('aws', ['--version'], { encoding: 'utf-8' }); return true; } catch { return false; }
+  try { execFileSync('aws', ['--version'], { encoding: 'utf-8', timeout: 5000 }); return true; } catch { return false; }
 }
 
 async function verifyResource(resource: InfraResource): Promise<CheckResult> {
-  const [type, name] = resource.resource.split(':');
-  if (!type || !name) {
+  const separator = resource.resource.indexOf(':');
+  const type = resource.resource.slice(0, separator), name = resource.resource.slice(separator + 1);
+  if (separator < 1 || !name || name.startsWith('-') || /[\r\n]/.test(name) || (resource.region && !/^[a-z]{2}(?:-[a-z]+)+-\d+$/.test(resource.region))) {
     return { entity: resource.entity, provider: 'aws', resource: resource.resource, status: 'fail', message: 'Invalid resource format (expected type:name)' };
   }
 
@@ -45,13 +44,7 @@ async function verifyResource(resource: InfraResource): Promise<CheckResult> {
     // aws s3api head-bucket checks existence
     const { ok, output } = aws(['s3api', 'head-bucket', '--bucket', name, ...regionArgs]);
     if (ok) {
-      // Get approximate object count for detail
-      let detail = '';
-      try {
-        const sizeResult = aws(['s3', 'ls', '--summarize', '--human-readable', '--recursive', `s3://${name}`, ...regionArgs]);
-        detail = sizeResult.output.split('\n').slice(-3).join(' ').trim().slice(0, 120);
-      } catch {}
-      return { entity: resource.entity, provider: 'aws', resource: resource.resource, status: 'pass', message: 'exists', detail };
+      return { entity: resource.entity, provider: 'aws', resource: resource.resource, status: 'pass', message: 'exists' };
     }
     if (output.includes('404') || output.includes('Not Found')) {
       return { entity: resource.entity, provider: 'aws', resource: resource.resource, status: 'fail', message: 'not found' };
