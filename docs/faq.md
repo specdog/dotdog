@@ -13,7 +13,7 @@ A `.dog` file is a human-written spec combining Markdown prose with structured Y
 
 ## What is a .dag file?
 
-A `.dag` file is a machine-compiled positional graph generated from `.dog` files. It is 94pct smaller than the source and optimized for LLM consumption. AI agents query it via MCP with zero hallucination risk.
+A `.dag` file is a machine-compiled positional graph generated from `.dog` files. Its size depends on the source and retained metadata. Agents query it via MCP; extracted facts still require appropriate verification.
 
 ## Do I need to use all spec files?
 

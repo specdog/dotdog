@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.0 — Unreleased
+
+- Add repository-scoped Codex and Claude skills, opt-in removable hooks and staged-index CI checks.
+- Add content-hash refresh, cached JS/TS AST extraction, named context and reverse-impact queries.
+- Unify legacy/current graph readers, preserve schemas and evidence, validate graph identity and references, and scope conflicting declarations by source.
+- Harden MCP notifications, input validation, errors, paging and structured output; support modern discovery and legacy clients.
+- Import saved REA NativeCallGraph bodies without launching or reconfiguring REA/Ghidra.
+- Fix destructive init, minimal scaffolds, v3 token accounting, lexical search scoring, live endpoint detection and false-success exits.
+- Replace nonfunctional linting with TypeScript checks; verify packed releases under Node and Bun and test CI on Node 22/24 and macOS/Linux.
+- Breaking: generated graph IDs change; regenerate with refresh. Node.js minimum is 22.12.0. JSON errors now return nonzero where appropriate. No release published yet.
+
 ## 0.9.0 — 2026-07-18
 
 - Add `dotdog speckit import` to convert GitHub Spec Kit features into local, queryable dotdog projects

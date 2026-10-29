@@ -12,6 +12,8 @@ We will respond within 48 hours and work on a fix.
 
 | Version | Supported |
 |---------|-----------|
+| 1.0.x   | In development |
+| 0.9.x   | Yes |
 | 0.8.x   | Yes |
 | < 0.8.0 | No |
 

@@ -60,7 +60,8 @@ export function resolveUserPath(inputPath: string, rootPath = process.cwd()): st
   const resolved = path.resolve(root, expanded);
 
   if (!existsSync(resolved)) {
-    const parent = path.dirname(resolved);
+    let parent = path.dirname(resolved);
+    while (!existsSync(parent)) parent = path.dirname(parent);
     assertInsideRoots(parent, [root]);
     return resolved;
   }

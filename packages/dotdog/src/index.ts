@@ -43,7 +43,7 @@ export function buildIndex(projectDir: string, projectName: string): SearchIndex
   for (const file of files) {
     const content = readFileSync(join(projectDir, file), 'utf-8');
     // Chunk by ## and ### headings
-    const sections = content.split(/\n(?=##\s)/);
+    const sections = content.split(/\n(?=#{2,3}\s)/);
     for (const section of sections) {
       const lines = section.split('\n');
       const heading = lines[0]?.replace(/^#+\s*/, '') || '(root)';
@@ -57,14 +57,15 @@ export function buildIndex(projectDir: string, projectName: string): SearchIndex
       const tf = new Map<string, number>();
       for (const t of terms) {
         tf.set(t, (tf.get(t) || 0) + 1);
-        docFreq.set(t, (docFreq.get(t) || 0) + 1);
+
       }
       
+      for (const term of tf.keys()) docFreq.set(term, (docFreq.get(term) || 0) + 1);
       entries.push({
         section: heading,
         heading,
         file,
-        content: body.slice(0, 500), // first 500 chars for display
+        content: body, // first 500 chars for display
         vector: [] // will fill later
       });
     }
@@ -72,7 +73,7 @@ export function buildIndex(projectDir: string, projectName: string): SearchIndex
   
   // Build vocabulary from terms appearing in at least 2 docs
   const vocabulary = [...docFreq.entries()]
-    .filter(([_, df]) => df >= 2)
+    .filter(([_, df]) => df >= 1)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 1000)
     .map(([term]) => term);
@@ -90,7 +91,7 @@ export function buildIndex(projectDir: string, projectName: string): SearchIndex
       const termFreq = tf.get(term) || 0;
       if (termFreq === 0) return 0;
       const docFreqTerm = docFreq.get(term) || 1;
-      return (termFreq / terms.length) * Math.log(N / docFreqTerm);
+      return (termFreq / terms.length) * (1 + Math.log((N + 1) / (docFreqTerm + 1)));
     });
   }
   

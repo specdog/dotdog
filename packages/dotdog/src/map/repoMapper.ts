@@ -1,8 +1,11 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, lstatSync } from 'fs';
+import { execFileSync } from 'child_process';
+import { createHash } from 'crypto';
+import { mapSource } from './source';
+import { join, basename } from 'path';
 import { renderRepositoryDag } from '../dag/repoWorld';
 import { stableId } from '../dag/schema';
-import { isIgnoredRepoPath } from '../workspace/paths';
+import { isIgnoredRepoPath, resolveUserPath } from '../workspace/paths';
 
 export type RepoMapFact = {
   name: string;
@@ -34,6 +37,7 @@ export type RepoMap = {
   facts: RepoMapFact[];
   edges: RepoMapEdge[];
   files: string[];
+  limitations?: string[];
 };
 
 export type RepoMapWriteResult = {
@@ -48,6 +52,9 @@ export type RepoMapWriteResult = {
 
 const REPO_MAP_IGNORES = new Set([
   '.git',
+  '.doghouse',
+  'target',
+  '.venv',
   'node_modules',
   'dist',
   'build',
@@ -61,27 +68,27 @@ const REPO_MAP_IGNORES = new Set([
 ]);
 
 export function safeProjectName(dir: string): string {
-  const base = dir.split('/').filter(Boolean).pop() || 'project';
+  const base = basename(dir) || 'project';
   return base.replace(/[^a-zA-Z0-9_-]/g, '-').replace(/^-+|-+$/g, '') || 'project';
 }
 
-function walkRepoFiles(root: string, maxFiles = 500): string[] {
+export function listRepoFiles(root: string): string[] {
+  if (existsSync(join(root, '.git'))) {
+    const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).split('\0').filter(Boolean);
+    return [...new Set(files)].filter(file => !file.split('/').some(part => REPO_MAP_IGNORES.has(part)) && !isIgnoredRepoPath(file) && existsSync(join(root, file)) && lstatSync(join(root, file)).isFile()).sort();
+  }
   const out: string[] = [];
 
   function walk(current: string, rel = '') {
-    if (out.length >= maxFiles) return;
 
     let entries: Array<{ name: string; isDirectory(): boolean; isFile(): boolean }> = [];
     try {
       entries = readdirSync(current, { withFileTypes: true }) as typeof entries;
-    } catch {
-      return;
-    }
+    } catch (error) { throw new Error(`Cannot scan ${rel || '.'}: ${error instanceof Error ? error.message : String(error)}`); }
 
     entries.sort((a, b) => a.name.localeCompare(b.name));
 
     for (const entry of entries) {
-      if (out.length >= maxFiles) break;
       if (REPO_MAP_IGNORES.has(entry.name)) continue;
 
       const nextRel = rel ? `${rel}/${entry.name}` : entry.name;
@@ -103,6 +110,7 @@ function fileNodeName(file: string): string {
 
 function routeFromFile(file: string): string | null {
   const normalized = file.replace(/\\/g, '/');
+  if (/(?:^|\/)app\/page\.(?:ts|tsx|js|jsx)$/.test(normalized) || /(?:^|\/)pages\/index\.(?:ts|tsx|js|jsx|mdx)$/.test(normalized)) return '/';
   const api = normalized.match(/(?:^|\/)(?:app|pages)\/api\/(.+?)\.(?:ts|tsx|js|jsx)$/);
   if (api) return `/api/${api[1].replace(/\/route$/, '').replace(/\/index$/, '').replace(/\[[^\]]+\]/g, ':param')}`;
 
@@ -115,11 +123,15 @@ function routeFromFile(file: string): string | null {
   return null;
 }
 
-export function detectRepoMap(root: string): RepoMap {
-  const files = walkRepoFiles(root);
+export function detectRepoMap(root: string, cache?: Record<string, any>): RepoMap {
+  const files = listRepoFiles(root);
+  const fileSet = new Set(files);
+  const limitations: string[] = ['JS/TS extraction covers top-level declarations and static relative imports/re-exports; dynamic calls and package alias resolution are not inferred.'];
   const facts = new Map<string, RepoMapFact>();
+  const inventoryHash = createHash('sha256').update(JSON.stringify(files)).digest('hex');
+  const hashes = new Map(files.map(file => [file, createHash('sha256').update(readFileSync(join(root, file))).digest('hex')]));
   const edges: RepoMapEdge[] = [];
-  const addFact = (fact: RepoMapFact) => { if (!facts.has(fact.name)) facts.set(fact.name, fact); };
+  const addFact = (fact: RepoMapFact) => { if (!facts.has(fact.name) || facts.get(fact.name)!.type === 'file') facts.set(fact.name, fact); };
   const addFile = (file: string, type = 'file', description = file) => addFact({ name: fileNodeName(file), type, description, properties: { path: file } });
   const addDeploymentProvider = (file: string, name: string, provider: string) => {
     addFile(file, 'deployment_config', provider + ' deployment configuration');
@@ -130,6 +142,8 @@ export function detectRepoMap(root: string): RepoMap {
   };
 
   addFact({ name: 'repository', type: 'repo', description: 'Mapped repository' });
+
+  for (const file of files) addFile(file);
 
   for (const file of files) {
     if (file === 'railway.json' || file.endsWith('/railway.json')) {
@@ -206,11 +220,22 @@ export function detectRepoMap(root: string): RepoMap {
     }
   }
 
-  return { facts: [...facts.values()], edges, files };
+  for (const file of files.filter(file => /\.[cm]?[jt]sx?$/.test(file))) {
+    const key = `${hashes.get(file)}:${inventoryHash}:babel7-v1`;
+    const mapped = cache?.[file]?.key === key ? cache[file].mapped : mapSource(file, readFileSync(join(root, file), 'utf8'), fileSet);
+    if (cache) cache[file] = { key, mapped };
+    for (const fact of mapped.facts) addFact(fact);
+    edges.push(...mapped.edges); limitations.push(...mapped.limitations);
+  }
+  for (const fact of facts.values()) {
+    const path = fact.properties?.path;
+    if (path) fact.properties = { ...fact.properties, sha256: hashes.get(path)! };
+  }
+  return { facts: [...facts.values()], edges: [...new Map(edges.map(edge => [`${edge.source}\0${edge.verb}\0${edge.target}`, edge])).values()], files, limitations };
 }
 
 function dogString(value: string): string {
-  return String(value).replace(/`/g, "'").trim();
+  return String(value).replace(/`/g, "'").replace(/[\r\n]/g, " ").trim();
 }
 
 function graphFactSource(fact: RepoMapFact): GraphFact['source'] {
@@ -302,7 +327,16 @@ export function renderRepoMapDog(project: string, root: string, map: RepoMap): s
 }
 
 export function writeRepoMap(targetDir: string, projectName: string, specDir: string): RepoMapWriteResult {
-  const map = detectRepoMap(targetDir);
+  resolveUserPath(specDir, targetDir);
+  const cacheDir = resolveUserPath('.doghouse/cache', targetDir), cacheFile = join(cacheDir, 'sources.json');
+  resolveUserPath(cacheFile, targetDir);
+  let cache: Record<string, any> = {};
+  try { cache = JSON.parse(readFileSync(cacheFile, 'utf8')); } catch {}
+  const map = detectRepoMap(targetDir, cache);
+  const current = new Set(map.files);
+  for (const file of Object.keys(cache)) if (!current.has(file)) delete cache[file];
+  mkdirSync(cacheDir, { recursive: true });
+  writeFileSync(cacheFile, JSON.stringify(cache));
   mkdirSync(specDir, { recursive: true });
 
   const outFile = join(specDir, 'repo-map.dog');

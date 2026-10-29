@@ -1,164 +1,147 @@
 # dotdog
 
-[![npm version](https://img.shields.io/npm/v/dotdog)](https://www.npmjs.com/package/dotdog)
-[![npm downloads](https://img.shields.io/npm/dm/dotdog)](https://www.npmjs.com/package/dotdog)
-[![License: MIT](https://img.shields.io/npm/l/dotdog)](https://github.com/specdog/dotdog/blob/main/LICENSE)
-[![CI](https://github.com/specdog/dotdog/actions/workflows/test.yml/badge.svg)](https://github.com/specdog/dotdog/actions)
+Local-first spec and code graphs for coding agents. Keep human intent, observed implementation, and imported analysis evidence distinct and queryable.
 
-> **Feed the dog. Ship with specs.** Write `.dog` specs, map repos into `.dag` graphs, and expose single-repo or N-repo workspaces to agents.
+**1.0 development:** this branch prepares the next major release. The published npm `latest` version audited for this update was 0.9.0. No 1.0 release has been published by this change.
 
 ## Install
 
-```bash
+```sh
 npm install -g dotdog
+# or
+bun add -g dotdog
 ```
 
-Requires Node.js >= 20.
+Node.js 22.12+ or Bun 1.3+. npm and Bun install the same package. The existing Homebrew distribution remains available through the Specdog tap; its formula/version is maintained separately from this source change.
 
-## Quick Start
-
-```bash
-dotdog init my-project      # scaffold a spec workspace
-dotdog validate             # score completeness (0-100%)
-dotdog analyze              # deep analysis: gaps, suggestions, entity audit
+```sh
+brew tap specdog/tap
+brew install dotdog
 ```
 
-For an existing multi-repo product:
+## Existing repository: one refresh, targeted questions
 
-```bash
-dotdog workspace init --id example-workspace
-dotdog workspace add ../example-service --alias example-service --role api
-dotdog workspace add ../example-interface --alias example-interface --role web
-dotdog workspace validate
-dotdog workspace graph --json
+```sh
+cd your-repository
+dotdog refresh --json
+dotdog query "authentication"
+dotdog context "file:src/auth.ts" --json
+dotdog impact "file:src/auth.ts" --json
+dotdog path "file:src/auth.ts" "file:src/session.ts" --json
 ```
 
-For a GitHub Spec Kit project:
+Use an actual graph label from `query`, not the illustrative paths above. `refresh` maps repository files, extracts JS/TS declarations and static relative imports, preserves semantic/overlay layers, compiles specs when present, and reports added/changed/removed identities. `--if-stale` checks content hashes and skips extraction when inputs and output match. Unchanged JS/TS extraction is cached.
 
-```bash
-dotdog speckit import .                # import specs/<feature> artifacts
-dotdog compile .doghouse/speckit      # compile the imported local graphs
-dotdog serve .doghouse/speckit        # expose them over local MCP
+Generated repository graphs live under `.doghouse/`. Do not commit generated repository metadata by default. Human-owned semantic and overlay inputs remain separate from generated facts.
+
+## Codex and Claude skills
+
+```sh
+dotdog skills install --agent both
+# or: --agent codex / --agent claude
 ```
 
-Imports are local and portable. dotdog makes no network requests, quotes imported Markdown so it cannot create unintended graph syntax, tracks generated artifact hashes, and preserves files you edit; use `--force` only when you intentionally want to replace them.
+This installs the bundled `dotdog` skill into `.agents/skills/dotdog/` for Codex and `.claude/skills/dotdog/` for Claude Code. It is repository-scoped, idempotent, and refuses to replace user-edited skills. Invoke `$dotdog` in Codex or `/dotdog` in Claude; hosts can also select the skill when relevant. Installation does not modify global client settings or install hooks.
 
-## Commands
+## Optional automation
 
-| Command | Description |
-|---------|-------------|
-| `dotdog validate [dir]` | Score spec completeness. Checks file existence, entity descriptions, section counts. |
-| `dotdog analyze [dir]` | Deep analysis. Detects domain, stack, gaps with severity, entity quality audit. |
-| `dotdog design [dir]` | Audit compiled data models for identifiers, relationships, lifecycle, ownership, access, and sensitive data. |
-| `dotdog parse <file>` | Parse a `.dog` file into sections. |
-| `dotdog compile [dir]` | Compile `.dog` files into a `.dag` graph (JSON). |
-| `dotdog visualize [dir]` | Output Mermaid graph from `.dag`. `--save` writes `.md` for GitHub rendering. |
-| `dotdog serve [dir]` | Start MCP server over stdio. AI agents query specs and workspace metadata without hallucination. |
-| `dotdog workspace init --id <id>` | Create `.doghouse/workspace.json` for one repo or a product workspace. |
-| `dotdog workspace add <path>` | Add a repository to a workspace with `--alias` and `--role`. |
-| `dotdog workspace list` | List workspace repos and groups. |
-| `dotdog workspace validate` | Validate workspace aliases, paths, groups, and edges. |
-| `dotdog workspace graph` | Emit deterministic workspace graph JSON. |
-| `dotdog path <from> <to>` | Find a bounded shortest path in a repo-world DAG. |
-| `dotdog map [dir]` | Inspect an existing repo and generate graph-ready `.dog` facts plus `repo.dag`. |
-| `dotdog speckit import [dir]` | Import local GitHub Spec Kit artifacts into queryable dotdog projects. |
-| `dotdog staleness [dir]` | Detect drift between spec and reality. Compares plan.dog tasks against code. |
-| `dotdog generate [dir]` | Generate missing spec files from SPEC.dog (data-model, COPY, INDEX). |
-| `dotdog simulate <scenario>` | Run a simulation scenario. Reads SPEC.dog scenarios, checks pre/postconditions. |
-| `dotdog init <project>` | Scaffold a new spec workspace project with templates. |
-| `dotdog list` | List all projects and their `.dog` file counts. |
+| Layer | Responsibility |
+| --- | --- |
+| Skill | Choose useful graph context and verify cited evidence. |
+| Claude edit hook | Refresh local graph artifacts after supported agent edits. |
+| Git hook | Check a temporary snapshot of the staged Git index. |
+| CI | Run a pinned version independently of editor behavior. |
+| CLI/MCP | Stable execution and query interfaces beneath integrations. |
 
-## File Formats
-
-### `.dog` : Human-Written Source Spec
-
-Markdown prose + YAML structured blocks. Free and open source. Define entities, relationships, events, predictions, implementation facts, and copy in a single format that both humans and parsers understand.
-
-```markdown
-### Entity: User
-
-A person who uses the app.
-
-` ``yaml
-entity: User
-type: entity
-properties:
-  id:
-    type: string
-    required: true
-  email:
-    type: string
-    required: true
-states: [active, suspended]
-lifecycle: active → suspended
-` ``
+```sh
+dotdog hooks install --agent claude
+dotdog hooks install --agent git
+dotdog hooks status
+dotdog hooks remove --agent claude
+dotdog hooks remove --agent git
 ```
 
-### `.dag` : Machine-Compiled Graph
+Hooks are explicit opt-in, visible and removable. Existing Git hooks and `core.hooksPath` configurations are not overwritten. Git hooks never auto-stage files. Claude hooks preserve unrelated settings; edits made through shell commands or external tools may not trigger them. Use `refresh --if-stale` at the next task boundary and CI as independent checks.
 
-JSON graph compiled from `.dog` files. Nodes, edges, properties, and states in a deterministic structure. 85% token savings vs raw `.dog` files for AI agents.
+For CI, install a pinned release or build this branch, then run:
 
-## MCP Server : AI Agent Integration
-
-`dotdog serve` exposes specs and workspace metadata to any MCP-compatible AI agent over stdio.
-
-| Tool | Description |
-|------|-------------|
-| `getEntity` | Exact entity with properties, states, lifecycle, and connected edges |
-| `traverse` | BFS subgraph from any starting node to any depth |
-| `search` | Find entities by name or type |
-| `schema` | Property definitions only : zero prose, agent-optimized |
-| `summary` | Node count, edge count, file count, compile time |
-| `listProjects` | Array of project names |
-| `workspace.list` | Structured workspace metadata with repos, groups, and `trustedAsInstruction: false` |
-| `infraVerify` | Read-only checks for declared infrastructure resources |
-| `path` | Bounded shortest connecting subgraph between two entities |
-
-Agent workflow: `workspace.list` → `listProjects` → `getEntity` → `traverse` graph.
-
-`dotdog serve` is a local stdio server: it opens no TCP port and writes no query logs. Generated `.doghouse` graphs and facts are ignored by default. Workspace responses contain repository-relative `path` values; `cwd` remains a relative compatibility alias. Secure any external MCP gateway separately with authentication and least-privilege access.
-
-## Dogfood
-
-dotdog validates its own specs. Every PR:
-
-```
-dotdog validate → find gaps → fix spec → PR → merge → tag → CI publish
+```sh
+dotdog check --json
 ```
 
-Eat your own dogfood. The tool is the project.
+`check` rebuilds graphs and checks structural integrity. It does not run application tests or prove runtime behavior. `check --staged` checks index contents rather than unstaged changes.
 
-## VS Code Extension
+## New spec project
 
-Syntax highlighting for `.dog` files. Install:
-
-```bash
-cp -r extensions/vscode ~/.vscode/extensions/dotdog
+```sh
+dotdog init my-project
+# Fill in the generated human-owned specs.
+dotdog validate
+dotdog compile
+dotdog design --json
+dotdog serve
 ```
 
-## Format Specifications
+`init` refuses an existing project. `--minimal` creates two files and is supported by validation. Validation reports required-file presence and parser diagnostics, not a percentage of product correctness. Use `analyze` for heuristic suggestions; use real tests for behavior.
 
-- [`.dog` format spec](spec/format-spec.dog) : language definition, EBNF grammar, validation rules
-- [`.dag` format spec](spec/format-spec-dag.dog) : graph definition, MCP API, token efficiency
+The compact compiler preserves property definitions, states and lifecycle metadata. Incompatible same-named declarations in different source files receive `Name@source-file` labels; relationships must resolve in their source scope. `--v2` retains legacy positional output. Byte-based token figures are estimates, not tokenizer measurements or quality guarantees.
 
-## Links
+## MCP
 
-- **GitHub:** [specdog/dotdog](https://github.com/specdog/dotdog)
-- **npm:** [dotdog](https://www.npmjs.com/package/dotdog)
-- **Docs:** [GitHub Pages](https://specdog.github.io/dotdog)
-- **llms.txt:** [llms.txt](llms.txt) : structured for AI agent discovery
-- **AGENTS.md:** [AGENTS.md](AGENTS.md) : instructions for AI coding agents
+Configure a local stdio server with the installed `dotdog` executable and arguments `["serve"]`, from the intended repository root. It opens no TCP listener.
 
-## Spec-Driven Development
+Tools: `listProjects`, `workspace.list`, `search`, `getEntity`, `schema`, `summary`, `traverse`, `path`, `context`, `impact`, and `infraVerify`.
 
-dotdog is built for SDD. Write your spec first, or map an existing repo/workspace. Validate it. Compile it. Let AI agents query it. The spec and graph are the source of truth.
+Query an explicit project when more than one is loaded. Observed repository graphs use `<repository>:observed` names in MCP, keeping them separate from same-named spec projects. Every tool returns structured JSON plus text fallback. Search supports `limit` and `cursor`; traversal/impact/context are bounded and disclose truncation. Invalid graphs are reported separately by `listProjects`; deleted graphs are evicted.
 
+The server supports legacy initialization revisions 2024-11-05, 2025-06-18 and 2025-11-25, plus 2026-07-28 discovery and per-request metadata. `infraVerify` is an explicit live network/provider operation; other graph queries stay local.
+
+## REA / Ghidra evidence
+
+Dotdog can import a saved **REA NativeCallGraph body**:
+
+```sh
+dotdog graph import native-calls.json --format rea-callgraph --project native --artifact-sha256 <binary-sha256>
+dotdog context "0x1000" --dag .doghouse/imported/native.dag --json
+dotdog graph export --dag .doghouse/imported/native.dag --format json
 ```
-spec → validate → compile → serve → AI agent queries
+
+Replace the digest and address with actual evidence values. The importer retains traversal coverage, limitations, evidence references, addresses and the export digest. Without a binary digest, identifiers are scoped to the export bytes and binary identity remains unknown. Imported projects are also served by MCP. Imports create separate named graphs; automatic source-to-binary reconciliation and cross-project links are not provided.
+
+This is an export adapter, not a direct Ghidra provider or a verified binary-analysis integration. REA/SolidState retains ownership of Ghidra, target selection, analysis sessions and authority. Dotdog never launches targets, installs REA/Ghidra, or registers another provider. NativeCallGraph bodies are supported; arbitrary REA Evidence envelopes and other Ghidra export formats are not implicitly accepted.
+
+## Existing integrations
+
+GitHub Spec Kit remains supported:
+
+```sh
+dotdog speckit import .
+dotdog compile .doghouse/speckit
+dotdog serve .doghouse/speckit
 ```
 
-No more specs that rot in a wiki. No more agents guessing from prose. One source. Zero ambiguity.
+Workspaces retain `workspace init`, `add`, `list`, `validate`, `graph`, `observe`, `ask`, and `drift`. `refresh` operates on the current repository; it does not infer cross-repository calls. Use the workspace commands for explicit multi-repo manifests.
 
-## License
+## Limits and migration
 
-MIT
+- AST extraction covers JS/TS top-level declarations and static relative imports/re-exports. It does not resolve arbitrary aliases, dynamic calls, runtime execution, or every language's semantics. Other files are inventoried.
+- Git ignore rules are honored in Git repositories; non-Git directories use built-in exclusions. There is no silent 500-file cutoff.
+- `impact` follows recorded relationships; it is not a complete runtime blast-radius proof.
+- 1.0 uses content-derived, case-sensitive identities. Rebuild generated graphs with `refresh`; old graph formats remain readable. Do not persist old generated IDs as external contracts without migration.
+- Missing paths and high-severity drift return nonzero exits, including JSON output.
+- No fixed token-savings percentage or hallucination guarantee is claimed.
+
+See [migration](https://github.com/specdog/dotdog/blob/main/docs/v1-migration.md), [audit and research](https://github.com/specdog/dotdog/blob/main/docs/npm-0.9-audit.md), and [integrations](https://github.com/specdog/dotdog/blob/main/docs/integrations.md). The independent Rust port remains in PR #330; npm/Bun delivery is not being replaced by it.
+
+## Development
+
+```sh
+bun install --frozen-lockfile
+bun run lint
+bun test
+bun run build
+bun run pack:check
+bun run release:check
+```
+
+The release check packs the actual npm artifact and tests it outside the repository with Node and Bun. MIT licensed.

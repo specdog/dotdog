@@ -83,7 +83,7 @@ describe('untested commands', () => {
     try {
       setupTempProject(dir, 'testproj');
       const result = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts analyze`.quiet().nothrow();
-      expect(result.text()).toContain('complete');
+      expect(result.text()).toContain('heuristic score');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

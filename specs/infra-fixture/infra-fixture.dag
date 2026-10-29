@@ -7,35 +7,95 @@
       "e",
       null,
       null,
-      null
+      null,
+      null,
+      {
+        "kind": "entity",
+        "description": "",
+        "schema": {
+          "provider": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "lifecycle": []
+      }
     ],
     [
       "Database",
       "e",
       null,
       null,
-      null
+      null,
+      null,
+      {
+        "kind": "entity",
+        "description": "",
+        "schema": {
+          "host": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "lifecycle": []
+      }
     ],
     [
       "WebApp",
       "e",
       null,
       null,
-      null
+      null,
+      null,
+      {
+        "kind": "entity",
+        "description": "",
+        "schema": {
+          "url": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "lifecycle": []
+      }
     ],
     [
       "LandingPage",
       "e",
       null,
       null,
-      null
+      null,
+      null,
+      {
+        "kind": "entity",
+        "description": "",
+        "schema": {
+          "domain": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "lifecycle": []
+      }
     ],
     [
       "ApiServer",
       "e",
       null,
       null,
-      null
+      null,
+      null,
+      {
+        "kind": "entity",
+        "description": "",
+        "schema": {
+          "endpoint": {
+            "type": "string",
+            "required": true
+          }
+        },
+        "lifecycle": []
+      }
     ],
     [
       "cloudflare:r2:avatars",
@@ -48,7 +108,9 @@
         "entity",
         "FileStorage",
         "region",
-        "tables"
+        "",
+        "tables",
+        ""
       ],
       null,
       [
@@ -71,6 +133,7 @@
         "entity",
         "Database",
         "region",
+        "",
         "tables",
         "users,posts,sessions"
       ],
@@ -95,7 +158,9 @@
         "entity",
         "WebApp",
         "region",
-        "tables"
+        "",
+        "tables",
+        ""
       ],
       null,
       [
@@ -118,7 +183,9 @@
         "entity",
         "LandingPage",
         "region",
-        "tables"
+        "",
+        "tables",
+        ""
       ],
       null,
       [
@@ -141,7 +208,9 @@
         "entity",
         "ApiServer",
         "region",
-        "tables"
+        "",
+        "tables",
+        ""
       ],
       null,
       [
@@ -165,7 +234,8 @@
         "FileStorage",
         "region",
         "us-east-1",
-        "tables"
+        "tables",
+        ""
       ],
       null,
       [
@@ -179,21 +249,12 @@
     ]
   ],
   {
-    "m": "chars/4",
+    "m": "bytes/4",
     "st": 302,
     "ct": 283,
-    "dt": 342,
-    "sv": -13.2,
-    "cs": -20.8,
-    "saved": -40
-  },
-  {
-    "m": "chars/4",
-    "st": 302,
-    "ct": 283,
-    "dt": 342,
-    "sv": -13.2,
-    "cs": -20.8,
-    "saved": -40
+    "dt": 425,
+    "sv": -40.7,
+    "cs": -54.1,
+    "saved": -123
   }
 ]

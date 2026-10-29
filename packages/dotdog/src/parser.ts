@@ -97,35 +97,35 @@ function parseBlocks(lines: string[], start: number, end: number, errors?: Parse
     // Entity block?
     const entityMatch = line.match(/^#{2,5}\s+[Ee]ntity:\s*(.+)/);
     if (entityMatch) {
-      const result = parseStructuredBlock(lines, i, end, 'entity', entityMatch[1]);
+      const result = parseStructuredBlock(lines, i, end, 'entity', entityMatch[1], errors);
       if (result) { blocks.push(result.node); i = result.nextLine; continue; }
     }
 
     // Relationship block?
     const relMatch = line.match(/^#{3,5}\s+Relationship:\s*(.+)/);
     if (relMatch) {
-      const result = parseStructuredBlock(lines, i, end, 'relationship', relMatch[1]);
+      const result = parseStructuredBlock(lines, i, end, 'relationship', relMatch[1], errors);
       if (result) { blocks.push(result.node); i = result.nextLine; continue; }
     }
 
     // Event block?
     const eventMatch = line.match(/^#{3,5}\s+Event:\s*(.+)/);
     if (eventMatch) {
-      const result = parseStructuredBlock(lines, i, end, 'event', eventMatch[1]);
+      const result = parseStructuredBlock(lines, i, end, 'event', eventMatch[1], errors);
       if (result) { blocks.push(result.node); i = result.nextLine; continue; }
     }
 
     // Endpoint block? (contract testing)
     const endpointMatch = line.match(/^#{3,5}\s+Endpoint:\s*(.+)/);
     if (endpointMatch) {
-      const result = parseStructuredBlock(lines, i, end, 'endpoint', endpointMatch[1]);
+      const result = parseStructuredBlock(lines, i, end, 'endpoint', endpointMatch[1], errors);
       if (result) { blocks.push(result.node); i = result.nextLine; continue; }
     }
 
     // Prediction block?
     const predMatch = line.match(/^#{3,5}\s+Prediction:\s*(.+)/);
     if (predMatch) {
-      const result = parseStructuredBlock(lines, i, end, 'prediction', predMatch[1]);
+      const result = parseStructuredBlock(lines, i, end, 'prediction', predMatch[1], errors);
       if (result) { blocks.push(result.node); i = result.nextLine; continue; }
     }
 
@@ -316,14 +316,14 @@ function parseBlocks(lines: string[], start: number, end: number, errors?: Parse
 }
 
 function isBlockStart(line: string): boolean {
-  return /^#{2,5}\s+(Entity|Relationship|Event|Prediction):/.test(line) || /^\|.+\|/.test(line) || /^\[.+\]/.test(line);
+  return /^#{2,5}\s+(Entity|Relationship|Event|Prediction|Endpoint):/.test(line) || /^\|.+\|/.test(line) || /^\[.+\]/.test(line);
 }
 
 // --- Structured block parser ---
 
 function parseStructuredBlock(
   lines: string[], start: number, end: number,
-  kind: string, headerRest: string
+  kind: string, headerRest: string, errors?: ParseError[]
 ): { node: BlockNode; nextLine: number } | null {
   let i = start + 1;
   let description = '';
@@ -357,7 +357,7 @@ function parseStructuredBlock(
         name: headerRest,
         description: descLines.join(' ') || Object.entries(props).map(([k,v]) => `${k}: ${v}`).join(', '),
         type: 'entity',
-        properties: props,
+        properties: Object.fromEntries(Object.entries(props).map(([key, value]) => [key, { type: 'string', required: true, default: value }])),
         states: [],
         lifecycle: [],
         yaml: props,
@@ -375,6 +375,7 @@ function parseStructuredBlock(
     yamlLines.push(lines[i]);
     i++;
   }
+  if (i >= end) errors?.push({ message: 'Unclosed YAML fence', line: start + 1 });
   i++; // skip closing ```
 
   let yaml: Record<string, unknown> = {};
@@ -390,9 +391,9 @@ function parseStructuredBlock(
   }
 
   // Build the appropriate node
-  if (kind === 'entity') {
+  if (kind === 'entity' || kind === 'endpoint') {
     return {
-      node: buildEntityNode(headerRest, description, yaml, start, i),
+      node: buildEntityNode(headerRest, description, kind === 'endpoint' ? { ...yaml, type: 'endpoint' } : yaml, start, i),
       nextLine: i,
     };
   }
@@ -425,7 +426,7 @@ function parseStructuredBlock(
 
 function buildEntityNode(name: string, description: string, yaml: Record<string, unknown>, lineStart: number, lineEnd: number): EntityNode {
   const properties: Record<string, PropertyDef> = {};
-  const rawProps = yaml.properties as Record<string, Record<string, unknown>> | undefined;
+  const rawProps = yaml.properties as Record<string, any> | undefined;
   if (rawProps) {
     for (const [key, val] of Object.entries(rawProps)) {
       // Support compact inline YAML: role: {type: string, required: true}
@@ -448,7 +449,7 @@ function buildEntityNode(name: string, description: string, yaml: Record<string,
 
   const states = Array.isArray(yaml.states) ? yaml.states as string[] : [];
   const lifecycleStr = (yaml.lifecycle as string) || '';
-  const lifecycleParts = lifecycleStr ? lifecycleStr.split(/\s*→\s*/).map(s => s.trim()) : [];
+  const lifecycleParts = lifecycleStr ? lifecycleStr.split(/\s*(?:→|->)\s*/).map(s => s.trim()) : [];
   const lifecycle: string[] = [];
   for (let si = 0; si < lifecycleParts.length - 1; si++) {
     lifecycle.push(`${lifecycleParts[si]} → ${lifecycleParts[si + 1]}`);
@@ -472,7 +473,7 @@ function buildEntityNode(name: string, description: string, yaml: Record<string,
 
 function buildRelationshipNode(headerRest: string, description: string, yaml: Record<string, unknown>, lineStart: number, lineEnd: number): RelationshipNode {
   // Parse "Source -> Target" from heading
-  const parts = headerRest.split(/\s*→\s*/);
+  const parts = headerRest.split(/\s*(?:→|->)\s*/);
   const source = parts[0]?.trim() || (yaml.source as string) || '';
   const target = parts[1]?.trim() || (yaml.target as string) || '';
 
@@ -595,7 +596,7 @@ function parseSimpleYAML(lines: string[]): Record<string, unknown> {
         result[currentKey] = parseFloat(value);
       } else if (value.startsWith('[') && value.endsWith(']')) {
         result[currentKey] = value.slice(1, -1).split(',').map(s => s.trim());
-      } else if (value.startsWith('null')) {
+      } else if (value === 'null') {
         result[currentKey] = null;
       } else {
         result[currentKey] = value;
@@ -634,15 +635,15 @@ function parseSimpleYAML(lines: string[]): Record<string, unknown> {
       }
       if (item.startsWith('{') && item.endsWith('}')) {
         const inline = parseInlineObject(item);
-        currentObj.__list.push(inline || item);
+        (currentObj.__list as unknown[]).push(inline || item);
       } else if (item === 'true') {
-        currentObj.__list.push(true);
+        (currentObj.__list as unknown[]).push(true);
       } else if (item === 'false') {
-        currentObj.__list.push(false);
+        (currentObj.__list as unknown[]).push(false);
       } else if (/^-?\d+(\.\d+)?$/.test(item)) {
-        currentObj.__list.push(parseFloat(item));
+        (currentObj.__list as unknown[]).push(parseFloat(item));
       } else {
-        currentObj.__list.push(item);
+        (currentObj.__list as unknown[]).push(item);
       }
       continue;
     }
@@ -667,7 +668,7 @@ function parseSimpleYAML(lines: string[]): Record<string, unknown> {
       const key = deepMatch[1];
       const value = (deepMatch[2] || '').trim();
       const inlineObj = parseInlineObject(value);
-      deepNested[key] = inlineObj || value;
+      deepNested[key] = inlineObj || (value === 'true' ? true : value === 'false' ? false : /^-?\d+(\.\d+)?$/.test(value) ? Number(value) : value.replace(/^([\"'])(.*)\1$/, '$2'));
     }
   }
 
@@ -749,7 +750,7 @@ function parseCompactBlock(
   const states: string[] = [];
   const flowProp = props.find(p => p.key.toLowerCase() === 'flow');
   if (flowProp) {
-    const flowStates = flowProp.value.split(/\s*→\s*/).map(s => s.trim()).filter(Boolean);
+    const flowStates = flowProp.value.split(/\s*(?:→|->)\s*/).map(s => s.trim()).filter(Boolean);
     states.push(...flowStates);
   }
 

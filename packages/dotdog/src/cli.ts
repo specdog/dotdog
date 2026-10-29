@@ -2,7 +2,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { existsSync, readdirSync, readFileSync, mkdirSync, writeFileSync, statSync } from 'fs';
-import { join, relative, resolve } from 'path';
+import { join, relative, resolve, dirname, basename } from 'path';
 import { buildIndex, searchIndex } from './index';
 import { resolveUserPath } from './workspace/paths';
 import { createHash } from 'crypto';
@@ -18,6 +18,9 @@ import { buildWorkspaceGraph, portableWorkspacePath } from './workspace/graph';
 import { resolveWorkspace, WORKSPACE_MANIFEST } from './workspace/resolver';
 import { validateWorkspaceConfig } from './workspace/validator';
 import { formatSpecKitImport, importSpecKit } from './integrations/speckit';
+import { normalizeGraph } from './graph/model';
+import { registerAutomation } from './automation';
+import { registerGraphCommands } from './graph/commands';
 
 
 function normalizeDag(dag: any): any {
@@ -37,71 +40,21 @@ function normalizeDag(dag: any): any {
   return dag;
 }
 
-function dagNodes(dag: any): any[] {
-  if (Array.isArray(dag)) return Array.isArray(dag[2]) ? dag[2] : [];
-  if (Array.isArray(dag.n)) return dag.n;
-  if (Array.isArray(dag.nodes)) return dag.nodes;
-  return [];
-}
-
-function dagNodeKind(node: any): string {
-  if (Array.isArray(node)) {
-    if (node[1] === 'p') return 'prediction';
-    if (node[1] === 'i') return 'infra';
-    if (node[1] === 'e') {
-      const props = Array.isArray(node[2]) ? node[2] : [];
-      const kindIndex = props.indexOf('kind');
-      if (kindIndex >= 0 && props[kindIndex + 1]) return String(props[kindIndex + 1]);
-      return 'entity';
-    }
-    return String(node[2] || node[1] || 'unknown');
-  }
-
-  return String(node.kind || node.type || node.t || node.g || 'unknown');
-}
-
-function dagEdges(dag: any, nodes: any[]): any[] {
-  if (!Array.isArray(dag) && Array.isArray(dag.edges)) return dag.edges;
-  if (!Array.isArray(dag) && Array.isArray(dag.e)) return dag.e;
-
-  const edges: any[] = [];
-  for (const node of nodes) {
-    if (Array.isArray(node)) {
-      const outEdges = node[4] && node[1] !== 'e' && node[1] !== 'i' && node[1] !== 'p'
-        ? node[6] || []
-        : node[4] || node[6] || [];
-      edges.push(...outEdges);
-    } else if (Array.isArray(node.edges)) {
-      edges.push(...node.edges);
-    } else if (Array.isArray(node.es)) {
-      edges.push(...node.es);
-    }
-  }
-  return edges;
-}
-
 function auditDagFile(path: string, requiredKinds: string[] = []) {
-  const dag = JSON.parse(readFileSync(path, 'utf-8'));
-  const nodes = dagNodes(dag);
-  const edges = dagEdges(dag, nodes);
-  const kinds = new Map<string, number>();
+  const graph = normalizeGraph(JSON.parse(readFileSync(path, 'utf-8')));
+  const kinds: Record<string, number> = {};
+  for (const node of graph.nodes) kinds[node.kind] = (kinds[node.kind] || 0) + 1;
+  const missingKinds = requiredKinds.filter(kind => !kinds[kind]);
+  return { path, nodeCount: graph.nodes.length, edgeCount: graph.edges.length, kinds, missingKinds, ok: graph.nodes.length > 0 && !missingKinds.length };
+}
 
-  for (const node of nodes) {
-    const kind = dagNodeKind(node);
-    kinds.set(kind, (kinds.get(kind) || 0) + 1);
-  }
+function projectRoots(dir: string): string[] {
+  return existsSync(join(dir, 'SPEC.dog')) ? [dirname(dir)] : [join(dir, 'projects'), join(dir, 'specs'), dir];
+}
 
-  const missingKinds = requiredKinds.filter(kind => !kinds.has(kind));
-  const result = {
-    path,
-    nodeCount: nodes.length,
-    edgeCount: edges.length,
-    kinds: Object.fromEntries([...kinds.entries()].sort(([a], [b]) => a.localeCompare(b))),
-    missingKinds,
-    ok: nodes.length > 0 && missingKinds.length === 0,
-  };
-
-  return result;
+function projectNames(directory: string, root: string): string[] {
+  if (existsSync(join(root, 'SPEC.dog'))) return directory === dirname(root) ? [basename(root)] : [];
+  return readdirSync(directory, { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name);
 }
 
 function resolvePath(p: string): string {
@@ -159,7 +112,7 @@ import { serve } from './serve';
 
 const program = new Command();
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8'));
-program.name('spec').alias('dotdog').description('CLI for structured software specs : validate .dog, compile .dag, query via MCP').version(pkg.version);
+program.name('dotdog').alias('spec').description('CLI for structured software specs : validate .dog, compile .dag, query via MCP').version(pkg.version);
 
 const speckitCmd = program.command('speckit').description('Import GitHub Spec Kit artifacts into dotdog graphs');
 
@@ -183,30 +136,37 @@ speckitCmd
 
 program.command('validate [dir]').action((d='.') => {
   const dir = resolvePath(d);
-  const dirs = [join(dir,'projects'),join(dir,'specs')];
+  const dirs = projectRoots(dir);
   let found = false, hasErrors = false;
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       found = true;
       const pd = join(dd,p);
       if (!existsSync(join(pd,'SPEC.dog'))) continue;
       const files = existsSync(pd) ? readdirSync(pd).filter(f=>f.endsWith('.dog')) : [];
-      const missing = ['SPEC.dog','constitution.dog','data-model.dog'].filter(f=>!files.includes(f));
+      const missing = ['SPEC.dog','data-model.dog'].filter(f=>!files.includes(f));
       const optional = ['COPY.dog','plan.dog','DESIGN-SYSTEM.dog','INDEX.dog'].filter(f=>!files.includes(f));
-      console.log(chalk.bold(`\n  ${p} : ${files.length} .dog files, ${Math.max(0, 100-Math.round(missing.length*3/20*100))}% complete`));
+      for (const file of files) {
+        const ast = parse(readFileSync(join(pd, file), 'utf8'));
+        if (ast.errors.length) { hasErrors = true; console.error(`${p}/${file}: ${ast.errors.map(error => error.message).join('; ')}`); }
+      }
+      console.log(chalk.bold(`\n  ${p} : ${files.length} .dog files, ${Math.max(0, 100-Math.round(missing.length*3/20*100))}% required files present`));
       for (const f of files) console.log(chalk.gray(`    ${f}`));
       if (missing.length) { console.log(chalk.red(`  Missing required: ${missing.join(', ')}`)); hasErrors = true; }
       if (optional.length) console.log(chalk.gray(`  Optional: ${optional.join(', ')} — not required for 100%`));
     }
   }
-  if (!found) console.log(chalk.yellow('No projects found. Run: spec init <project>'));
+  if (!found) { console.log(chalk.yellow('No projects found. Run: dotdog init <project>')); hasErrors = true; }
   if (hasErrors) process.exit(1);
 });
 
 program.command('init <project>').option('-m, --minimal', 'Only SPEC.dog + data-model.dog').action((p, opts) => {
-  const d = join(process.cwd(),'specs',p);
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(p)) throw new Error('Project name must contain only letters, numbers, underscores and hyphens');
+  mkdirSync(join(process.cwd(), 'specs'), { recursive: true });
+  const d = resolveUserPath(join('specs',p), process.cwd());
+  if (existsSync(d)) throw new Error('Project already exists; init never overwrites existing specs');
   mkdirSync(d,{recursive:true});
   const full: Record<string,string> = {
     'SPEC.dog': '# Project\n\n## Product\n\n',
@@ -235,25 +195,28 @@ program.command('issues [repo]').description('Check GitHub issue coverage agains
   const root = join(process.cwd(), 'specs');
   const projects = existsSync(root) ? readdirSync(root,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name) : [];
   const results: any[] = [];
+  const issues = ghIssues(repo);
   for (const p of projects) {
     const pd = join(root, p);
     if (!existsSync(join(pd,'SPEC.dog'))) continue;
     const entities = projectEntities(pd);
-    const issues = ghIssues(repo);
     const uncovered = issues.filter(i => !entities.some(e => (i.title + ' ' + (i.body || '')).toLowerCase().includes(e)));
     results.push({ project: p, entities: entities.length, issues: issues.length, uncovered: uncovered.length });
-    console.log(chalk.bold(`\n  ${p}`));
-    console.log(`  ${entities.length} entities, ${issues.length} issues, ${uncovered.length} uncovered`);
+    if (!opts.json) {
+      console.log(chalk.bold(`\n  ${p}`));
+      console.log(`  ${entities.length} entities, ${issues.length} issues, ${uncovered.length} uncovered`);
+    }
   }
   if (opts.json) console.log(JSON.stringify(results, null, 2));
 });
 
 program.command('list').option('--json', 'Output project names as JSON').action((opts: { json?: boolean }) => {
+  const dir = process.cwd();
   const entries: Array<{ root: string; name: string; dogFiles: number }> = [];
   for (const d of ['projects','specs']) {
     const dd = join(process.cwd(),d);
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       const sp = join(dd,p);
       const n = existsSync(sp) ? readdirSync(sp).filter(f=>f.endsWith('.dog')).length : 0;
@@ -352,19 +315,19 @@ function buildCompactText(project: string, v2nodes: any[][]): string {
   return lines.join('\n');
 }
 
-program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'Use v2 format (default: v3 for 57% smaller graphs)').action((d='.', opts) => {
+program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'Use legacy v2 format').option('--specs-only', 'Compile spec projects without repository layers').action((d='.', opts) => {
   const dir = resolvePath(d);
-  const layered = compileDotdogLayers(dir, safeProjectName(dir));
+  const layered = opts.specsOnly ? null : compileDotdogLayers(dir, safeProjectName(dir));
   if (layered) {
     console.log(chalk.green('  ✓ ' + layered.file));
     console.log(chalk.gray('    ' + layered.nodes + ' nodes, ' + layered.edges + ' edges, ' + layered.unknowns + ' unknowns'));
     return;
   }
-  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  const dirs = projectRoots(dir);
   let found = false;
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       const pd = join(dd,p);
       if (!existsSync(join(pd,'SPEC.dog'))) continue;
@@ -389,6 +352,7 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
       const nodes: any[] = [], edges: any[] = [];
       for (const f of files) {
         const ast = parse(sources[f]);
+        if (ast.errors.length) throw new Error(`${f}: ${ast.errors.map(error => error.message).join('; ')}`);
         for (const section of ast.sections) {
           for (const block of section.blocks) {
             if (block.kind === 'entity' || block.kind === 'event') {
@@ -404,10 +368,12 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
               }
               nodes.push({
                 i: (block as any).name || '',
+                sourceFile: f,
                 t: (block as any).type || '',
                 g: block.kind,
-                d: (block as any).description || '',
+                d: f === 'repo-map.dog' ? '' : (block as any).description || '',
                 p: compactProps,
+                schema: (block as any).properties || {},
                 s: (block as any).states || [],
                 l: (block as any).lifecycle || [],
               });
@@ -415,9 +381,10 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
             if (block.kind === 'prediction') {
               nodes.push({
                 i: (block as any).statement || (block as any).name || '',
+                sourceFile: f,
                 t: 'prediction',
                 g: 'prediction',
-                d: (block as any).description || '',
+                d: f === 'repo-map.dog' ? '' : (block as any).description || '',
                 p: {},
                 s: [],
                 l: [],
@@ -429,6 +396,7 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
             }
             if (block.kind === 'relationship') {
               edges.push({
+                sourceFile: f,
                 s: block.source,
                 t: block.target,
                 v: block.verb,
@@ -443,6 +411,7 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
       // Extract infrastructure resources — they become infra nodes with edges to entities
       for (const f of files) {
         const ast = parse(sources[f]);
+        if (ast.errors.length) throw new Error(`${f}: ${ast.errors.map(error => error.message).join('; ')}`);
         for (const section of ast.sections) {
           if (!section.heading.toLowerCase().includes('infrastructure')) continue;
           for (const block of section.blocks) {
@@ -495,6 +464,7 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
               const nodeName = `${provider}:${res}`;
               nodes.push({
                 i: nodeName,
+                sourceFile: f,
                 t: 'infra',
                 g: 'resource',
                 d: `${provider} ${res}`,
@@ -505,6 +475,7 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
               // Edge from infra resource to spec entity
               edges.push({
                 s: nodeName,
+                sourceFile: f,
                 t: entity,
                 v: 'maps_to',
                 d: '',
@@ -515,6 +486,34 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
           }
         }
       }
+      const groups = new Map<string, any[]>();
+      for (const node of nodes) {
+        if (!groups.has(node.i)) groups.set(node.i, []);
+        groups.get(node.i)!.push(node);
+      }
+      const scoped = new Set<string>(), uniqueNodes = new Map<string, any>();
+      const compatible = (left: any, right: any) => left.g === right.g && left.t === right.t && Object.entries(right.schema || {}).every(([key, value]) => !left.schema?.[key] || JSON.stringify(left.schema[key]) === JSON.stringify(value));
+      for (const [name, declarations] of groups) {
+        const conflict = declarations.some((node, index) => declarations.slice(0, index).some(previous => !compatible(previous, node)));
+        if (conflict) scoped.add(name);
+        for (const node of declarations) {
+          const key = conflict ? `${name}@${node.sourceFile.replace(/\.dog$/, '')}` : name;
+          const previous = uniqueNodes.get(key);
+          if (!previous) { uniqueNodes.set(key, { ...node, i: key }); continue; }
+          if (!compatible(previous, node)) throw new Error(`Conflicting declarations for ${key}`);
+          previous.schema = { ...previous.schema, ...node.schema };
+          previous.p = { ...previous.p, ...node.p };
+          previous.s = [...new Set([...(previous.s || []), ...(node.s || [])])];
+          previous.l = [...new Set([...(previous.l || []), ...(node.l || [])])];
+        }
+      }
+      for (const edge of edges) for (const endpoint of ['s', 't']) {
+        if (!scoped.has(edge[endpoint])) continue;
+        const local = `${edge[endpoint]}@${edge.sourceFile.replace(/\.dog$/, '')}`;
+        if (!uniqueNodes.has(local)) throw new Error(`Ambiguous relationship endpoint ${edge[endpoint]} in ${edge.sourceFile}`);
+        edge[endpoint] = local;
+      }
+      nodes.splice(0, nodes.length, ...uniqueNodes.values());
       // Validate all relationship targets reference real entities
       const entityNames = new Set(nodes.map((n: any) => n.i));
       for (const e of edges) {
@@ -552,7 +551,7 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
           seen.add(key);
           const ee: any[] = [tid, e.v || ''];
           if (e.c) ee.push(e.c);
-          if (e.r) ee.push(1);
+          if (e.r) { if (!e.c) ee.push(''); ee.push(1); }
           outEdges.push(ee);
         }
         const entry: any[] = [j, nd.i || '', nd.t || '', nd.d || '', props, states, outEdges];
@@ -565,6 +564,10 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
           if (nd.ms) f.push(nd.ms);
           if (f.length) entry.push(f);
         }
+        if (nd.schema) {
+          if (entry.length === 7) entry.push(null);
+          entry.push({ schema: nd.schema, lifecycle: nd.l || [] });
+        }
         v2nodes.push(entry);
       }
       // Calculate token savings first (needed for v3 inline array)
@@ -576,7 +579,7 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
       const allSavingsPct = sourceTokens > 0 ? Math.round((1 - dagTokens / sourceTokens) * 1000) / 10 : 0;
       const contentSavingsPct = contentTokens > 0 ? Math.round((1 - dagTokens / contentTokens) * 1000) / 10 : 0;
       const savingsTokens = sourceTokens - dagTokens;
-      const tokens = { m: 'chars/4', st: sourceTokens, ct: contentTokens, dt: dagTokens, sv: allSavingsPct, cs: contentSavingsPct, saved: savingsTokens };
+      const tokens = { m: 'bytes/4', st: sourceTokens, ct: contentTokens, dt: dagTokens, sv: allSavingsPct, cs: contentSavingsPct, saved: savingsTokens };
 
       // Build compact injection text for collar's DAG-first context
       const compact = buildCompactText(p, v2nodes);
@@ -587,7 +590,7 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
           const st = nd.s && nd.s.length ? nd.s : null;
           const ed = n[6] && n[6].length ? n[6] : null;
           // Strip empty values from props for token efficiency
-          const cleanProps = n[4] && n[4].length ? n[4].filter((_: any, i: number) => i % 2 === 0 || n[4][i]) : null;
+          const cleanProps = n[4] && n[4].length ? n[4] : null;
           const entry: any[] = [nd.i, tc, cleanProps, st, ed];
           if (nd.g === 'prediction') {
             const f: any[] = [];
@@ -595,16 +598,23 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
             if (nd.tf) f.push(nd.tf);
             if (f.length) entry.push(f);
           }
+          if (nd.schema) {
+            if (entry.length === 5) entry.push(null);
+            entry.push({ kind: nd.t || 'entity', description: nd.d, schema: nd.schema, lifecycle: nd.l || [] });
+          }
           return entry;
         }), tokens];
 
       const dag = opts.v2 ? v2dag : v3dag;
       const dagJson = JSON.stringify(dag);
-      const report: any = opts.v2 ? { ...dag, tk: tokens, compact } : [...dag, tokens];
-      writeFileSync(outPath, JSON.stringify(report, null, 2) + '\n');
+      const report: any = opts.v2 ? { ...dag, tk: tokens, compact } : dag;
       console.log(chalk.green(`  ✓ ${outPath}`));
       console.log(chalk.gray(`    ${nodes.length} nodes, ${edges.length} edges, ${files.length} files`));
-      console.log(chalk.gray(`    ${sourceTokens} → ${dagTokens} tokens (${allSavingsPct}% savings, ${contentSavingsPct}% content-only, ${savingsTokens} saved)`));
+      const payload = JSON.stringify(opts.v2 ? v2dag : v3dag.slice(0, 3));
+      const estimated = Math.round(Buffer.byteLength(payload, 'utf8') / 4);
+      tokens.dt = estimated; tokens.sv = sourceTokens ? Math.round((1 - estimated / sourceTokens) * 1000) / 10 : 0; tokens.saved = sourceTokens - estimated;
+      writeFileSync(outPath, JSON.stringify(report, null, 2) + '\n');
+      console.log(chalk.gray(`    ${sourceTokens} → ${estimated} estimated tokens (bytes/4; ${tokens.sv}% savings)`));
     }
   }
   if (!found) console.log(chalk.yellow('No projects found.'));
@@ -612,11 +622,11 @@ program.command('compile [dir]').option('-o, --output <file>').option('--v2', 'U
 
 program.command('tokens [dir]').action((d='.') => {
   const dir = resolvePath(d);
-  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  const dirs = projectRoots(dir);
   let found = false;
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       const pd = join(dd,p);
       if (!existsSync(join(pd,'SPEC.dog'))) continue;
@@ -635,7 +645,7 @@ program.command('tokens [dir]').action((d='.') => {
       const savings = sourceBytes > 0 ? Math.round((1 - dagBytes / sourceBytes) * 1000) / 10 : 0;
       // Compute dag-only savings (strips tk metadata that inflates on-disk size)
       const dag = JSON.parse(readFileSync(dagFile,'utf-8'));
-      const dagOnly = JSON.stringify({v: dag.v, p: dag.p, n: dag.n});
+      const dagOnly = JSON.stringify(Array.isArray(dag) ? dag.slice(0, 3) : {v: dag.v, p: dag.p, n: dag.n});
       const dagOnlyBytes = Buffer.byteLength(dagOnly,'utf-8');
       const dagOnlyPct = sourceBytes > 0 ? Math.round((1 - dagOnlyBytes / sourceBytes) * 1000) / 10 : 0;
       console.log(chalk.bold(`\n  ${p}`));
@@ -653,10 +663,10 @@ program.command('tokens [dir]').action((d='.') => {
 
 program.command('visualize [dir]').option('-s, --save').action((d='.', opts) => {
   const dir = resolvePath(d);
-  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  const dirs = projectRoots(dir);
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       const dagFile = join(dd,p,`${p}.dag`);
       if (!existsSync(dagFile)) continue;
@@ -718,12 +728,12 @@ program.command('serve [dir]').description('MCP server : expose .dag graph to AI
 
 program.command('analyze [dir]').description('Analyze a spec project : score, gaps, suggestions').option('-p, --project <name>').option('--issues', 'Include GitHub issue drift summary').action((d='.', opts) => {
   const dir = resolvePath(d);
-  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  const dirs = projectRoots(dir);
   console.log(chalk.bold('\nSpec Analysis\n'));
   let found = false, hasGaps = false;
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       if (opts.project && p !== opts.project) continue;
       const pd = join(dd,p);
@@ -748,7 +758,7 @@ program.command('analyze [dir]').description('Analyze a spec project : score, ga
         }
         analyses.push({file:f, sections:ast.sections.length, size:content.length, entities:entities.length, rels:rels.length});
       }
-      const missingReq = ['SPEC.dog','constitution.dog','data-model.dog'].filter(f => !files.includes(f));
+      const missingReq = ['SPEC.dog','data-model.dog'].filter(f => !files.includes(f));
       const missingOpt = ['COPY.dog','plan.dog','DESIGN-SYSTEM.dog','INDEX.dog'].filter(f => !files.includes(f));
       let score = 100 - missingReq.length * 15 - missingOpt.length * 5;
       const noDesc = allEntities.filter(e => !e.description || e.description.length < 10).length;
@@ -757,7 +767,7 @@ program.command('analyze [dir]').description('Analyze a spec project : score, ga
       score = Math.max(0, score - noProps * 5);
       const noStates = allEntities.filter(e => e.states.length === 0).length;
       score = Math.max(0, score - noStates * 3);
-      console.log(`  ${files.length} files | ${score}% complete`);
+      console.log(`  ${files.length} files | ${score}% heuristic score`);
       for (const a of analyses) {
         const detail = a.entities > 0 ? ` (${a.entities} entities, ${a.rels} rels)` : '';
         console.log(chalk.gray(`    ${a.file} : ${a.sections} sections, ${(a.size/1024).toFixed(1)}KB${detail}`));
@@ -859,16 +869,17 @@ program.command('design [dir]')
         for (const item of report.findings) console.log(`  ${item.severity} ${item.code}${item.entity ? ` [${item.entity}]` : ''}: ${item.message}\n    next: ${item.nextStep}`);
       }
     }
+    if (opts.strict && !reports.length) process.exitCode = 1;
     if (opts.strict && reports.some((report) => report.summary.high > 0 || report.summary.medium > 0)) process.exitCode = 1;
   });
 
 program.command('generate [dir]').description('Generate missing spec files from SPEC.dog').option('-p, --project <name>').action((d='.', opts) => {
   const dir = resolvePath(d);
-  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  const dirs = projectRoots(dir);
   let specContent = '', specDir = '';
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       if (opts.project && p !== opts.project) continue;
       const pd = join(dd,p);
@@ -935,13 +946,13 @@ program.command('generate [dir]').description('Generate missing spec files from 
   console.log(chalk.bold('\nRun dotdog validate to verify.\n'));
 });
 
-program.command('simulate <scenario>').description('Walk through a scenario, check pre/postconditions').option('-p, --project <name>').action((scenario, opts) => {
+program.command('simulate <scenario>').description('Check scenario references; does not execute application behavior').option('-p, --project <name>').action((scenario, opts) => {
   const dir = resolvePath('.');
-  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  const dirs = projectRoots(dir);
   let projectDir = '';
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       if (opts.project && p !== opts.project) continue;
       const pd = join(dd,p);
@@ -1046,11 +1057,11 @@ program.command('simulate <scenario>').description('Walk through a scenario, che
 
 program.command('staleness [dir]').action((d='.') => {
   const dir = resolvePath(d);
-  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  const dirs = projectRoots(dir);
   console.log(chalk.bold('Staleness Audit\n'));
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       const pd = join(dd,p);
       if (!existsSync(join(pd,'SPEC.dog'))) continue;
@@ -1095,11 +1106,11 @@ program.command('staleness [dir]').action((d='.') => {
 
 program.command('verify [dir]').description('Verify spec-code alignment. --init auto-generates verify section in plan.dog').option('-i, --init', 'Auto-generate verify section from codebase scan').action((d='.', opts) => {
   const dir = resolvePath(d);
-  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  const dirs = projectRoots(dir);
   console.log(chalk.bold(opts.init ? 'Auto-Generating Verify Section\n' : 'Verification Audit\n'));
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       const pd = join(dd,p);
       if (!existsSync(join(pd,'SPEC.dog'))) continue;
@@ -1129,7 +1140,7 @@ program.command('verify [dir]').description('Verify spec-code alignment. --init 
           for (const cd of codeDirs) {
             if (!existsSync(cd)) continue;
             try {
-              const allFiles = readdirSync(cd, {recursive:true}).filter((f:string) => {
+              const allFiles = readdirSync(cd, {recursive:true, encoding:'utf8'}).filter((f:string) => {
                 if (!(f.endsWith('.ts') || f.endsWith('.js') || f.endsWith('.py') || f.endsWith('.sol') || f.endsWith('.go'))) return false;
                 for (const part of f.split('/')) { if (skip.has(part)) return false; }
                 return true;
@@ -1211,13 +1222,13 @@ program.command('woof').action(() => {
   console.log('/_____/   U');
 });
 
-program.command('index [dir]').description('Build search index for semantic queries').action((d='.') => {
+program.command('index [dir]').description('Build lexical search index from source sections').action((d='.') => {
   const dir = resolvePath(d);
-  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  const dirs = projectRoots(dir);
   let built = 0;
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       const pd = join(dd,p);
       if (!existsSync(join(pd,'SPEC.dog'))) continue;
@@ -1230,14 +1241,14 @@ program.command('index [dir]').description('Build search index for semantic quer
   if (!built) console.log(chalk.yellow('No projects found. Run dotdog init first.'));
 });
 
-program.command('search <query>').description('Semantic search across compiled specs').option('-p, --project <name>').action((query, opts) => {
+program.command('search <query>').description('Lexical TF-IDF search across indexed source sections').option('-p, --project <name>').action((query, opts) => {
   console.log(chalk.bold(`\nSearch: "${query}"\n`));
   const dir = resolvePath('.');
-  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  const dirs = projectRoots(dir);
   let found = false;
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       if (opts.project && p !== opts.project) continue;
       const pd = join(dd,p);
@@ -1263,12 +1274,12 @@ program.command('search <query>').description('Semantic search across compiled s
 
 program.command('predictions [dir]').description('List all predictions with status').option('-p, --project <name>').action((d='.', opts) => {
   const dir = resolvePath(d);
-  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  const dirs = projectRoots(dir);
   console.log(chalk.bold('\nPredictions\n'));
   let found = false;
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       if (opts.project && p !== opts.project) continue;
       const pd = join(dd,p);
@@ -1298,13 +1309,13 @@ program.command('predictions [dir]').description('List all predictions with stat
 
 program.command('resolve <name>').description('Mark a prediction as correct, wrong, or partial').option('-p, --project <name>').option('--correct', 'Prediction was correct').option('--wrong', 'Prediction was wrong').option('--partial', 'Prediction was partially correct').action((name, opts) => {
   const dir = resolvePath('.');
-  const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+  const dirs = projectRoots(dir);
   const status = opts.correct ? 'correct' : opts.wrong ? 'wrong' : opts.partial ? 'partial' : null;
   if (!status) { console.log(chalk.red('Specify --correct, --wrong, or --partial')); return; }
   
   for (const dd of dirs) {
     if (!existsSync(dd)) continue;
-    const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+    const projects = projectNames(dd, dir);
     for (const p of projects) {
       if (opts.project && p !== opts.project) continue;
       const pd = join(dd,p);
@@ -1393,7 +1404,7 @@ kitCmd.command('init <kit>').description('Init a project from a kit').option('-p
   const src = join(kitDir, kit);
   if (!existsSync(src)) {
     console.log(chalk.red(`Kit "${kit}" not found. Available: ${builtInKits.join(', ')}`));
-    return;
+    process.exitCode = 1; return;
   }
   const projectName = opts.project || kit;
   const dir = resolvePath('.');
@@ -1418,11 +1429,11 @@ program.command('badge [dir]')
   .description('Generate dotdog-badge.svg (shields.io style) showing savings')
   .action((d: string = '.') => {
     const dir = resolvePath(d);
-    const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+    const dirs = projectRoots(dir);
     let found = false;
     for (const dd of dirs) {
       if (!existsSync(dd)) continue;
-      const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+      const projects = projectNames(dd, dir);
       for (const p of projects) {
         const pd = join(dd,p);
         const dagFile = join(pd, `${p}.dag`);
@@ -1476,20 +1487,20 @@ program.command('doctor')
   .option('--json', 'Machine-readable JSON output')
   .action((opts: { json?: boolean }) => {
     const dir = resolvePath('.');
-    const dirs = [join(dir,'projects'),join(dir,'specs'),dir];
+    const dirs = projectRoots(dir);
     let found = false, passed = 0, failed = 0;
     const results: Array<{project:string,status:string,error?:string}> = [];
 
     for (const dd of dirs) {
       if (!existsSync(dd)) continue;
-      const projects = readdirSync(dd,{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>e.name);
+      const projects = projectNames(dd, dir);
       for (const p of projects) {
         const pd = join(dd,p);
         if (!existsSync(join(pd,'SPEC.dog'))) continue;
         found = true;
         const dogFiles = readdirSync(pd).filter(f=>f.endsWith('.dog'));
         // Check 1: validate completeness
-        const missing = ['SPEC.dog','constitution.dog','data-model.dog'].filter(f=>!dogFiles.includes(f));
+        const missing = ['SPEC.dog','data-model.dog'].filter(f=>!dogFiles.includes(f));
         if (missing.length) {
           const msg = `missing ${missing.join(', ')}`;
           if (opts.json) results.push({project:p,status:'fail',error:msg});
@@ -1603,7 +1614,8 @@ program.command('live [entity]')
       let dag: any;
       try { dag = JSON.parse(readFileSync(dagFile,'utf-8')); } catch { continue; }
       dagLoaded = true;
-        const nodes = dag.n || [];
+        const liveGraph = normalizeGraph(dag);
+        const nodes = liveGraph.nodes.map(node => ({ i: node.label, t: node.kind, p: node.properties }));
         const isV2 = (n: any) => Array.isArray(n) && typeof n[0] === 'number';
         const Nm = (n: any) => isV2(n) ? (n[1] || String(n[0])) : (n.i || n.id || n.name || '');
         const Nt = (n: any) => isV2(n) ? (n[2] || '') : (n.t || n.type || '');
@@ -1694,7 +1706,7 @@ program.command('live [entity]')
       console.log(chalk.gray('    url: { type: string, default: "https://..." }'));
       console.log(chalk.gray('    expect_body: { type: json, default: { ... } }'));
       console.log(chalk.gray('  ```'));
-      process.exit(0);
+      process.exit(opts.exitCode ? 1 : 0);
     }
 
     // Hit each endpoint
@@ -1717,6 +1729,7 @@ program.command('live [entity]')
             else { console.log(chalk.red(`  ✗ ${ep.name}: ${u} → status ${res.status} (expected ${ep.expectStatus})`)); unreachable++; break; }
           }
           const body = await res.json().catch(() => null);
+          if (ep.expectBody && body === null) throw new Error('Expected a JSON response body');
           if (ep.expectBody && body) {
             const drift = diffBody(ep.expectBody, body);
             if (drift.missing.length > 0) {
@@ -1823,13 +1836,14 @@ program.command('live [entity]')
     }
 
     if (opts.exitCode) {
+      if (infraResults.some((result: any) => result.status === 'fail' || result.children?.some((child: any) => child.status === 'fail'))) process.exit(1);
       if (failed > 0) process.exit(1);
       if (unreachable > 0) process.exit(2);
       if (degraded > 0) process.exit(3);
     }
   });
 
-// Deep diff — returns missing and extra top-level keys
+// Contract comparison checks top-level field presence.
 function diffBody(expected: Record<string, unknown>, actual: Record<string, unknown>): { missing: string[]; extra: string[] } {
   const expKeys = Object.keys(expected);
   const actKeys = Object.keys(actual);
@@ -2111,6 +2125,7 @@ program
       }
 
       issues.sort((a, b) => driftIssueRank(a).localeCompare(driftIssueRank(b)));
+      if (issues.some(issue => issue.severity === 'HIGH')) process.exitCode = 1;
 
       if (opts.json) {
         console.log(JSON.stringify({ ok: issues.length === 0, issues }, null, 2));
@@ -2251,10 +2266,9 @@ program
   .command('trace <node>')
   .description('Trace repo.dag relationships for a node')
   .option('--dag <file>', 'path to repo.dag', '.doghouse/compiled/repo.dag')
-  .option('-d, --depth <n>', 'trace depth', '2')
   .action((node, opts) => {
     const world = loadWorldModel(resolve(opts.dag));
-    const result = traceWorldNode(world, node, Number(opts.depth || 2));
+    const result = traceWorldNode(world, node);
     console.log(formatTrace(result));
   });
 
@@ -2273,6 +2287,7 @@ program
       verb: opts.verb,
       maxHops: Number(opts.maxHops || 8),
     });
+    if (!result.ok) process.exitCode = 1;
     if (opts.json) {
       console.log(JSON.stringify(result, null, 2));
       return;
@@ -2289,4 +2304,6 @@ program
     }
   });
 
-program.parse();
+registerAutomation(program);
+registerGraphCommands(program);
+try { program.parse(); } catch (error) { console.error(error instanceof Error ? error.message : String(error)); process.exitCode = 1; }
