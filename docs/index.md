@@ -17,7 +17,7 @@ npm install -g dotdog
 bun add -g dotdog
 ```
 
-Node.js 22.12+ or Bun 1.3+. npm and Bun install the same package. The existing Homebrew distribution remains available through the Specdog tap; its formula/version is maintained separately from this source change.
+Node.js 22.12+ or Bun 1.3+. npm and Bun install the same package. The global executable has a Node shebang; on a Bun-only machine, use `bunx --bun dotdog` to force the Bun runtime. The existing Homebrew distribution remains available through the Specdog tap; its formula/version is maintained separately from this source change.
 
 ```sh
 brew tap specdog/tap

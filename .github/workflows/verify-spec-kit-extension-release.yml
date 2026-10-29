@@ -31,23 +31,45 @@ jobs:
           "$RUNNER_TEMP/spec-kit-venv/bin/python" -m pip install --disable-pip-version-check \
             'git+https://github.com/github/spec-kit.git@main'
 
-      - name: Download and verify release asset
+      - name: Prepare and verify extension bundle
+        id: bundle
         shell: bash
         run: |
           set -euo pipefail
           version="$(node -p "require('./packages/dotdog/package.json').version")"
           asset="dotdog-spec-kit-extension-v${version}.zip"
           base="https://github.com/specdog/dotdog/releases/download/v${version}"
-          curl --fail --location --proto '=https' --tlsv1.2 --output "$RUNNER_TEMP/$asset" "$base/$asset"
-          curl --fail --location --proto '=https' --tlsv1.2 --output "$RUNNER_TEMP/$asset.sha256" "$base/$asset.sha256"
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            node scripts/check-speckit-extension.mjs
+            stage="$RUNNER_TEMP/dotdog-extension"
+            mkdir -p "$stage/commands"
+            cp extension.yml "$stage/extension.yml"
+            cp commands/*.md "$stage/commands/"
+            cp LICENSE CHANGELOG.md "$stage/"
+            awk 'NR==1 && $0=="---" {front=1; next} front && $0=="---" {front=0; next} !front {print}' docs/spec-kit-extension.md > "$stage/README.md"
+            (
+              cd "$stage"
+              find . -type f -print | LC_ALL=C sort | zip -X -q "$RUNNER_TEMP/$asset" -@
+            )
+            (
+              cd "$RUNNER_TEMP"
+              sha256sum "$asset" > "$asset.sha256"
+            )
+          else
+            expected="${GITHUB_REF_NAME#verify/spec-kit-extension-v}"
+            test "$version" = "$expected"
+            curl --fail --location --proto '=https' --tlsv1.2 --output "$RUNNER_TEMP/$asset" "$base/$asset"
+            curl --fail --location --proto '=https' --tlsv1.2 --output "$RUNNER_TEMP/$asset.sha256" "$base/$asset.sha256"
+          fi
           (
             cd "$RUNNER_TEMP"
             sha256sum --check "$asset.sha256"
           )
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Install release through Spec Kit
         env:
-          VERIFY_VERSION: '0.9.0'
+          VERIFY_VERSION: ${{ steps.bundle.outputs.version }}
         shell: bash
         run: |
           set -euo pipefail
