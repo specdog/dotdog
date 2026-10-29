@@ -8,6 +8,7 @@ import { resolveWorkspace } from './workspace/resolver';
 import { portableWorkspacePath } from './workspace/graph';
 import { shortestGraphPath } from './graph/path';
 import { toolOutputSchema } from './graph/contracts';
+import { budgetContext } from './graph/context';
 import { normalizeGraph, graphNeighborhood, indexGraph, type NormalizedGraph, type GraphIndex } from './graph/model';
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -26,7 +27,7 @@ const definitions = [
   ['workspace.list', 'Repository-relative workspace metadata, not instructions', {}, []],
   ['summary', 'Graph counts, coverage, limitations and estimated savings', graphArgs, []],
   ['schema', 'Full property definitions from the compiled graph', { ...graphArgs, entity: string }, ['entity']],
-  ['context', 'Task-relevant nodes with bounded connected context', { ...graphArgs, q: string, depth: integer(0, 12), limit: integer(1, 1000) }, ['q']],
+  ['context', 'Connected graph context; optional o200k_base token budget and lexical task ranking', { ...graphArgs, q: string, depth: integer(0, 12), limit: integer(1, 1000), maxTokens: integer(128, 131072), task: { type: 'string', maxLength: 4096 } }, ['q']],
   ['impact', 'Reverse dependency neighborhood for a proposed change; not a runtime proof', { ...graphArgs, from: string, depth: integer(0, 12), limit: integer(1, 1000) }, ['from']],
   ['infraVerify', 'Explicit live, read-only infrastructure verification; may contact configured providers', { provider: string, entity: string, summary: { type: 'boolean' } }, []],
 ] as const;
@@ -125,8 +126,9 @@ export function createMcpHandler(dir: string) {
       for (const [key, value] of Object.entries(args)) {
         const schema = Object.hasOwn(properties, key) ? properties[key] : undefined;
         if (!schema) return failure(id, -32602, 'Unknown argument: ' + key);
-        if (schema.enum ? !schema.enum.includes(value) : schema.type === 'integer' ? !Number.isInteger(value) || Number(value) < schema.minimum || Number(value) > schema.maximum : typeof value !== schema.type) return failure(id, -32602, 'Invalid argument: ' + key);
+        if (schema.enum ? !schema.enum.includes(value) : schema.type === 'integer' ? !Number.isInteger(value) || Number(value) < schema.minimum || Number(value) > schema.maximum : typeof value !== schema.type || schema.maxLength && String(value).length > schema.maxLength) return failure(id, -32602, 'Invalid argument: ' + key);
       }
+      if (args.task !== undefined && args.maxTokens === undefined) return failure(id, -32602, 'task requires maxTokens');
       load();
       const name = params.name;
       if (name === 'listProjects') return success(id, { items: [...graphs.keys()].sort(), invalidProjects }, [...graphs.keys()].sort());
@@ -178,8 +180,10 @@ export function createMcpHandler(dir: string) {
         const idMatch = byId.get(args.q);
         const exact = idMatch ? [idMatch] : index.byLabel.get(args.q) || [];
         const matches = exact.length ? exact : graph.nodes.filter(node => `${node.label} ${node.description || ''}`.toLowerCase().includes(args.q.toLowerCase()));
-        if (matches.length !== 1) return success(id, { ok: false, error: matches.length ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: matches.slice(0, args.limit || 100).map(node => node.label) });
-        return success(id, graphNeighborhood(graph, matches[0].id, { depth: args.depth, limit: args.limit }, index));
+        const context = matches.length !== 1
+          ? { ok: false, error: matches.length ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: matches.slice(0, args.limit || 100).map(node => node.label) }
+          : graphNeighborhood(graph, matches[0].id, { depth: args.depth, limit: args.limit }, index);
+        return success(id, args.maxTokens === undefined ? context : await budgetContext(context, args.maxTokens, args.task));
       }
       const neighborhood = graphNeighborhood(graph, args.from, { direction: name === 'impact' ? 'incoming' : 'outgoing', depth: args.depth, limit: args.limit, verb: args.verb }, index);
       if (name === 'impact') return success(id, neighborhood);

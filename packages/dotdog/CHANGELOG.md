@@ -2,6 +2,7 @@
 
 ## 1.0.0 — Unreleased
 
+- Add opt-in exact `o200k_base` context-text budgets and lexical task ranking with whole-record/provenance preservation, connected selections and omission reporting; verify independent tiktoken vectors and frozen tasks on two real repositories.
 - Reuse MCP entity/adjacency indexes and compare content fingerprints without re-escaping graph text; retain reproducible lookup/token measurements and graph/vector/superposition research.
 - Replace generated outputs atomically, preserve hard-linked evidence and serialize refresh/map/compile with recoverable ownership locks; handle CRLF input and add Windows CI.
 - Verify and publish one hashed tarball; add a real SolidState/Ghidra → REA → Dotdog example with recorded provenance.

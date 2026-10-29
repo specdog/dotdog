@@ -6,6 +6,10 @@ import { parseArgs } from 'node:util';
 import { npm } from './lib/npm.mjs';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
+
+const require = createRequire(new URL('../packages/dotdog/package.json', import.meta.url));
+const { countTokens } = require('gpt-tokenizer/encoding/o200k_base');
 
 const version = JSON.parse(readFileSync('packages/dotdog/package.json')).version;
 const { values } = parseArgs({ options: { output: { type: 'string' }, tarball: { type: 'string' } } });
@@ -37,6 +41,15 @@ try {
   assert.equal(JSON.parse(run('refresh', '--if-stale', '--json')).changed, false);
   const impact = JSON.parse(run('impact', 'file:src/b.ts', '--json'));
   assert.ok(impact.nodes.some(node => node.label === 'file:src/a.ts'));
+  const budgetArgs = ['context', 'file:src/b.ts', '--max-tokens', '1024', '--task', 'Review value exports'];
+  for (const output of [run(...budgetArgs), execFileSync('bun', [cli, ...budgetArgs], { cwd: project, encoding: 'utf8' })]) {
+    const context = JSON.parse(output);
+    assert.equal(context.ok, true);
+    assert.equal(context.budget.encoding, 'o200k_base');
+    assert.ok(countTokens(output.trim(), { disallowedSpecial: new Set() }) <= 1024);
+    assert.ok(context.nodes.some(node => node.label === 'symbol:src/b.ts#value'));
+    assert.ok(context.edges.every(edge => context.nodes.some(node => node.id === edge.sourceId) && context.nodes.some(node => node.id === edge.targetId)));
+  }
   assert.equal(JSON.parse(run('check', '--json')).ok, true);
   assert.equal(JSON.parse(run('status', '--json')).fresh, true);
   const evidence = 'Synthetic release fixture only; not a hardware measurement.\n';

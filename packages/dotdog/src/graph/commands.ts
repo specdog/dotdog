@@ -4,6 +4,7 @@ import { join, relative } from 'path';
 import { createHash } from 'crypto';
 import type { Command } from 'commander';
 import { auditGraph } from './audit';
+import { budgetContext } from './context';
 import { readGraphText } from './io';
 import { resolveUserPath, safeOutputPath } from '../workspace/paths';
 import { normalizeGraph, graphNeighborhood, type GraphNode, type GraphEdge } from './model';
@@ -49,23 +50,28 @@ export function importReaCallGraph(input: any, project: string, source: string, 
 
 export function registerGraphCommands(program: Command) {
   for (const command of ['context', 'impact']) {
-    program.command(`${command} <node>`)
+    const query = program.command(`${command} <node>`)
       .description(command === 'impact' ? 'Bounded reverse dependency graph for a proposed change' : 'Bounded evidence-linked context around a graph node')
       .option('--dag <file>', 'compiled graph', '.doghouse/compiled/repo.dag')
       .option('--depth <n>', 'maximum traversal depth', '2')
       .option('--limit <n>', 'maximum returned nodes', '100')
       .option('--json', 'print JSON')
-      .action((node, opts) => {
+      .action(async (node, opts) => {
+        if (opts.task !== undefined && opts.maxTokens === undefined) throw new Error('--task requires --max-tokens');
         const graph = normalizeGraph(JSON.parse(readGraphText(resolveUserPath(opts.dag))));
-        const result = graphNeighborhood(graph, node, { direction: command === 'impact' ? 'incoming' : 'any', depth: Number(opts.depth), limit: Number(opts.limit) });
+        const neighborhood = graphNeighborhood(graph, node, { direction: command === 'impact' ? 'incoming' : 'any', depth: Number(opts.depth), limit: Number(opts.limit) });
+        const result = opts.maxTokens === undefined ? neighborhood : await budgetContext(neighborhood, Number(opts.maxTokens), opts.task);
         if (!result.ok) process.exitCode = 1;
-        if (opts.json) console.log(JSON.stringify(result, null, 2));
+        if (opts.maxTokens !== undefined) console.log(JSON.stringify(result));
+        else if (opts.json) console.log(JSON.stringify(result, null, 2));
         else {
-          for (const item of result.nodes) console.log(`${item.kind} ${item.label}${item.source ? ' [' + item.source + ']' : ''}`);
+          for (const item of result.nodes || []) console.log(`${item.kind} ${item.label}${item.source ? ' [' + item.source + ']' : ''}`);
           if (!result.ok) console.error(result.error);
           if (result.truncated) console.error('Result truncated; increase --limit or narrow the query.');
         }
       });
+    if (command === 'context') query.option('--max-tokens <n>', 'compact JSON text budget in o200k_base tokens (128–131072)')
+      .option('--task <text>', 'lexical task ranking within the neighborhood; requires --max-tokens');
   }
   const graph = program.command('graph').description('Import, export and inspect interoperable evidence-linked graphs');
   graph.command('audit').description('Read-only evidence identity/freshness and optional embodied-system coverage')

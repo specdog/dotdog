@@ -6,6 +6,7 @@ const boolean = { type: 'boolean' };
 const integer = { type: 'integer', minimum: 0 };
 const shape = (properties: Record<string, any>, required = Object.keys(properties)) => ({ type: 'object', properties, required });
 const neighborhood = shape({ ok: boolean, nodes: objects, edges: objects });
+const budget = shape({ maxTokens: { type: 'integer', minimum: 128, maximum: 131072 }, encoding: { const: 'o200k_base' }, tokenizer: { const: 'gpt-tokenizer@4.1.0' }, scope: { const: 'compact-json-text' }, excludes: text });
 
 const outputs: Record<string, any> = {
   getEntity: shape({ name: text, type: text, properties: object, schema: object, states: strings, lifecycle: strings, edges: { type: 'array', items: { type: 'array' } } }),
@@ -17,7 +18,7 @@ const outputs: Record<string, any> = {
   traverse: shape({ ok: boolean, nodes: { type: 'array', items: shape({ name: text, edges: strings }) }, edges: objects, truncated: boolean }),
   path: neighborhood,
   impact: neighborhood,
-  context: { anyOf: [neighborhood, shape({ ok: { const: false }, error: text, candidates: strings })] },
+  context: { anyOf: [shape({ ...neighborhood.properties, budget, omitted: shape({ nodes: integer, edges: integer }) }, neighborhood.required), shape({ ok: { const: false }, error: text, candidates: strings, budget }, ['ok', 'error', 'candidates'])] },
   infraVerify: { anyOf: [shape({ items: objects }), shape({ total: integer, results: objects })] },
 };
 

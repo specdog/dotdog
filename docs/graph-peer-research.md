@@ -11,13 +11,15 @@ Selected high-star graph/context peers, discovered through GitHub search and che
 | --- | ---: | --- | --- |
 | [Graphify](https://github.com/Graphify-Labs/graphify) | 137,988 | Shared configuration, incremental extraction, explicit query ambiguity | Keep a common refresh/status path and invalidate extraction caches across extractor versions |
 | [CodeGraph](https://github.com/colbymchenry/codegraph) | 75,787 | Index/sync/status, agent installation and change-impact queries | Provide opt-in skills/hooks plus independent CI; no automatic daemon or telemetry |
-| [Aider](https://github.com/Aider-AI/aider) | 49,802 | Graph-ranked repository maps under a context budget | Keep bounded neighborhoods and report truncation; do not claim tokenizer measurements |
+| [Aider](https://github.com/Aider-AI/aider) | 49,802 | Graph-ranked repository maps under a context budget | Keep measured tokenizer budgets and truncation explicit; Dotdog's lexical neighborhood ranking is not Aider's repository-map ranking |
 | [GitNexus](https://github.com/abhigyanpatwari/GitNexus) | 48,099 | Context, impact, trace, change detection and freshness status | Separate structural diagnostics from runtime verification; make stale/ambiguous results explicit |
-| [Repomix](https://github.com/yamadashy/repomix) | 29,062 | Include/ignore controls, structured context packaging and tokenizer-aware counts | Preserve ignore boundaries and measured byte estimates; token-budget ranking remains future work |
+| [Repomix](https://github.com/yamadashy/repomix) | 29,062 | Include/ignore controls, structured context packaging and tokenizer-aware counts | Preserve ignore boundaries and add explicit encoding-scoped context budgets; retain byte estimates as estimates elsewhere |
 
 Graphify's [cache implementation](https://github.com/Graphify-Labs/graphify/blob/v8/graphify/cache.py) was inspected: extractor identity and grammar/schema versions participate in AST cache namespacing. Dotdog's cache key now includes its package version, Babel version and extraction-schema revision, alongside file/inventory hashes. This adopts the invalidation principle, not source code. Dotdog does not perform Graphify-style LLM semantic extraction.
 
 Aider's [repository-map documentation](https://aider.chat/docs/repomap.html) explains its graph-ranking and token-budget mechanism. Dotdog's node/edge limits are not equivalent to that relevance ranking, and byte/4 estimates are not actual model-token counts.
+
+Dotdog now provides an opt-in [token-budgeted context](context-budgets.md) mode with lexical task ranking, connected whole-record selection and exact `o200k_base` payload counts. It is not semantic-vector retrieval or a complete repository-map ranking implementation.
 
 Licenses checked at the snapshot: Graphify and Aider Apache-2.0; CodeGraph and Repomix MIT. GitNexus's README states PolyForm Noncommercial 1.0.0; GitHub's license API returned NOASSERTION. No GitNexus code was copied. Recheck licenses before reusing code; popularity does not establish license compatibility.
 

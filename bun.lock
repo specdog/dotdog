@@ -22,6 +22,7 @@
         "ajv": "^8.20.0",
         "chalk": "^6.0.1",
         "commander": "^15.0.0",
+        "gpt-tokenizer": "4.1.0",
         "typescript": "^7.0.2",
       },
     },
@@ -168,6 +169,8 @@
     "get-proto": ["get-proto@1.0.1", "", { "dependencies": { "dunder-proto": "^1.0.1", "es-object-atoms": "^1.0.0" } }, "sha512-sTSfBjoXBp89JvIKIefqw7U2CCebsc74kiY6awiGogKtoSGbgjYE/G/+l9sF3MWFPNc9IcoOC4ODfKHfxFmp0g=="],
 
     "gopd": ["gopd@1.2.0", "", {}, "sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg=="],
+
+    "gpt-tokenizer": ["gpt-tokenizer@4.1.0", "", {}, "sha512-r7Op7S3iPy9vGpcfHmfIlLN/+/mNL2kXDy3N/ppp2xC2pm57pyYTt3fqsncMZ/yfIT+d3mTGhd7H6fcF/qiqWg=="],
 
     "has-symbols": ["has-symbols@1.1.0", "", {}, "sha512-1cDNdwJ2Jaohmb3sg4OmKaMBwuC48sYni5HUw2DvsC8LjGTLK9h+eb1X6RyuOHe4hT0ULCW68iomhjUoKUqlPQ=="],
 
