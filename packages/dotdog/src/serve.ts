@@ -1,13 +1,14 @@
 import { existsSync, readdirSync, readFileSync, realpathSync } from 'fs';
 import { join } from 'path';
 import { once } from 'events';
+import { createHash } from 'crypto';
 import { readGraphText } from './graph/io';
 import { resolveUserPath } from './workspace/paths';
 import { resolveWorkspace } from './workspace/resolver';
 import { portableWorkspacePath } from './workspace/graph';
 import { shortestGraphPath } from './graph/path';
 import { toolOutputSchema } from './graph/contracts';
-import { normalizeGraph, graphNeighborhood, type NormalizedGraph } from './graph/model';
+import { normalizeGraph, graphNeighborhood, indexGraph, type NormalizedGraph, type GraphIndex } from './graph/model';
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const modern = '2026-07-28';
@@ -42,7 +43,7 @@ function failure(id: any, code: number, message: string) {
 export function createMcpHandler(dir: string) {
   const root = realpathSync(dir);
   let fingerprint = '';
-  let graphs = new Map<string, { graph: NormalizedGraph; raw: any }>();
+  let graphs = new Map<string, { graph: NormalizedGraph; raw: any; index: GraphIndex }>();
   let invalidProjects: Record<string, string> = Object.create(null);
   function load() {
     const candidates = new Map<string, string>();
@@ -63,16 +64,18 @@ export function createMcpHandler(dir: string) {
       }
     }
     const sources: string[][] = [];
+    const digest = createHash('sha256');
     let bytes = 0;
     for (const [file, key] of candidates) {
       const source = readGraphText(file);
       bytes += Buffer.byteLength(source);
       if (bytes > 128 * 1024 * 1024) throw new Error('Combined project graphs exceed 128 MiB');
       sources.push([key, file, source]);
+      digest.update(JSON.stringify([key, file, Buffer.byteLength(source)])).update(source);
     }
-    const next = JSON.stringify(sources);
+    const next = digest.digest('hex');
     if (next === fingerprint) return;
-    const loaded = new Map<string, { graph: NormalizedGraph; raw: any }>();
+    const loaded = new Map<string, { graph: NormalizedGraph; raw: any; index: GraphIndex }>();
     invalidProjects = Object.create(null);
     for (const [key, file, source] of sources) {
       try {
@@ -80,7 +83,7 @@ export function createMcpHandler(dir: string) {
         if (file === compiled) graph.project = (graph.project || 'repository') + ':observed';
         const name = graph.project || key;
         if (loaded.has(name) || invalidProjects[name]) { loaded.delete(name); invalidProjects[name] = 'Duplicate project name'; continue; }
-        loaded.set(name, { graph, raw });
+        loaded.set(name, { graph, raw, index: indexGraph(graph) });
       } catch (error) { invalidProjects[key] = error instanceof Error ? error.message : String(error); }
     }
     graphs = loaded;
@@ -140,12 +143,12 @@ export function createMcpHandler(dir: string) {
       if (!args.project && graphs.size > 1) return failure(id, -32602, 'Multiple projects available; specify project');
       const entry = graphs.get(args.project || [...graphs.keys()][0]);
       if (!entry) { const result = success(id, { error: invalidProjects[args.project] || 'project_not_found' }); result.result.isError = true; return result; }
-      const { graph, raw } = entry;
-      const byId = new Map(graph.nodes.map(node => [node.id, node]));
+      const { graph, raw, index } = entry;
+      const { byId } = index;
       const find = (query: string) => {
-        const exact = graph.nodes.find(node => node.id === query);
+        const exact = byId.get(query);
         if (exact) return exact;
-        const matches = graph.nodes.filter(node => node.label.toLowerCase() === query.toLowerCase() || node.id.toLowerCase() === query.toLowerCase());
+        const matches = index.byFoldedName.get(query.toLowerCase()) || [];
         if (matches.length > 1) throw new Error('Ambiguous entity; query an exact ID: ' + matches.slice(0, 100).map(node => node.id).join(', '));
         return matches[0];
       };
@@ -156,7 +159,7 @@ export function createMcpHandler(dir: string) {
         if (name === 'schema') return success(id, { entity: node.label, properties, schema: node.schema });
         return success(id, { name: node.label, type: node.kind, properties, schema: node.schema, states: node.states, lifecycle: node.lifecycle, description: node.description,
           origin: node.origin, confidence: node.confidence, evidence: node.evidence,
-          edges: graph.edges.filter(edge => edge.sourceId === node.id).map(edge => [byId.get(edge.targetId)!.label, edge.verb, edge.cardinality || '']) });
+          edges: (index.incident.get(node.id) || []).filter(edge => edge.sourceId === node.id).map(edge => [byId.get(edge.targetId)!.label, edge.verb, edge.cardinality || '']) });
       }
       if (name === 'summary') {
         const tk = Array.isArray(raw) ? raw[3] : raw.tk || raw.tokens || {};
@@ -172,13 +175,13 @@ export function createMcpHandler(dir: string) {
       }
       if (name === 'path') return success(id, shortestGraphPath(raw, args.from, args.to, { direction: args.direction, maxHops: args.maxHops, verb: args.verb }));
       if (name === 'context') {
-        const idMatches = graph.nodes.filter(node => node.id === args.q);
-        const exact = idMatches.length ? idMatches : graph.nodes.filter(node => node.label === args.q);
+        const idMatch = byId.get(args.q);
+        const exact = idMatch ? [idMatch] : index.byLabel.get(args.q) || [];
         const matches = exact.length ? exact : graph.nodes.filter(node => `${node.label} ${node.description || ''}`.toLowerCase().includes(args.q.toLowerCase()));
         if (matches.length !== 1) return success(id, { ok: false, error: matches.length ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: matches.slice(0, args.limit || 100).map(node => node.label) });
-        return success(id, graphNeighborhood(graph, matches[0].id, { depth: args.depth, limit: args.limit }));
+        return success(id, graphNeighborhood(graph, matches[0].id, { depth: args.depth, limit: args.limit }, index));
       }
-      const neighborhood = graphNeighborhood(graph, args.from, { direction: name === 'impact' ? 'incoming' : 'outgoing', depth: args.depth, limit: args.limit, verb: args.verb });
+      const neighborhood = graphNeighborhood(graph, args.from, { direction: name === 'impact' ? 'incoming' : 'outgoing', depth: args.depth, limit: args.limit, verb: args.verb }, index);
       if (name === 'impact') return success(id, neighborhood);
       return success(id, { ...neighborhood, nodes: neighborhood.nodes.map(node => ({ name: node.label, edges: neighborhood.edges.filter(edge => edge.sourceId === node.id).map(edge => `${byId.get(edge.targetId)!.label}:${edge.verb}${edge.cardinality ? '(' + edge.cardinality + ')' : ''}`) })) });
     } catch (error) {

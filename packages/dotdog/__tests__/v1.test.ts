@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { execFileSync, spawnSync } from 'child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync, unlinkSync } from 'fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync, unlinkSync, statSync, utimesSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { createMcpHandler } from '../src/serve';
-import { normalizeGraph, graphNeighborhood } from '../src/graph/model';
+import { normalizeGraph, graphNeighborhood, indexGraph } from '../src/graph/model';
 import { shortestGraphPath } from '../src/graph/path';
 import { importReaCallGraph } from '../src/graph/commands';
 import { stableId } from '../src/dag/schema';
@@ -53,6 +53,25 @@ describe('1.0 graph contracts', () => {
     expect(result.truncated).toBe(true);
     expect(result.nodes.length).toBe(2);
     expect(result.edges[0].evidence).toEqual({ line: 3 });
+  });
+
+  test('reusable graph indexes preserve direction, edge order, self-loops and ambiguity', () => {
+    const graph = normalizeGraph({ nodes: [
+      { id: 'a', label: 'Shared' }, { id: 'b', label: 'Shared' }, { id: 'c', label: 'A' },
+    ], edges: [
+      { sourceId: 'b', targetId: 'a', verb: 'calls', evidence: { line: 1 } },
+      { sourceId: 'a', targetId: 'a', verb: 'calls', evidence: { line: 2 } },
+      { sourceId: 'a', targetId: 'c', verb: 'imports', evidence: { line: 3 } },
+    ] });
+    const index = indexGraph(graph);
+    const query = (options: Parameters<typeof graphNeighborhood>[2]) => graphNeighborhood(graph, 'a', options, index);
+    expect(query({ depth: 1 }).edges.map(edge => edge.evidence)).toEqual([{ line: 1 }, { line: 2 }, { line: 3 }]);
+    expect(query({ direction: 'outgoing', depth: 1 }).nodes.map(node => node.id)).toEqual(['a', 'c']);
+    expect(query({ direction: 'incoming', depth: 1 }).nodes.map(node => node.id)).toEqual(['a', 'b']);
+    expect(query({ verb: 'calls', depth: 1 }).nodes.map(node => node.id)).toEqual(['a', 'b']);
+    expect(graphNeighborhood(graph, 'Shared', {}, index).error).toBe('ambiguous_endpoint');
+    expect(query({ depth: 0 }).nodes.map(node => node.id)).toEqual(['a']);
+    expect(() => graphNeighborhood({ ...graph }, 'a', {}, index)).toThrow('different graph');
   });
 
   test('REA import preserves incomplete traversal evidence and binary scope', () => {
@@ -225,6 +244,29 @@ describe('1.0 CLI and automation', () => {
 });
 
 describe('1.0 MCP compatibility', () => {
+  test('live query indexes reload changed relationships, names and invalid graphs', async () => {
+    const dir = fixture(), file = join(dir, 'example.dag');
+    const source = { project: 'example', nodes: [{ id: 'a', label: 'A' }, { id: 'b', label: 'OldName' }, { id: 'c', label: 'C' }],
+      edges: [{ sourceId: 'a', targetId: 'b', verb: 'calls', evidence: { line: 1 } }] };
+    writeFileSync(file, JSON.stringify(source));
+    const handle = createMcpHandler(dir);
+    const context = async () => (await handle(call('context', { q: 'a', depth: 1 }))).result.structuredContent;
+    expect((await context()).nodes.map((node: any) => node.id)).toEqual(['a', 'b']);
+    const previous = statSync(file);
+    source.edges[0].targetId = 'c'; source.edges[0].evidence.line = 2; source.nodes[1].label = 'NewName';
+    writeFileSync(file, JSON.stringify(source));
+    utimesSync(file, previous.atime, previous.mtime);
+    expect(statSync(file).size).toBe(previous.size);
+    expect((await context()).nodes.map((node: any) => node.id)).toEqual(['a', 'c']);
+    expect((await context()).edges[0].evidence).toEqual({ line: 2 });
+    expect((await handle(call('getEntity', { name: 'OldName' }))).result.structuredContent.error).toBe('entity_not_found');
+    expect((await handle(call('getEntity', { name: 'NewName' }))).result.structuredContent.name).toBe('NewName');
+    writeFileSync(file, '{}');
+    expect((await handle(call('getEntity', { name: 'NewName' }))).result.isError).toBe(true);
+    writeFileSync(file, JSON.stringify(source));
+    expect((await context()).ok).toBe(true);
+  });
+
   test('legacy negotiation, modern discovery, notifications, validation and cursor paging', async () => {
     const dir = fixture();
     writeFileSync(join(dir, 'example.dag'), JSON.stringify(graph));

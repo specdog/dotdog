@@ -144,6 +144,8 @@ dotdog graph audit --dag .doghouse/imported/system.dag --profile embodied --json
 - Missing paths and high-severity drift return nonzero exits, including JSON output.
 - No fixed token-savings percentage or hallucination guarantee is claimed.
 
+See [retrieval measurements and superposition assessment](https://github.com/specdog/dotdog/blob/main/docs/retrieval-benchmarks.md) for the controlled benchmark, exact tokenizer baseline and remaining evaluation limits.
+
 See [security audit](https://github.com/specdog/dotdog/blob/main/docs/v1-security-audit.md), [peer research](https://github.com/specdog/dotdog/blob/main/docs/graph-peer-research.md), [embodied evidence](https://github.com/specdog/dotdog/blob/main/docs/embodied-systems.md), [migration](https://github.com/specdog/dotdog/blob/main/docs/v1-migration.md), [audit and research](https://github.com/specdog/dotdog/blob/main/docs/npm-0.9-audit.md), and [integrations](https://github.com/specdog/dotdog/blob/main/docs/integrations.md). The independent Rust port remains in PR #330; npm/Bun delivery is not being replaced by it.
 
 ## Development

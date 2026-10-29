@@ -52,3 +52,22 @@ Snapshot: 2026-10-29. These are not all newly created projects. Database engines
 Proposed evaluation: compare current lexical retrieval with semantic candidates plus bounded graph expansion on the same labeled repository tasks. Record relevance, latency, peak memory, index size, deletion/staleness handling, package/platform cost and offline behavior. Embedding metadata must identify model, dimensions and input digest; changed models invalidate their indexes. Remote embeddings require explicit configuration and must respect exclusions. Similarity must never manufacture an authored relationship, verified fact or physical authority.
 
 No listed engine/framework has been installed or benchmarked in Dotdog by this research pass. Native dependencies, model downloads, telemetry, licensing and secret-handling behavior need verification before adoption.
+
+## Additional systems and dependency costs
+
+Additional primary-source checks on 2026-10-29 broaden the comparison beyond graph-agent repositories. These remain research candidates, not Dotdog dependencies or reproduced vendor benchmarks.
+
+| System | Documented capability | Adoption consideration |
+| --- | --- | --- |
+| [Orama](https://github.com/oramasearch/orama) | JavaScript/TypeScript full-text, vector and hybrid retrieval | Closest portable npm candidate; [Apache-2.0](https://raw.githubusercontent.com/oramasearch/orama/main/LICENSE.md). Embeddings still need an encoder. `@orama/orama@3.1.18` has about 2.19 MB unpacked package content, not a verified installed footprint |
+| [HelixDB](https://github.com/helixdb/helix-db) | Rust graph/vector/BM25 database, TypeScript SDK; Apache-2.0 | Evaluate only when server operations and deployment cost are justified; not a drop-in embedded JS index |
+| [Qdrant](https://qdrant.tech/documentation/hybrid-queries/) | Filtered vector retrieval and multi-stage hybrid fusion; Apache-2.0 | Strong external-service comparison, not a property-graph replacement. Verify [network/TLS/API-key settings](https://qdrant.tech/documentation/security/) for any deployment |
+| [SurrealDB](https://surrealdb.com/surrealdb/graph) | Combined graph/vector queries | Current [license](https://raw.githubusercontent.com/surrealdb/surrealdb/main/LICENSE) is BSL 1.1 with an additional-use grant and change date, not an interchangeable MIT/Apache dependency |
+| [FalkorDB](https://github.com/FalkorDB/FalkorDB) | Graph/vector server and a Graphiti backend | Current [server license](https://raw.githubusercontent.com/FalkorDB/FalkorDB/main/LICENSE) is SSPL v1; deployment/license fit requires review before selection |
+| [Cozo](https://github.com/cozodb/cozo) | Datalog graph queries with [HNSW vector search](https://docs.cozodb.org/en/latest/vector.html); MPL-2.0 | Not archived at the snapshot, but repository API last push was 2024-12-04 and latest release 0.7.6 was 2023-12-11. Maintenance is a material concern |
+| [RuVector](https://github.com/ruvnet/RuVector) | Rust/WASM vector/graph-related modules; MIT | Inspect the actual modules and supported APIs before relying on broad learning/performance claims; research prototypes are not proof of a supported Dotdog capability |
+| [Transformers.js](https://huggingface.co/docs/transformers.js/custom_usage) | Local embedding inference; Apache-2.0 runtime | Encoder, not database. Remote model loading/caching needs explicit offline controls, pinned artifacts and per-model license checks |
+
+Registry metadata shows why wrapper size alone is misleading: `@ladybugdb/core@0.22.1` is about 72 KB but selects optional native binaries and includes build tooling; `sqlite-vec@0.1.9` is about 4 KB before its native platform package. `@lancedb/lancedb@0.40.0` is about 1.48 MB before native packages and optional integrations. `@huggingface/transformers@4.3.2` is about 9.99 MB before ONNX runtimes, Sharp and model weights; that version also declares a development-tagged ONNX web runtime. None of these wrapper figures is a measured final installation or a vulnerability finding. Audit the actual resolved candidate tree before adoption.
+
+The current fit is exact local graph indexes first, lexical/graph retrieval as the baseline, and an optional semantic sidecar only if held-out tasks justify its operational cost. See [measured retrieval results and the VSA/superposition assessment](retrieval-benchmarks.md). The controlled graph benchmark is not a benchmark of these engines.

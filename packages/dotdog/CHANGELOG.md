@@ -2,6 +2,7 @@
 
 ## 1.0.0 — Unreleased
 
+- Reuse MCP entity/adjacency indexes and compare content fingerprints without re-escaping graph text; retain reproducible lookup/token measurements and graph/vector/superposition research.
 - Replace generated outputs atomically, preserve hard-linked evidence and serialize refresh/map/compile with recoverable ownership locks; handle CRLF input and add Windows CI.
 - Verify and publish one hashed tarball; add a real SolidState/Ghidra → REA → Dotdog example with recorded provenance.
 

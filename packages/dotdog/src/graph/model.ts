@@ -36,6 +36,29 @@ export type NormalizedGraph = {
   limitations: string[];
 };
 
+export function indexGraph(graph: NormalizedGraph) {
+  const byId = new Map(graph.nodes.map(node => [node.id, node]));
+  const byLabel = new Map<string, GraphNode[]>(), byFoldedName = new Map<string, GraphNode[]>();
+  const incident = new Map<string, GraphEdge[]>();
+  for (const node of graph.nodes) {
+    if (!byLabel.has(node.label)) byLabel.set(node.label, []);
+    byLabel.get(node.label)!.push(node);
+    for (const key of new Set([node.id.toLowerCase(), node.label.toLowerCase()])) {
+      if (!byFoldedName.has(key)) byFoldedName.set(key, []);
+      byFoldedName.get(key)!.push(node);
+    }
+  }
+  for (const edge of graph.edges) {
+    for (const id of new Set([edge.sourceId, edge.targetId])) {
+      if (!incident.has(id)) incident.set(id, []);
+      incident.get(id)!.push(edge);
+    }
+  }
+  return { graph, byId, byLabel, byFoldedName, incident };
+}
+
+export type GraphIndex = ReturnType<typeof indexGraph>;
+
 function safeOrigin(origin: any): Record<string, unknown> | undefined {
   if (!origin || typeof origin !== 'object') return undefined;
   const result: Record<string, unknown> = {};
@@ -156,38 +179,31 @@ export function graphErrors(graph: NormalizedGraph): string[] {
   return errors;
 }
 
-export function graphNeighborhood(graph: NormalizedGraph, query: string, options: { direction?: 'incoming' | 'outgoing' | 'any'; depth?: number; limit?: number; verb?: string } = {}) {
-  const byIdMatch = graph.nodes.filter(node => node.id === query);
-  const exact = byIdMatch.length ? byIdMatch : graph.nodes.filter(node => node.label.toLowerCase() === query.toLowerCase() || node.id.toLowerCase() === query.toLowerCase());
+export function graphNeighborhood(graph: NormalizedGraph, query: string, options: { direction?: 'incoming' | 'outgoing' | 'any'; depth?: number; limit?: number; verb?: string } = {}, index: GraphIndex = indexGraph(graph)) {
+  if (index.graph !== graph) throw new Error('Graph index belongs to a different graph');
+  const byIdMatch = index.byId.get(query);
+  const exact = byIdMatch ? [byIdMatch] : index.byFoldedName.get(query.toLowerCase()) || [];
   if (exact.length !== 1) return { ok: false, error: exact.length ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: exact.slice(0, 100).map(node => node.id), nodes: [], edges: [], truncated: false };
   const direction = options.direction || 'any', depth = options.depth ?? 2, limit = options.limit ?? 100;
   if (!Number.isInteger(depth) || depth < 0 || depth > 12 || !Number.isInteger(limit) || limit < 1 || limit > 1000) throw new Error('depth must be 0–12 and limit 1–1000');
-  const byId = new Map(graph.nodes.map(node => [node.id, node]));
-  const adjacency = new Map<string, { edge: GraphEdge; next: string }[]>();
-  const add = (id: string, next: string, edge: GraphEdge) => {
-    if (!adjacency.has(id)) adjacency.set(id, []);
-    adjacency.get(id)!.push({ edge, next });
-  };
-  for (const edge of graph.edges) {
-    if (options.verb && options.verb !== edge.verb) continue;
-    if (direction !== 'incoming') add(edge.sourceId, edge.targetId, edge);
-    if (direction !== 'outgoing') add(edge.targetId, edge.sourceId, edge);
-  }
   const visited = new Set([exact[0].id]), edges = new Map<string, GraphEdge>();
   const queue = [{ id: exact[0].id, depth: 0 }];
   let truncated = false;
   for (let i = 0; i < queue.length; i++) {
     const current = queue[i];
     if (current.depth >= depth) continue;
-    for (const item of adjacency.get(current.id) || []) {
-      if (!visited.has(item.next)) {
+    for (const edge of index.incident.get(current.id) || []) {
+      if (options.verb && options.verb !== edge.verb) continue;
+      if (direction === 'incoming' && edge.targetId !== current.id || direction === 'outgoing' && edge.sourceId !== current.id) continue;
+      const next = edge.sourceId === current.id ? edge.targetId : edge.sourceId;
+      if (!visited.has(next)) {
         if (visited.size >= limit) { truncated = true; continue; }
-        visited.add(item.next);
-        queue.push({ id: item.next, depth: current.depth + 1 });
+        visited.add(next);
+        queue.push({ id: next, depth: current.depth + 1 });
       }
-      if (edges.size < limit * 4 || edges.has(item.edge.id)) edges.set(item.edge.id, item.edge);
+      if (edges.size < limit * 4 || edges.has(edge.id)) edges.set(edge.id, edge);
       else truncated = true;
     }
   }
-  return { ok: true, nodes: [...visited].map(id => byId.get(id)!), edges: [...edges.values()], truncated, direction, depth };
+  return { ok: true, nodes: [...visited].map(id => index.byId.get(id)!), edges: [...edges.values()], truncated, direction, depth };
 }

@@ -7,7 +7,7 @@ title: Dotdog 1.0 release implementation and acceptance plan
 
 Scope confirmed 2026-10-29: a substantial, polished npm/Bun release with useful graph/agent features, verified cleanup and security work. Windows, real Codex/Claude workflows, live cloud validation, a reproducible REA/Ghidra example, measured performance work and an embodied-system demonstration belong in 1.0. They are not automatically deferred to 1.1 to meet a date.
 
-The existing 96-test green candidate is a baseline, not completion. Every gate needs actual evidence against its named artifact/environment. No claim of absolute bug freedom, complete security or hardware safety follows from this plan.
+The 100-test hosted green candidate at `0569319` is a baseline, not completion. Every gate needs actual evidence against its named artifact/environment. No claim of absolute bug freedom, complete security or hardware safety follows from this plan.
 
 ## Ordered work and exit criteria
 
@@ -30,6 +30,6 @@ The existing 96-test green candidate is a baseline, not completion. Every gate n
 1. Keep focused follow-up commits in the existing 1.0 branch/PR, linked to this acceptance plan. No main merge, tag or publication has been authorized by defining the scope.
 2. For each finding record reproduction, effect, repair and rerun. Do not use test count as a quality target or remove a meaningful failing check to get green CI.
 3. Preserve human-owned specs, unrelated hooks/settings and existing source data. Deprecated commands must identify the replacement and limits; no silent success for retired behavior.
-4. Mark blocked gates precisely. The cloud project/account and simulator/device are awaiting designation. Claude CLI was not found on the current PATH. The Ghidra/REA/Dotdog macOS arm64 fixture has now run successfully; see examples/native/verification.json. Windows CI exposed a CRLF/frontmatter defect, now repaired and awaiting the next hosted run. These are pending work/access, not passed or waived gates.
+4. Mark blocked gates precisely. The cloud project/account and simulator/device are awaiting designation. Claude CLI was not found on the current PATH. The Ghidra/REA/Dotdog macOS arm64 fixture has now run successfully; see examples/native/verification.json. Windows CRLF/frontmatter and canonical-path defects are repaired; the 100-test hosted matrix at `0569319` passed Windows, macOS and Linux. [Controlled retrieval measurements](retrieval-benchmarks.md) now exist, but real-repository relevance, full extraction benchmarks and actual host/cloud/device workflows remain required. Pending checks are not passed or waived gates.
 5. Keep provider credentials, raw private exports and hardware recordings out of public commits. Publish only reviewed, sanitized evidence and reproducible public fixtures.
 6. Freeze new feature scope only after the agreed work is implemented. Then run the complete release matrix, exercise a prerelease, resolve feedback and request final release authorization.
