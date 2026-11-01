@@ -2,11 +2,9 @@
 
 Local-first spec and code graphs for coding agents. Keep human intent, observed implementation, and imported analysis evidence distinct and queryable.
 
-**1.0 development:** this branch prepares the next major release. The published npm `latest` version audited for this update was 0.9.0. No 1.0 release has been published by this change.
-
 ## Install
 
-These commands install the published stable package. The examples on this branch describe the unreleased 1.0 candidate; build this checkout using [Development](#development) to try them before publication.
+These commands install the stable package. This guide covers Dotdog 1.0.
 
 ```sh
 npm install -g dotdog
@@ -100,7 +98,7 @@ The server supports legacy initialization revisions 2024-11-05, 2025-06-18 and 2
 
 ## Selected type contracts
 
-The unreleased candidate also supports opt-in `types inspect` for selected TypeScript 7.0.2 contracts, compiler diagnostics and bounded type-reference graphs. See [type contracts](https://github.com/specdog/dotdog/blob/main/docs/type-contracts.md) for built-checkout commands, requirements and limits. No compiler is auto-installed, and no MCP query executes one.
+Dotdog 1.0 supports opt-in `types inspect` for selected TypeScript 7.0.2 contracts, compiler diagnostics and bounded type-reference graphs. See [type contracts](https://github.com/specdog/dotdog/blob/main/docs/type-contracts.md) for commands, requirements and limits. No compiler is auto-installed, and no MCP query executes one.
 
 ## REA / Ghidra evidence
 
@@ -139,7 +137,7 @@ dotdog graph audit --dag .doghouse/imported/system.dag --profile evidence --json
 
 `status` is read-only and exits nonzero when graphs are stale or absent. `scenario-check` checks one named Scenario/Flow for lexical compiled-entity references. `reference-check` checks explicit Verify file/property mappings without writing human plans. None proves application correctness. `staleness`, `simulate` and `verify` are deprecated compatibility names; `verify --init` is retired.
 
-`graph audit` checks recorded artifact hashes, timestamps and results. Its optional embodied profile reports missing asset/requirement/sensor/actuator/hazard links. It does not operate hardware, run simulations or certify safety. See the embodied evidence guide for the exact graph conventions.
+`graph audit` checks recorded artifact hashes, timestamps and results. This establishes artifact identity and reported traceability, not requirement satisfaction or runtime correctness.
 
 ## Limits and migration
 
@@ -152,7 +150,7 @@ dotdog graph audit --dag .doghouse/imported/system.dag --profile evidence --json
 
 See [retrieval measurements and superposition assessment](https://github.com/specdog/dotdog/blob/main/docs/retrieval-benchmarks.md) for the controlled benchmark, exact tokenizer baseline and remaining evaluation limits.
 
-See [security audit](https://github.com/specdog/dotdog/blob/main/docs/v1-security-audit.md), [peer research](https://github.com/specdog/dotdog/blob/main/docs/graph-peer-research.md), [embodied evidence](https://github.com/specdog/dotdog/blob/main/docs/embodied-systems.md), [migration](https://github.com/specdog/dotdog/blob/main/docs/v1-migration.md), [audit and research](https://github.com/specdog/dotdog/blob/main/docs/npm-0.9-audit.md), and [integrations](https://github.com/specdog/dotdog/blob/main/docs/integrations.md). The independent Rust port remains in PR #330; npm/Bun delivery is not being replaced by it.
+See [security review](https://github.com/specdog/dotdog/blob/main/docs/v1-security-audit.md), [migration](https://github.com/specdog/dotdog/blob/main/docs/v1-migration.md), and [integrations](https://github.com/specdog/dotdog/blob/main/docs/integrations.md).
 
 ## Development
 

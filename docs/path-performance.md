@@ -30,6 +30,27 @@ The corresponding local archives were 1,313,355 and 1,219,546 bytes, both includ
 
 ## Reproduce
 
+### Completed CLI build review
+
+A same-source comparison at `85eb225` covers a synthetic 200-file static-import chain plus a selected-type fixture. Both builds use Bun 1.3.14 with identical entry points/minification; only `--splitting` differs. Node 26.8.1 commands run sequentially in alternating variant order, with three warmups and twenty measured samples per variant. [Sanitized measurements, entry hashes and equivalent-result hashes](../benchmarks/retrieval/release-build-review.json) retain the complete percentiles, output sizes and OS maximum-RSS observations.
+
+| Whole CLI case | Non-split p50 / p95 (ms) | Shared chunks p50 / p95 (ms) |
+| --- | ---: | ---: |
+| `--version` | 104.75 / 106.48 | 61.12 / 63.92 |
+| Refresh without generated artifacts | 218.91 / 220.81 | 164.22 / 168.92 |
+| Unchanged `refresh --if-stale` | 127.23 / 130.31 | 83.33 / 84.78 |
+| Refresh after one source edit | 200.20 / 204.90 | 154.09 / 158.18 |
+| Context | 110.58 / 111.57 | 66.92 / 69.30 |
+| Impact | 110.69 / 112.48 | 67.40 / 69.75 |
+| Four-hop path | 111.19 / 113.90 | 67.16 / 69.29 |
+| Selected type inspection | 419.88 / 466.02 | 373.09 / 413.76 |
+
+Query outputs and selected type contracts/input identity match between variants. Refresh assertions require successful regeneration and correct change detection; they are not full-payload equivalence checks. Output byte sizes are unchanged. Darwin `time -l` maximum-RSS medians fall from about 95–117 MB to 53–77 MB on the non-type cases; type inspection remains about 98 MB. This is OS-reported maximum resident memory, not aggregate simultaneous process-tree memory or a memory guarantee. Timing includes process creation and the measurement wrapper; the OS filesystem cache is warm even for artifact-free refresh.
+
+To reproduce, build the same revision twice into separate output directories, omitting `--splitting` for the baseline. Supply the matching package metadata alongside each build. Generate files `src/m0.ts` through `src/m199.ts`, each exporting `value` and statically importing the next file except the last. Repeat `node dist/cli.js` version/refresh/context/impact/path commands under `/usr/bin/time -l`; select `file:src/m100.ts` and use outgoing `m100.ts` → `m104.ts` for the four-hop case. For the type case, use an explicit strict/no-emit ES2022/Bundler project with `Ready` and `commit(value: Ready): Ready`, and the same project-installed TypeScript 7.0.2. Alternate build order, assert results before comparing times, and keep raw machine-specific logs private. These measurements establish no universal or end-to-end agent speedup.
+
+### Path-search harness
+
 From a built development checkout with its frozen dependencies installed, use a new temporary directory. These are maintainer benchmarks, not product prerequisites.
 
 ```sh

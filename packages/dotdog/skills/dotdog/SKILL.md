@@ -12,7 +12,7 @@ Use the repository's installed Dotdog version. Never install packages, hooks, or
 4. Preserve semantic/overlay inputs. Refresh generated artifacts after relevant edits. Use existing project tests to verify behavior; `dotdog check --json` validates graph integrity, not application correctness.
 5. Report evidence, limits, unresolved references and truncation. An impact graph is a dependency neighborhood, not proof of every runtime effect. A small graph or successful check does not prove complete repository coverage.
 
-For REA/Ghidra work, use the already configured analysis workflow. Dotdog only imports supplied graph evidence with `dotdog graph import <file> --format rea-callgraph --project <name>`. Supply `--artifact-sha256` when the analyzed binary identity is known. Do not launch, register, install, or reconfigure an analysis provider through Dotdog.
+For REA/Ghidra work, use the already configured analysis workflow. Dotdog only imports supplied graph evidence with `dotdog graph import <file> --format rea-callgraph --project <name> --rea-direction forward`. Use `backward` for caller exports, matching the producer request; the export body omits direction. Supply `--artifact-sha256` when the analyzed binary identity is known. Do not launch, register, install, or reconfigure an analysis provider through Dotdog.
 
 Automation is optional: `dotdog hooks install --agent git` checks the staged snapshot; `--agent claude` refreshes after edits. Only install when the user requests it. `dotdog hooks status` shows registration and `dotdog hooks remove --agent <agent>` removes Dotdog's contribution. CI should run a pinned Dotdog version and `dotdog check` independently of editor hooks.
 

@@ -5,11 +5,11 @@ title: Selected type contracts
 
 # Selected type contracts
 
-The unreleased 1.0.0 candidate can inspect one exported TypeScript contract and its bounded declared-type references. Specs retain intended behavior; compiler checks enforce encoded constraints; graphs retain relationships and evidence. None substitutes for behavioral tests or runtime input validation.
+Dotdog 1.0 can inspect one exported TypeScript contract and its bounded declared-type references. Specs retain intended behavior; compiler checks enforce encoded constraints; graphs retain relationships and evidence. None substitutes for behavioral tests or runtime input validation.
 
 ## Requirements
 
-- Node.js 22.12.0 or newer and a built Dotdog checkout, or the package after 1.0 publication.
+- Dotdog 1.0 and Node.js 22.12.0 or newer, including when invoking type inspection through Bun.
 - TypeScript **7.0.2** installed in the consumer project/workspace. Dotdog does not install a compiler or require a beta version.
 - A selected export/file contained in an explicit project configuration. JSONC, inherited options and compiler-resolved aliases are exercised by the integration tests.
 

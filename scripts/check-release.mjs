@@ -80,7 +80,8 @@ try {
   assert.throws(() => run('graph', 'audit', '--dag', '.doghouse/imported/bench-fixture.dag', '--profile', 'embodied', '--json'), error => error.status === 1);
   const bun = execFileSync('bun', [cli, '--version'], { cwd: project, encoding: 'utf8' }).trim();
   assert.equal(bun, version);
-  const manifest = { version, artifact: basename(artifact), sha256, integrity, size: bytes.length, node: process.versions.node, verified: true };
+  const commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  const manifest = { version, commit, artifact: basename(artifact), sha256, integrity, size: bytes.length, node: process.versions.node, ...(packed ? { files: packed.files } : {}), verified: true };
   if (values.output) writeFileSync(join(output, 'release.json'), JSON.stringify(manifest, null, 2) + '\n');
   console.log(JSON.stringify(manifest));
 } finally {

@@ -2,7 +2,7 @@
 // Dispatches to explicit read-only provider checks; output redaction is best-effort.
 
 import { readFileSync, existsSync } from 'fs';
-import { join, resolve } from 'path';
+import { join } from 'path';
 import { listRepoFiles } from '../map/repoMapper';
 import { resolveUserPath } from '../workspace/paths';
 import { redactSecrets } from '../workspace/redact';

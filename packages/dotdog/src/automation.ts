@@ -166,6 +166,9 @@ export function registerAutomation(program: Command) {
       safeOutputPath(target, root);
       mkdirSync(dirname(target), { recursive: true });
       const settings = existsSync(target) ? JSON.parse(readFileSync(target, 'utf8')) : {};
+      if (!settings || typeof settings !== 'object' || Array.isArray(settings)
+        || settings.hooks !== undefined && (!settings.hooks || typeof settings.hooks !== 'object' || Array.isArray(settings.hooks))
+        || settings.hooks?.PostToolUse !== undefined && !Array.isArray(settings.hooks.PostToolUse)) throw new Error('Invalid Claude settings; preserve the file and repair its object/hook shape before installing');
       const command = 'dotdog refresh --if-stale';
       const hook = { matcher: 'Write|Edit|MultiEdit', hooks: [{ type: 'command', command, timeout: 30 }] };
       settings.hooks ||= {};

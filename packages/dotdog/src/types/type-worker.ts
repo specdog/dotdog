@@ -1,7 +1,7 @@
 import { createRequire } from 'module';
 import { createHash } from 'crypto';
 import { readFileSync, readSync, statSync } from 'fs';
-import { basename, dirname, isAbsolute, relative, resolve, sep } from 'path';
+import { basename, dirname, isAbsolute, relative, sep } from 'path';
 import { pathToFileURL } from 'url';
 import { parseExpression } from '@babel/parser';
 import { normalizeGraph } from '../graph/model';
