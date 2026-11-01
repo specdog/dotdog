@@ -1,6 +1,11 @@
 # Changelog
 
-## 1.0.0 — Unreleased
+## 1.0.0 — 2026-11-01
+
+- Reject malformed Claude hook settings without overwriting them; disclose omitted ambiguity candidates with exact IDs in graph/MCP context errors.
+- Bind verified release archives to source commits and retain package file manifests; share parser chunks and defer tokenizer loading without adding runtime dependencies.
+
+- Add opt-in selected TypeScript 7.0.2 contract inspection with original project diagnostics, bounded declared-type references and retained compiler/config/source evidence; no declaration emit or automatic compiler installation.
 
 - Store BFS parent links instead of copying full path histories for each queued node; skip adjacency construction for zero-hop paths.
 - Extend the retrieval benchmark with path queries and wide-tree/zero-hop cases while preserving result/evidence checks.

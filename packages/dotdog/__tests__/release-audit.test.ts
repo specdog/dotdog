@@ -13,6 +13,7 @@ import { graphStatus } from '../src/automation';
 import { scenarioCheck, referenceCheck } from '../src/spec/checks';
 import { createMcpHandler } from '../src/serve';
 import { MAX_GRAPH_BYTES } from '../src/graph/io';
+import { minimalChildEnv } from '../src/workspace/environment';
 import { setupTempProject } from './helpers';
 
 const dirs: string[] = [];
@@ -20,6 +21,37 @@ const fixture = () => { const dir = mkdtempSync(join(tmpdir(), 'dotdog-release-a
 const cli = join(import.meta.dir, '../src/cli.ts');
 const run = (cwd: string, ...args: string[]) => spawnSync(process.execPath, [cli, ...args], { cwd, encoding: 'utf8' });
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
+
+test('publishing refuses a different source commit and tampered verified archive', () => {
+  const root = fixture(), artifact = 'dotdog-1.0.0.tgz', bytes = Buffer.from('release-fixture');
+  mkdirSync(join(root, 'packages/dotdog'), { recursive: true });
+  writeFileSync(join(root, 'packages/dotdog/package.json'), JSON.stringify({ version: '1.0.0' }));
+  writeFileSync(join(root, artifact), bytes);
+  const manifest = { verified: true, version: '1.0.0', commit: 'a'.repeat(40), artifact, sha256: createHash('sha256').update(bytes).digest('hex'), integrity: 'sha512-' + createHash('sha512').update(bytes).digest('base64') };
+  const metadata = join(root, 'release.json'), npm = join(root, 'npm-cli.js');
+  writeFileSync(npm, 'require("node:fs").writeFileSync("publish-args.json", JSON.stringify(process.argv.slice(2)));');
+  const publish = (commit: string) => spawnSync('node', [join(import.meta.dir, '../../../scripts/publish-release.mjs'), metadata], { cwd: root, encoding: 'utf8', env: minimalChildEnv({ GITHUB_ACTIONS: 'true', GITHUB_REF_NAME: 'v1.0.0', GITHUB_SHA: commit, npm_execpath: npm }) });
+  writeFileSync(metadata, JSON.stringify(manifest));
+  expect(publish('b'.repeat(40)).status).not.toBe(0);
+  expect(() => readFileSync(join(root, 'publish-args.json'))).toThrow();
+  writeFileSync(join(root, artifact), 'tampered');
+  expect(publish(manifest.commit).status).not.toBe(0);
+  expect(() => readFileSync(join(root, 'publish-args.json'))).toThrow();
+  writeFileSync(join(root, artifact), bytes);
+  expect(publish(manifest.commit).status).toBe(0);
+  expect(JSON.parse(readFileSync(join(root, 'publish-args.json'), 'utf8'))).toEqual(['publish', join(root, artifact), '--access', 'public', '--provenance']);
+});
+
+test('Claude hook install rejects malformed settings without rewriting them or recording ownership', () => {
+  for (const settings of [[], null, { hooks: [] }, { hooks: { PostToolUse: {} } }]) {
+    const root = fixture(); mkdirSync(join(root, '.claude'));
+    const bytes = JSON.stringify(settings), file = join(root, '.claude/settings.json');
+    writeFileSync(file, bytes);
+    expect(run(root, 'hooks', 'install', '--agent', 'claude').status).not.toBe(0);
+    expect(readFileSync(file, 'utf8')).toBe(bytes);
+    expect(() => readFileSync(join(root, '.doghouse/hooks/claude.json'))).toThrow();
+  }
+});
 
 test('read-only status detects changed inputs and missing outputs without repairing them', () => {
   const root = fixture();
@@ -119,13 +151,20 @@ test('embodied evidence checks detect stale, changed, failing and omitted covera
 
 test('real MCP SDK connects, discovers schemas, and calls Dotdog over stdio', async () => {
   const root = fixture();
-  writeFileSync(join(root, 'example.dag'), JSON.stringify({ project: 'example', nodes: [{ id: 'a', label: 'A' }], edges: [] }));
+  writeFileSync(join(root, 'example.dag'), JSON.stringify({ project: 'example', nodes: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], edges: [{ sourceId: 'a', targetId: 'b', verb: 'references' }] }));
   const transport = new StdioClientTransport({ command: process.execPath, args: [cli, 'serve'], cwd: root, stderr: 'pipe' });
   const client = new Client({ name: 'dotdog-regression', version: '1.0.0' });
   try {
     await client.connect(transport);
     const tools = await client.listTools();
     expect(tools.tools).toHaveLength(11);
+    const Ajv = (await import('ajv/dist/2020')).default, ajv = new Ajv({ strict: false });
+    const inputs: Record<string, object> = { getEntity: { name: 'A' }, traverse: { from: 'A' }, path: { from: 'A', to: 'B' }, search: { q: 'A' }, schema: { entity: 'A' }, context: { q: 'A' }, impact: { from: 'B' }, infraVerify: { summary: true } };
+    for (const tool of tools.tools) {
+      const response = await client.callTool({ name: tool.name, arguments: inputs[tool.name] || {} });
+      expect(response.isError).toBe(false);
+      expect(ajv.compile(tool.outputSchema!)(response.structuredContent)).toBe(true);
+    }
     const response = await client.callTool({ name: 'getEntity', arguments: { project: 'example', name: 'A' } });
     expect(response.isError).toBe(false);
     expect(response.structuredContent?.name).toBe('A');

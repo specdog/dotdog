@@ -57,6 +57,20 @@ describe('token-budgeted context', () => {
     await expect(budgetContext(graphNeighborhood(graph, 'root'), 1024, 'x'.repeat(4097))).rejects.toThrow('task');
   });
 
+  test('ambiguous neighborhoods and MCP context expose exact candidate IDs and omitted candidates', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'dotdog-ambiguous-'));
+    try {
+      const raw = { project: 'ambiguous', nodes: Array.from({ length: 130 }, (_, i) => ({ id: `entity:${i}`, label: 'Duplicate' })), edges: [] };
+      const result = graphNeighborhood(normalizeGraph(raw), 'Duplicate');
+      expect(result.truncated).toBe(true);
+      expect(result.candidates).toHaveLength(100);
+      writeFileSync(join(root, 'ambiguous.dag'), JSON.stringify(raw));
+      const response = await createMcpHandler(root)({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'context', arguments: { project: 'ambiguous', q: 'Duplicate', limit: 3 } } });
+      expect(response.result.structuredContent.candidates).toEqual(['entity:0', 'entity:1', 'entity:2']);
+      expect(response.result.structuredContent.truncated).toBe(true);
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
+
   test('bounds ambiguous candidate errors and treats special-token spellings as ordinary data', async () => {
     const result = await budgetContext({ ok: false, error: 'ambiguous_endpoint', candidates: Array.from({ length: 100 }, (_, i) => `<|im_start|>${i}${'🐕'.repeat(40)}`) }, 160);
     expect(tokens(result)).toBeLessThanOrEqual(160);

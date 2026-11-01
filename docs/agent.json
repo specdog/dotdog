@@ -22,6 +22,7 @@
     "Repository-scoped Codex and Claude skills",
     "Opt-in removable hooks and staged-index checks",
     "Local stdio MCP with bounded context and impact queries",
-    "Read-only import of saved REA NativeCallGraph evidence"
+    "Read-only import of saved REA NativeCallGraph evidence",
+    "Optional selected TypeScript 7.0.2 contracts and compiler diagnostics"
   ]
 }

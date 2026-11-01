@@ -42,9 +42,9 @@ export function auditGraph(graph: NormalizedGraph, root: string, options: { prof
       if (node.kind === 'hazard' && !linked(node.id, 'mitigated_by', 'requirement')) add(node.id, 'unmapped_hazard', 'Hazard needs mitigated_by a requirement');
     }
   }
-  return { ok: findings.length === 0, profile, nodes: graph.nodes.length, evidence: evidence.length, validEvidence: validEvidence.size, findings, limitations: [
+  return { ok: findings.length === 0, profile, nodes: graph.nodes.length, evidence: evidence.length, validEvidence: validEvidence.size, findings, limitations: profile === 'embodied' ? [
     'Advisory graph/evidence coverage only. Not a safety assessment, certification, permission to actuate, or proof of a physical-system property.',
     'Digests establish file identity, not truth or authenticity. Coverage is limited to supplied nodes; omitted assets and hazards cannot be discovered.',
     'No ROS/DDS connection, USD validation, device operation, or execution of evidence files.',
-  ] };
+  ] : ['Advisory artifact/evidence traceability only; not proof of requirement satisfaction or runtime behavior.', 'Digests identify supplied files, not truth or authenticity. Omitted facts and unsupported relationships are not discovered.'] };
 }

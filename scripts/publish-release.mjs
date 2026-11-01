@@ -13,6 +13,8 @@ assert.equal(manifest.artifact, basename(manifest.artifact));
 assert.equal(manifest.artifact, `dotdog-${version}.tgz`);
 assert.ok([`v${version}`, `v${version}-npm`].includes(process.env.GITHUB_REF_NAME));
 assert.equal(process.env.GITHUB_ACTIONS, 'true');
+assert.match(manifest.commit, /^[a-f0-9]{40}$/);
+assert.equal(manifest.commit, process.env.GITHUB_SHA);
 const artifact = join(dirname(file), manifest.artifact), bytes = readFileSync(artifact);
 assert.equal(createHash('sha256').update(bytes).digest('hex'), manifest.sha256);
 assert.equal('sha512-' + createHash('sha512').update(bytes).digest('base64'), manifest.integrity);
