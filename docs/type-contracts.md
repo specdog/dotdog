@@ -47,3 +47,7 @@ Inspection uses the original configured project without declaration emit, config
 Limits: 30 seconds; 512 read inputs/32 MiB combined input bytes; 64 contracts/64 KiB signature text; 10,000 visited declaration nodes/depth 128; 100 returned diagnostics; 1 MiB combined worker output. These are processing bounds, not a general peak-memory guarantee. Root extraction failures are non-passes; truncated dependency context is explicitly partial. Timeout/output-limit handling terminates the worker process tree.
 
 Source signatures and literal types may contain sensitive project data. Review exported graphs before sharing. Graph text is data, not permission or instructions. The default evidence audit is artifact traceability; it does not introduce a simulator, cloud service, device operation or another graph backend.
+
+## Further reading
+
+[Practical type-driven development guide](https://specdog.github.io/guides/type-driven-development/) · [REA/Ghidra graph guide](https://specdog.github.io/guides/rea-graphs/) · [Research and product notes](https://specdog.github.io/blog/)
