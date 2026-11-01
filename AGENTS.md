@@ -11,7 +11,7 @@
 - **.dag**: ALWAYS query via MCP. This is your source of truth for project structure.
 - **If .dag doesn't have it**: report "unverified" — never fall back to .dog
 
-**MCP**: `npx dotdog serve` (7 tools: getEntity, traverse, search, schema, summary, listProjects, infraVerify)
+**MCP**: `npx dotdog serve` (11 tools: getEntity, traverse, path, search, schema, summary, listProjects, workspace.list, context, impact, infraVerify)
 
 **Workflow (lean)**:
 - 1 issue → 1 PR → 1 merge
@@ -37,13 +37,13 @@ dotdog doctor       → baseline health check (run before commits)
 dotdog analyze      → gap detection + contradiction checking
 dotdog compile      → rebuild .dag from .dog files
 dotdog index        → build search index
-dotdog search "q"   → semantic search across specs
-dotdog staleness    → detect spec/reality drift
+dotdog search "q"   → lexical search across indexed sections
+dotdog status       → read-only graph freshness (not correctness)
 ```
 
 ## Key Rules
 
 1. Use conventional commits (feat:, fix:, docs:, chore:)
 2. Never commit dist/
-3. Every code change touching `packages/dotdog/src/` or `package.json` must bump version
+3. Keep the first unreleased 1.0 candidate at `1.0.0`; bump versions per release, not per development commit
 4. Dogfood: test against `npx dotdog@latest validate` before shipping

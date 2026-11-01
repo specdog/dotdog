@@ -18,53 +18,90 @@ jobs:
   verify-release:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: '0.12.0'
+            revision: '96892954ad335a6803c163ed1830a35a019138af'
+          - version: '1.2.5'
+            revision: '4572a67fe0e72a6837e2d7bb0fda875bc41482e5'
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
 
-      - name: Install current GitHub Spec Kit
+      - name: Install pinned GitHub Spec Kit
         shell: bash
+        env:
+          SPEC_KIT_REVISION: ${{ matrix.revision }}
         run: |
           set -euo pipefail
           python3 -m venv "$RUNNER_TEMP/spec-kit-venv"
           "$RUNNER_TEMP/spec-kit-venv/bin/python" -m pip install --disable-pip-version-check \
-            'git+https://github.com/github/spec-kit.git@main'
+            "git+https://github.com/github/spec-kit.git@$SPEC_KIT_REVISION"
 
-      - name: Download and verify release asset
+      - name: Prepare and verify extension bundle
+        id: bundle
         shell: bash
         run: |
           set -euo pipefail
           version="$(node -p "require('./packages/dotdog/package.json').version")"
           asset="dotdog-spec-kit-extension-v${version}.zip"
           base="https://github.com/specdog/dotdog/releases/download/v${version}"
-          curl --fail --location --proto '=https' --tlsv1.2 --output "$RUNNER_TEMP/$asset" "$base/$asset"
-          curl --fail --location --proto '=https' --tlsv1.2 --output "$RUNNER_TEMP/$asset.sha256" "$base/$asset.sha256"
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            node scripts/check-speckit-extension.mjs
+            stage="$RUNNER_TEMP/dotdog-extension"
+            mkdir -p "$stage/commands"
+            cp extension.yml "$stage/extension.yml"
+            cp commands/*.md "$stage/commands/"
+            cp LICENSE CHANGELOG.md "$stage/"
+            awk 'NR==1 && $0=="---" {front=1; next} front && $0=="---" {front=0; next} !front {print}' docs/spec-kit-extension.md > "$stage/README.md"
+            (
+              cd "$stage"
+              find . -type f -print | LC_ALL=C sort | zip -X -q "$RUNNER_TEMP/$asset" -@
+            )
+            (
+              cd "$RUNNER_TEMP"
+              sha256sum "$asset" > "$asset.sha256"
+            )
+          else
+            expected="${GITHUB_REF_NAME#verify/spec-kit-extension-v}"
+            test "$version" = "$expected"
+            curl --fail --location --proto '=https' --tlsv1.2 --output "$RUNNER_TEMP/$asset" "$base/$asset"
+            curl --fail --location --proto '=https' --tlsv1.2 --output "$RUNNER_TEMP/$asset.sha256" "$base/$asset.sha256"
+          fi
           (
             cd "$RUNNER_TEMP"
             sha256sum --check "$asset.sha256"
           )
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Install release through Spec Kit
         env:
-          VERIFY_VERSION: '0.9.0'
+          VERIFY_VERSION: ${{ steps.bundle.outputs.version }}
+          SPEC_KIT_VERSION: ${{ matrix.version }}
         shell: bash
         run: |
           set -euo pipefail
           "$RUNNER_TEMP/spec-kit-venv/bin/python" - "$RUNNER_TEMP" "$VERIFY_VERSION" <<'PY'
+          import os
           import sys
+          from importlib.metadata import version as installed_version
           from pathlib import Path
           from specify_cli.extensions import ExtensionManager
 
           temp = Path(sys.argv[1])
           version = sys.argv[2]
+          speckit_version = installed_version("specify-cli")
+          assert speckit_version == os.environ["SPEC_KIT_VERSION"], speckit_version
           archive = temp / f"dotdog-spec-kit-extension-v{version}.zip"
           project = temp / "spec-kit-project"
           project.mkdir()
 
           manifest = ExtensionManager(project).install_from_zip(
               archive,
-              speckit_version="0.12.17",
+              speckit_version=speckit_version,
           )
           assert manifest.id == "dotdog"
           assert manifest.version == version

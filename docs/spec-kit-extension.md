@@ -7,11 +7,17 @@ title: Dotdog Spec Kit Extension
 
 Dotdog imports GitHub Spec Kit feature artifacts into local, queryable knowledge graphs without modifying the source artifacts.
 
+## 1.0 development
+
+The next extension version is 1.0.0 and is not published yet. Its release archive will be `https://github.com/specdog/dotdog/releases/download/v1.0.0/dotdog-spec-kit-extension-v1.0.0.zip`. The installation below refers to the existing published 0.9.0 extension until the next release is created.
+
 ## Requirements
 
 - GitHub Spec Kit 0.12.0 or newer
 - Dotdog 0.9.0 or newer
 - A Spec Kit project containing `.specify/` and `specs/`
+
+Extension compatibility CI uses pinned Spec Kit 0.12.0 and 1.2.5 sources and the installed package's actual version. It verifies archive installation and command files, not agent-host execution. Current-head CI results determine compatibility; a declared minimum alone is not evidence that it passed.
 
 Install Dotdog:
 

@@ -188,6 +188,6 @@ Now AI agents can call `getEntity`, `traverse`, and `search` against your spec â
 ## Next steps
 
 - Run `dotdog analyze` for deep gap analysis
-- Run `dotdog staleness` to detect spec/reality drift
+- Run `dotdog status` to check content-hash freshness; use `refresh` when stale
 - Run `dotdog predictions` to track forecasts
 - Add more spec files for completeness (constitution.dog, COPY.dog)

@@ -25,16 +25,19 @@ export type RepoWorldMapInput = {
   facts: RepoWorldFactInput[];
   edges: RepoWorldEdgeInput[];
   files: string[];
+  limitations?: string[];
 };
 
 function normalizeNodeKind(type: string): WorldNodeKind {
   const t = type.toLowerCase();
+  if (t === 'external') return 'external';
   if (t === 'repo') return 'package';
   if (t === 'manifest' || t === 'lockfile') return 'package';
   if (t === 'ci_workflow') return 'build';
   if (t === 'test') return 'test';
   if (t === 'doc') return 'doc';
   if (t === 'schema') return 'spec';
+  if (t === 'symbol') return 'symbol';
   if (t === 'component' || t === 'api_route' || t === 'page_route') return 'symbol';
   if (t === 'env') return 'external';
   if (t === 'package') return 'package';
@@ -64,7 +67,7 @@ function normalizeEdgeVerb(verb: string): WorldEdgeVerb {
 
 function factId(name: string, type: string): string {
   if (name === 'repository') return 'repository';
-  const normalizedName = name.replace(/^(file|package|route):/, '');
+  const normalizedName = name.replace(/^(file|package|route|symbol):/, '');
   return stableId(normalizeNodeKind(type), normalizedName);
 }
 
@@ -77,10 +80,10 @@ export function buildRepositoryWorldModel(project: string, root: string, map: Re
       id,
       kind: normalizeNodeKind(fact.type),
       label: fact.name,
-      source: fact.properties?.path || root,
+      source: fact.properties?.path || '.',
       description: fact.description,
       properties: fact.properties,
-      origin: { type: 'generated', file: fact.properties?.path || root },
+      origin: { type: 'generated', file: fact.properties?.path || '.', ...(fact.properties?.line ? { line: Number(fact.properties.line) } : {}) },
       confidence: 'certain',
     });
   });
@@ -95,7 +98,7 @@ export function buildRepositoryWorldModel(project: string, root: string, map: Re
         id: stableId('unknown', edge.source),
         kind: 'unknown',
         label: edge.source,
-        source: root,
+        source: '.',
         description: 'Referenced by an edge but not mapped as a known node',
         confidence: 'unknown',
         origin: { type: 'generated' },
@@ -106,7 +109,7 @@ export function buildRepositoryWorldModel(project: string, root: string, map: Re
         id: stableId('unknown', edge.target),
         kind: 'unknown',
         label: edge.target,
-        source: root,
+        source: '.',
         description: 'Referenced by an edge but not mapped as a known node',
         confidence: 'unknown',
         origin: { type: 'generated' },
@@ -119,19 +122,19 @@ export function buildRepositoryWorldModel(project: string, root: string, map: Re
     targetId: factIdByName.get(edge.target) || stableId('unknown', edge.target),
     verb: normalizeEdgeVerb(edge.verb),
     confidence: 'certain',
-    source: root,
+    source: '.',
     origin: { type: 'generated' },
   }));
 
   return {
     version: '0.1',
     project,
-    root,
+    root: '.',
     generatedAt: new Date().toISOString(),
     nodes,
     edges,
     predictions: [],
-    unknowns: [],
+    unknowns: map.limitations || [],
   };
 }
 

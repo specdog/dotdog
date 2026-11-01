@@ -1,0 +1,169 @@
+{
+  "schema": 1,
+  "scope": "Synthetic path normalization/search and in-process MCP retrieval; not end-to-end agent performance",
+  "baseline": "d94a8f4083a76693e1501aea891afc1dce8a4640",
+  "candidateSourceDiffSha256": "0a886185d67e9a6bb7a6af23b154eff7c902c4f06a328e3064fdd57510056d3d",
+  "harnessSha256": "2a8dce378b4db3ba5886585eed364393a16a1a5eb7d26c43ef1f4c1fc238fb75",
+  "runtime": {
+    "bun": "1.3.14",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "fixture": {
+    "nodes": 32767,
+    "groupGraphEdges": 31743,
+    "groupGraphSha256": "90289ce15c64bcaabeda0bf531bcef797213ea096ef014269bb04ec0fbc93bb7",
+    "pathGraph": "4-way tree",
+    "pathEdges": 32766
+  },
+  "comparisons": [
+    {
+      "samples": 20,
+      "warmup": 10,
+      "order": "baseline then candidate",
+      "cases": {
+        "zeroHop": {
+          "beforeMs": {
+            "p50": 19.15350000000035,
+            "p95": 23.841875000000073
+          },
+          "afterMs": {
+            "p50": 16.844500000000153,
+            "p95": 20.46641600000021
+          },
+          "payloadSha256": "99de6eaad4029832202c454d78e68e786e259f99cc9bd8bb3c508cc967022013"
+        },
+        "wideTree": {
+          "beforeMs": {
+            "p50": 28.2214170000002,
+            "p95": 36.92083399999956
+          },
+          "afterMs": {
+            "p50": 22.97316600000022,
+            "p95": 27.39729099999977
+          },
+          "payloadSha256": "2509ed4a743404d7fd339a3d0bf66f737b612f3cc876257dcd482e287e57a99f"
+        }
+      },
+      "mcp": {
+        "getEntity": {
+          "beforeMs": {
+            "p50": 8.622041999999965,
+            "p95": 8.691500000000019
+          },
+          "afterMs": {
+            "p50": 8.609291999999982,
+            "p95": 9.732541000000083
+          }
+        },
+        "context": {
+          "beforeMs": {
+            "p50": 8.514208999999937,
+            "p95": 9.199415999999928
+          },
+          "afterMs": {
+            "p50": 8.614249999999856,
+            "p95": 9.372457999999824
+          }
+        },
+        "impact": {
+          "beforeMs": {
+            "p50": 8.435875000000124,
+            "p95": 9.016000000000076
+          },
+          "afterMs": {
+            "p50": 8.473666999999978,
+            "p95": 9.451832999999851
+          }
+        },
+        "path": {
+          "beforeMs": {
+            "p50": 24.479540999999926,
+            "p95": 27.841874999999845
+          },
+          "afterMs": {
+            "p50": 25.072500000000105,
+            "p95": 28.809166000000005
+          }
+        }
+      }
+    },
+    {
+      "samples": 50,
+      "warmup": 10,
+      "order": "candidate then baseline",
+      "cases": {
+        "zeroHop": {
+          "beforeMs": {
+            "p50": 18.683917000000292,
+            "p95": 24.35629199999994
+          },
+          "afterMs": {
+            "p50": 15.815458000000035,
+            "p95": 19.666790999999648
+          },
+          "payloadSha256": "99de6eaad4029832202c454d78e68e786e259f99cc9bd8bb3c508cc967022013"
+        },
+        "wideTree": {
+          "beforeMs": {
+            "p50": 28.07379200000014,
+            "p95": 32.98158299999977
+          },
+          "afterMs": {
+            "p50": 22.36591700000008,
+            "p95": 25.807208000000173
+          },
+          "payloadSha256": "2509ed4a743404d7fd339a3d0bf66f737b612f3cc876257dcd482e287e57a99f"
+        }
+      },
+      "mcp": {
+        "getEntity": {
+          "beforeMs": {
+            "p50": 8.607124999999996,
+            "p95": 11.248583000000053
+          },
+          "afterMs": {
+            "p50": 8.615249999999833,
+            "p95": 10.975208000000293
+          }
+        },
+        "context": {
+          "beforeMs": {
+            "p50": 8.501749999999902,
+            "p95": 9.35291600000005
+          },
+          "afterMs": {
+            "p50": 8.49499999999989,
+            "p95": 9.386915999999928
+          }
+        },
+        "impact": {
+          "beforeMs": {
+            "p50": 8.472500000000082,
+            "p95": 9.614459000000352
+          },
+          "afterMs": {
+            "p50": 8.477040999999645,
+            "p95": 9.451958000000104
+          }
+        },
+        "path": {
+          "beforeMs": {
+            "p50": 24.60766700000022,
+            "p95": 29.449416000000042
+          },
+          "afterMs": {
+            "p50": 24.62566599999991,
+            "p95": 28.51649999999995
+          }
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Sequential runs on one system; reverse-order replay reduces but does not eliminate environmental bias",
+    "Warm measurements include normalization; no global optimum or general CLI/MCP speedup established",
+    "Returned path payload hashes match; peak memory, isolated allocation and package-size improvements are not measured",
+    "No whole-repository refresh, type-adapter or coding-agent productivity benchmark"
+  ]
+}

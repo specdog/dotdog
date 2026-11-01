@@ -2,7 +2,7 @@ import { existsSync, readFileSync, realpathSync } from 'fs';
 import path from 'path';
 import { RepoRegistry } from './registry';
 import type { RepoContext, WorkspaceConfig, WorkspaceContext } from './types';
-import { validateWorkspaceConfig } from './validator';
+import { parseWorkspaceConfig } from './validator';
 
 export interface ResolveWorkspaceOptions {
   manifestPath?: string;
@@ -31,11 +31,12 @@ export function resolveWorkspace(startDir = process.cwd(), options: ResolveWorks
   }
 
   const manifestDir = path.dirname(manifestPath);
-  const config = JSON.parse(readFileSync(manifestPath, 'utf8')) as WorkspaceConfig;
-  const result = validateWorkspaceConfig(config, { manifestDir, checkPaths: true });
-  if (!result.valid) {
+  const input: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  const result = parseWorkspaceConfig(input, { manifestDir, checkPaths: true });
+  if (result.valid === false) {
     throw new Error(`Invalid workspace manifest:\n${result.errors.map((err) => `- ${err.message}`).join('\n')}`);
   }
+  const config = result.data;
 
   const repos: RepoContext[] = config.repos.map((repo) => ({
     alias: repo.alias,

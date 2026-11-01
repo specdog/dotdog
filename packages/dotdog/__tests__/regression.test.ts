@@ -51,9 +51,10 @@ describe('regression', () => {
     }
   });
 
-  test('staleness handles missing package.json gracefully', async () => {
-    const result = await $`cd ${ROOT} && ${BUN} packages/dotdog/src/cli.ts staleness`.quiet();
-    expect(result.exitCode).toBe(0);
+  test('staleness is a deprecated read-only freshness check', async () => {
+    const result = await $`cd ${ROOT} && ${BUN} packages/dotdog/src/cli.ts staleness`.quiet().nothrow();
+    expect(result.stderr.toString()).toContain('Deprecated');
+    expect(result.stdout.toString()).not.toContain('spec matches reality');
   });
 
   test('visualize outputs mermaid graph with nodes', async () => {

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: "Spec-Driven Development"
-description: "Write specs first. Validate. Compile. Let AI agents query them. No hallucination."
+description: "Write specs first. Validate. Compile. Let AI agents query them. Query the recorded graph and verify its evidence."
 ---
 
 
@@ -9,13 +9,13 @@ description: "Write specs first. Validate. Compile. Let AI agents query them. No
 
 # Spec-Driven Development
 
-Write specs before code. Validate completeness. Compile to a graph AI agents can query. No hallucination.
+Write specs before code. Validate completeness. Compile to a graph AI agents can query. Query the recorded graph and verify its evidence.
 
 ## Why
 
 AI agents read prose and guess. They hallucinate entity names, invent relationships, miss required fields.
 
-A compiled `.dag` graph is 94% smaller than source — the agent loads exact data, not prose.
+A compiled `.dag` graph exposes structured facts and their coverage limits. Size varies; token figures are byte-based estimates.
 
 ## How
 
@@ -27,7 +27,7 @@ dotdog compile              # build .dag graph
 dotdog serve                # expose to AI agents
 ```
 
-Five minutes from zero to AI agents querying your specs.
+Install, compile, then query the resulting graph.
 
 ## The practice
 
@@ -40,7 +40,7 @@ Five minutes from zero to AI agents querying your specs.
 ## Who uses this
 
 - **New projects** — spec before code. `dotdog init --minimal`
-- **Existing codebases** — add specs alongside code. `dotdog verify --init`
+- **Existing codebases** — add specs alongside code. explicit `dotdog reference-check` mappings
 - **Teams** — validate in CI and use local MCP configurations; secure any shared gateway separately
 - **Specdog public site** — keep docs, blog, and discovery pages current
 - **Lean workflow** — one issue, one PR, one merge; spec/.dag first; verify with tests; keep status compact

@@ -1,3 +1,5 @@
+import { createHash } from 'crypto';
+
 export type Confidence = 'certain' | 'likely' | 'unknown';
 
 export type GraphOrigin = {
@@ -118,12 +120,8 @@ const EDGE_VERBS = new Set<WorldEdgeVerb>([
 const CONFIDENCE = new Set<Confidence>(['certain', 'likely', 'unknown']);
 
 export function stableId(...parts: string[]): string {
-  return parts
-    .join(':')
-    .toLowerCase()
-    .replace(/[^a-z0-9._:/-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
+  const readable = parts.join(':').toLowerCase().replace(/[^a-z0-9._:/-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  return readable + ':' + createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0, 12);
 }
 
 export function makeNode(input: Omit<WorldNode, 'id' | 'confidence'> & { id?: string; confidence?: Confidence }): WorldNode {

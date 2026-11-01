@@ -10,6 +10,6 @@ const SECRET_PATTERNS = [
 
 export function redactSecrets(input: string): string {
   let output = input;
-  for (const pattern of SECRET_PATTERNS) output = output.replace(pattern, (_match, key) => key ? `${key}=[REDACTED]` : '[REDACTED]');
+  for (const pattern of SECRET_PATTERNS) output = output.replace(pattern, () => '[REDACTED]');
   return output;
 }

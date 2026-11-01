@@ -70,7 +70,7 @@ export interface DocumentNode {
 
 export interface SectionNode {
   kind: 'section';
-  level: 2 | 3;
+  level: 1 | 2 | 3;
   heading: string;
   blocks: BlockNode[];
   lineStart: number;
@@ -102,6 +102,7 @@ export interface PropertyDef {
 
 export interface RelationshipNode {
   kind: 'relationship';
+  description?: string;
   source: string;
   target: string;
   verb: string;
@@ -130,6 +131,8 @@ export interface EventNode {
 
 export interface PredictionNode {
   kind: 'prediction';
+  description?: string;
+  status?: string;
   statement: string;
   trigger: string;
   timeframe: string;

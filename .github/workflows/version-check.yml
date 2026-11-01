@@ -7,18 +7,24 @@ on:
       - 'packages/dotdog/src/**'
       - 'packages/dotdog/package.json'
 
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          package-manager-cache: false
           node-version: '24'
       - name: Check version bump
         run: |
           PR_VERSION=$(node -p "require('./packages/dotdog/package.json').version")
-          NPM_VERSION=$(npm view dotdog version 2>/dev/null || echo "0.0.0")
+          NPM_VERSION=$(npm view dotdog version)
 
           echo "PR version:  $PR_VERSION"
           echo "npm version: $NPM_VERSION"
@@ -44,13 +50,4 @@ jobs:
           fi
 
           
-          # Block 1.0.0 without explicit approval
-          MAJOR=$(echo "$PR_VERSION" | cut -d. -f1)
-          if [ "$MAJOR" -ge 1 ] && [ "$NPM_VERSION" != "0.0.0" ]; then
-            echo ""
-            echo "ERROR: 1.x.x releases require manual approval."
-            echo "  Do not bump to $PR_VERSION in a PR."
-            exit 1
-          fi
-
           echo "✓ Version bumped: $NPM_VERSION → $PR_VERSION"

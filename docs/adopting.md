@@ -150,7 +150,7 @@ Run validation from the repository root:
 dotdog validate
 ```
 
-If dotdog reports missing required files, empty entities, or missing descriptions, fix those first. Then run the deeper analyzer:
+Validation checks required-file presence and parser diagnostics. Use the analyzer for heuristic entity and description suggestions. Then run the deeper analyzer:
 
 ```bash
 dotdog analyze
@@ -183,10 +183,10 @@ Look for a summary like:
 ```text
 support-portal
   6 .dog files: 12400 bytes
-  .dag payload: 740 bytes (94% savings, graph only)
+  .dag payload: measured serialized bytes (savings depend on retained metadata)
 ```
 
-Large savings mean an AI agent can load the structured graph instead of re-reading every prose file.
+Size estimates are not tokenizer measurements or evidence of answer quality. Retained schemas can make small graphs larger than their source.
 
 ## 6. Serve the graph and verify MCP tools
 

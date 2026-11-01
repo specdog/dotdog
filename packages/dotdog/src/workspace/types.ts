@@ -86,3 +86,7 @@ export interface ValidationResult {
   errors: ValidationIssue[];
   warnings: ValidationIssue[];
 }
+
+export type WorkspaceParseResult =
+  | { valid: true; data: WorkspaceConfig; errors: ValidationIssue[]; warnings: ValidationIssue[] }
+  | { valid: false; errors: ValidationIssue[]; warnings: ValidationIssue[] };

@@ -6,6 +6,9 @@ author: Justin Diclemente
 description: "dotdog validates itself. We predicted 90%+ token savings — hit 93.9%. We predicted 200 PRs by July. Here's how the predictions system works."
 ---
 
+> Historical pre-1.0 post. Commands, provider support and savings/hallucination claims below are not current guarantees. See the [1.0 migration guide](../v1-migration) and [security audit](../v1-security-audit).
+
+
 ← [specdog](https://specdog.github.io) · [guide](https://specdog.github.io/handbook) · [for agents](https://specdog.github.io/agents)
 
 dotdog validates itself. The `dotdog` dogfood project runs `dotdog validate`, `dotdog compile`, and `dotdog simulate` on every change. But we also use it to make predictions about the project — and then track whether those predictions came true.

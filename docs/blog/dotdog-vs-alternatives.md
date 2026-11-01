@@ -6,6 +6,9 @@ author: Justin Diclemente
 description: "AI agents don't need more prose. They need structured specs. Compare dotdog, OpenAPI, README, and Jira for agent consumption — token efficiency, hallucination risk, and query precision."
 ---
 
+> Historical pre-1.0 post. Commands, provider support and savings/hallucination claims below are not current guarantees. See the [1.0 migration guide](../v1-migration) and [security audit](../v1-security-audit).
+
+
 # Dotdog vs OpenAPI vs README: What Agents Actually Need
 
 AI coding agents are everywhere. They write code, open PRs, and debug production. But they don't know your project. They scan READMEs, guess entity names, and invent relationships.

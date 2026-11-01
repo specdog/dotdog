@@ -83,7 +83,7 @@ describe('untested commands', () => {
     try {
       setupTempProject(dir, 'testproj');
       const result = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts analyze`.quiet().nothrow();
-      expect(result.text()).toContain('complete');
+      expect(result.text()).toContain('heuristic score');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -100,25 +100,26 @@ describe('untested commands', () => {
     }
   });
 
-  test('verify outputs spec-code alignment', async () => {
+  test('verify reports missing explicit mappings without claiming code alignment', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-verify-'));
     try {
       setupTempProject(dir, 'testproj');
-      const out = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts verify`.text();
-      expect(typeof out).toBe('string');
+      const result = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts verify`.quiet().nothrow();
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr.toString()).toContain('Deprecated');
+      expect(result.stdout.toString()).toContain('0/0 explicit mappings');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  test('simulate runs scenario', async () => {
+  test('simulate rejects a missing named scenario', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'dotdog-test-sim-'));
     try {
       setupTempProject(dir, 'testproj');
       await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts compile`.quiet();
-      // Simulate should not crash — returns partial success if no scenario steps
       const result = await $`cd ${dir} && ${BUN} ${ROOT}/packages/dotdog/src/cli.ts simulate compile`.quiet().nothrow();
-      expect([0, 1]).toContain(result.exitCode);
+      expect(result.exitCode).toBe(1);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

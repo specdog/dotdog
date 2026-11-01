@@ -1,5 +1,5 @@
 title: dotdog
-description: CLI tool for structured software specs. Validate .dog files, compile .dag graphs, query via MCP.
+description: Local-first spec and code graphs with agent skills, opt-in hooks, and evidence-linked queries.
 logo: /assets/dog.svg?v=2
 show_downloads: false
 lang: en

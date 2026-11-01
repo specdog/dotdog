@@ -6,6 +6,9 @@ date: 2026-06-19
 categories: release
 ---
 
+> Historical pre-1.0 post. Commands, provider support and savings/hallucination claims below are not current guarantees. See the [1.0 migration guide](../v1-migration) and [security audit](../v1-security-audit).
+
+
 Your `.dog` spec declares a `FileStorage` entity. The prose says it maps to an S3 bucket called `uploads-prod`. But does that bucket actually exist? Is it in the right region? Did someone delete it six months ago and nobody updated the spec?
 
 **dotdog 0.8.6 answers this.** 

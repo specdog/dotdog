@@ -1,7 +1,3 @@
-<!--
-⚠️ Pull requests that do not follow this template may be closed without review.
--->
-
 ## Summary
 
 <!-- What does this PR do? Why is it needed? -->
@@ -12,9 +8,10 @@
 
 ## Verification
 
-- [ ] Tests pass (`bun test`)
-- [ ] Dogfood passes (`dotdog validate && dotdog compile`)
-- [ ] No regressions
+- [ ] Relevant typecheck/tests pass; commands and results are listed
+- [ ] Source CLI validation passes when applicable (`bun packages/dotdog/src/cli.ts validate`)
+- [ ] Compatibility impact and unverified behavior are documented
+- [ ] No personal information, credentials or private test evidence included
 - [ ] I read the [contributing guidelines](https://github.com/specdog/dotdog/blob/main/CONTRIBUTING.md)
 
 ## Issues

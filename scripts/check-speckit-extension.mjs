@@ -92,7 +92,7 @@ for (const command of commands) {
   }
   requireRegularFile(file);
 
-  const content = readFileSync(file, 'utf8');
+  const content = readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
   if (!content.startsWith('---\n')) fail(`${file} is missing frontmatter`);
   if (!/^description:\s*".+"$/m.test(content)) fail(`${file} is missing a frontmatter description`);
   if (!content.includes('$ARGUMENTS')) fail(`${file} must document $ARGUMENTS`);

@@ -23,10 +23,3 @@ export interface Provider {
   name: string;
   verify(resource: InfraResource): Promise<CheckResult>;
 }
-
-// Mask credential-like values for safe output
-export function mask(s: string): string {
-  if (!s) return '';
-  if (s.length <= 8) return '***';
-  return s.slice(0, 3) + '***' + s.slice(-3);
-}

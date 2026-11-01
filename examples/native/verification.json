@@ -1,0 +1,35 @@
+{
+  "source": "callgraph.c",
+  "sourceSha256": "e7828bd42f18b3055c4916ea642d4e1c33221015a95aa88a25a8acf67b50c361",
+  "binarySha256": "472ee07be89864cb67ded8c7cd1de7f211bfdc34bb04968f417d4801c5e1b201",
+  "export": "callgraph-ghidra.json",
+  "exportSha256": "5fc1e4c996fa5608b4ea4fedb000c6be5b9afc0fe78bf79749e9553b863c7ad2",
+  "host": "macOS arm64",
+  "compiler": "Apple clang 21.0.0 (clang-2100.1.1.101)",
+  "compilerFlags": [
+    "-O0",
+    "-g"
+  ],
+  "solidstateProvider": "rea-agents 6.8.0",
+  "engine": "Ghidra 12.1.4",
+  "java": "OpenJDK 25.0.5.0.2",
+  "observedCalls": [
+    {
+      "sourceSymbol": "_dotdog_validate",
+      "sourceAddress": "0x100000340",
+      "targetSymbol": "_dotdog_scale",
+      "targetAddress": "0x100000328"
+    }
+  ],
+  "dotdogImport": {
+    "nodes": 2,
+    "edges": 1,
+    "verifiedPathHops": 1
+  },
+  "targetExecuted": false,
+  "binaryUnchangedAfterAnalysis": true,
+  "limitations": [
+    "Static resolved call references only; unresolved indirect calls remain unknown.",
+    "Addresses and binary digest apply to this exact build, not every recompile."
+  ]
+}
