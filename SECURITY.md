@@ -4,7 +4,7 @@
 
 If you discover a security vulnerability in dotdog, please report it privately. Do not open a public issue.
 
-Email: security@specdog.dev (or open a private security advisory on GitHub)
+Use [GitHub private vulnerability reporting](https://github.com/specdog/dotdog/security/advisories/new). Include the affected version, reproduction steps, impact and a minimal sanitized example. Do not include credentials or unrelated personal data.
 
 ## Supported Versions
 
@@ -36,4 +36,4 @@ The unpublished 1.0 candidate adds static symlink/output-boundary checks, valida
 
 Dependency-change and scheduled CI run `bun audit --json`; builds use the frozen lockfile. Patched transitive overrides are documented in the [security audit](docs/v1-security-audit.md). Advisory checks do not detect every vulnerability or malicious package.
 
-The embodied evidence profile is advisory traceability only. It neither certifies physical safety nor grants authority to operate devices. No live hardware or ROS/Ghidra target integration was tested for this candidate.
+The optional embodied evidence profile is advisory traceability only; it neither certifies physical safety nor grants device authority. No live hardware or ROS integration is claimed. The saved-export Ghidra/REA workflow has been checked with the [public static-analysis fixture](examples/native/README.md); it does not establish complete call recovery, runtime equivalence or support for every target/host.

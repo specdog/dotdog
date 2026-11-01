@@ -11,6 +11,8 @@ Local-first spec and code graphs for coding agents. Keep human intent, observed 
 
 ## Install
 
+These commands install the published stable package. The examples on this branch describe the unreleased 1.0 candidate; build this checkout using [Development](#development) to try them before publication.
+
 ```sh
 npm install -g dotdog
 # or
@@ -160,8 +162,11 @@ bun install --frozen-lockfile
 bun run lint
 bun test
 bun run build
+node packages/dotdog/dist/cli.js --help
 bun run pack:check
 bun run release:check
 ```
+
+Run the built CLI with `node packages/dotdog/dist/cli.js` from this checkout. When working in another repository, use the absolute path to that built executable; an existing global `dotdog` installation may still be the stable release.
 
 The release check packs the actual npm artifact and tests it outside the repository with Node and Bun. MIT licensed.
