@@ -188,7 +188,7 @@ export function graphNeighborhood(graph: NormalizedGraph, query: string, options
   const byIdMatch = index.byId.get(query);
   const exact = byIdMatch ? [byIdMatch] : index.byFoldedName.get(query.toLowerCase()) || [];
   const scope = graphScope(graph);
-  if (exact.length !== 1) return { ...scope, ok: false as const, error: exact.length ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: exact.slice(0, 100).map(node => node.id), nodes: [], edges: [], truncated: false };
+  if (exact.length !== 1) return { ...scope, ok: false as const, error: exact.length ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: exact.slice(0, 100).map(node => node.id), nodes: [], edges: [], truncated: exact.length > 100 };
   const direction = options.direction || 'any', depth = options.depth ?? 2, limit = options.limit ?? 100;
   if (!Number.isInteger(depth) || depth < 0 || depth > 12 || !Number.isInteger(limit) || limit < 1 || limit > 1000) throw new Error('depth must be 0–12 and limit 1–1000');
   const visited = new Set([exact[0].id]), edges = new Map<string, GraphEdge>();

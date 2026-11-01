@@ -181,7 +181,7 @@ export function createMcpHandler(dir: string) {
         const exact = idMatch ? [idMatch] : index.byLabel.get(args.q) || [];
         const matches = exact.length ? exact : graph.nodes.filter(node => `${node.label} ${node.description || ''}`.toLowerCase().includes(args.q.toLowerCase()));
         const context = matches.length !== 1
-          ? { ...graphScope(graph), ok: false, error: matches.length ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: matches.slice(0, args.limit || 100).map(node => node.label) }
+          ? { ...graphScope(graph), ok: false, error: matches.length ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: matches.slice(0, args.limit || 100).map(node => node.id), truncated: matches.length > (args.limit || 100) }
           : graphNeighborhood(graph, matches[0].id, { depth: args.depth, limit: args.limit }, index);
         return success(id, args.maxTokens === undefined ? context : await budgetContext(context, args.maxTokens, args.task));
       }

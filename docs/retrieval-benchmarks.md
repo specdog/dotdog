@@ -54,9 +54,9 @@ This is a genuine research direction, not lossless compression or a speed guaran
 
 For Dotdog, retain exact ID maps and graph relationships. Evaluate VSA only as an optional candidate-retrieval experiment, followed by exact evidence lookup. A model cannot consume arbitrary superposed vectors as readable facts without an appropriate decoder. Smaller vector storage must not be advertised as fewer prompt tokens.
 
-## Remaining required evaluation
+## Research-only evaluation
 
-The follow-up [token-budgeted context evaluation](context-budgets.md) now measures frozen structural tasks on two real repositories. It compares existing context with lexical task ranking and an actual tokenizer budget. Neither pass completes the 1.0 performance gate: no standalone lexical/semantic-vector/VSA backend comparison or model answer evaluation has run yet.
+The follow-up [token-budgeted context evaluation](context-budgets.md) measures frozen structural tasks on two real repositories. It compares existing context with lexical task ranking and an actual tokenizer budget. Standalone semantic-vector/VSA comparisons and model answer evaluations have not run; they are prerequisites for future research claims, not 1.0 release gates or required product features. The scoped 1.0 performance review covers existing CLI, refresh and graph/type workflows.
 
 1. Label real repository tasks with required evidence, difficult distractors and no-answer cases. Keep held-out tasks separate from tuning; include code, authored intent and reverse-engineering evidence without treating inferred links as facts.
 2. Compare lexical retrieval, semantic-vector candidates, graph expansion and VSA under identical corpus/snapshot, top-k and context budgets. Record recall@k, ranking, evidence coverage, unsupported selections and answer abstention before claiming savings.
