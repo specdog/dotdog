@@ -5,6 +5,12 @@ title: Graph tooling research — October 2026
 
 # Graph tooling research — October 2026
 
+## Spec tooling update — 2026-11-01
+
+GitHub [Spec Kit 1.2.5](https://github.com/github/spec-kit/releases/tag/v1.2.5), released October 28, includes workflow discovery through MCP and extension validation fixes. [OpenSpec 1.16.0](https://github.com/Fission-AI/OpenSpec/releases/tag/v1.16.0), released October 30, adds scenario-step diagnostics and makes invalid configuration fail validation. These are upstream releases, not Dotdog versions, and activity does not establish better development outcomes.
+
+For Dotdog 1.0, retain the existing Spec Kit extension and test its declared minimum/current release using pinned sources and actual installed versions. Keep malformed configuration, unmet acceptance criteria, source freshness and requirement-to-check links explicit. Scenario syntax and compiler acceptance are separate from behavioral testing; no workflow engine, mandatory OpenSpec/Kiro installation or new backend is needed. Broader compatibility or additional spec formats require their own tested scope.
+
 Selected high-star graph/context peers, discovered through GitHub search and checked with the GitHub repository API on 2026-10-29. This is not an exhaustive ranking, a quality score or a reproduced performance comparison. Features below are documented by their maintainers unless source inspection is stated.
 
 | Project | Stars at snapshot | Relevant documented pattern | Dotdog decision |
