@@ -169,3 +169,7 @@ Run the built CLI with `node packages/dotdog/dist/cli.js` from this checkout. Wh
 See [path-search measurements](docs/path-performance.md) for the tested optimization scope.
 
 The release check packs the actual npm artifact and tests it outside the repository with Node and Bun. MIT licensed.
+
+## Author
+
+A specdog project by **[Justin DiClemente](https://github.com/logohere)**.
