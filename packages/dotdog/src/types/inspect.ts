@@ -1,17 +1,17 @@
 import { spawn, spawnSync } from 'child_process';
-import { existsSync, realpathSync } from 'fs';
+import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { relative } from 'path';
 import type { Command } from 'commander';
 import { normalizeGraph } from '../graph/model';
 import { minimalChildEnv } from '../workspace/environment';
-import { isIgnoredRepoPath, resolveUserPath } from '../workspace/paths';
+import { isIgnoredRepoPath, realPath, resolveUserPath } from '../workspace/paths';
 
 export async function inspectTypes(root: string, name: string, file: string, project: string, timeoutMs = 30000): Promise<any> {
   const failure = (error: string) => ({ ok: false, error, nodes: [], edges: [], coverage: { status: 'unknown', scope: 'selected TypeScript contract' }, limitations: ['No requirement or runtime-behavior proof.'] });
   let request: string;
   try {
-    root = realpathSync(root);
+    root = realPath(root);
     if (!name || name.length > 256 || /[\x00-\x1f\x7f]/.test(name) || !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000) return failure('invalid_request');
     const source = resolveUserPath(file, root), config = resolveUserPath(project, root);
     if (isIgnoredRepoPath(relative(root, source)) || isIgnoredRepoPath(relative(root, config))) return failure('invalid_request');

@@ -1,11 +1,11 @@
 import { createRequire } from 'module';
 import { createHash } from 'crypto';
-import { readFileSync, readSync, realpathSync, statSync } from 'fs';
+import { readFileSync, readSync, statSync } from 'fs';
 import { basename, dirname, isAbsolute, relative, resolve, sep } from 'path';
 import { pathToFileURL } from 'url';
 import { parseExpression } from '@babel/parser';
 import { normalizeGraph } from '../graph/model';
-import { isIgnoredRepoPath, resolveUserPath } from '../workspace/paths';
+import { isIgnoredRepoPath, realPath, resolveUserPath } from '../workspace/paths';
 
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const fail = (error: string, diagnostics: unknown[] = []) => ({ ok: false, error, diagnostics });
@@ -13,13 +13,13 @@ const fail = (error: string, diagnostics: unknown[] = []) => ({ ok: false, error
 async function inspect(request: any) {
   const [major, minor] = process.versions.node.split('.').map(Number);
   if (process.versions.bun || major < 22 || major === 22 && minor < 12) return fail('compiler_runtime_unsupported');
-  const { root, name } = request;
+  const root = realPath(request.root), { name } = request;
   const config = resolveUserPath(request.project, root), file = resolveUserPath(request.file, root);
   const require = createRequire(config);
   let packageFile: string;
   try { packageFile = require.resolve('typescript/package.json'); } catch { return fail('compiler_missing'); }
   if (JSON.parse(readFileSync(packageFile, 'utf8')).version !== '7.0.2') return fail('compiler_version_unsupported');
-  const compilerRoot = realpathSync(dirname(packageFile));
+  const compilerRoot = realPath(dirname(packageFile));
   const apiModule = await import(pathToFileURL(require.resolve('typescript/unstable/sync')).href);
   const ast = await import(pathToFileURL(require.resolve('typescript/unstable/ast')).href);
   const portable = (path: string) => relative(root, path).split(sep).join('/');
@@ -28,7 +28,7 @@ async function inspect(request: any) {
   let size = 0, inputError = '';
   const read = (path: string): string | null => {
     try {
-      path = realpathSync(path);
+      path = realPath(path);
       if (inputs.has(path)) return inputs.get(path)!.text;
       const library = path === compilerRoot || path.startsWith(compilerRoot + sep) || path.split(sep).includes('node_modules');
       if ((!inside(path) && !library) || inside(path) && !library && isIgnoredRepoPath(portable(path)) || isIgnoredRepoPath(basename(path)) || !/\.(?:[cm]?tsx?|[cm]?jsx?|json)$/i.test(path)) { inputError = 'compiler_input_unsupported'; return null; }
