@@ -1,5 +1,9 @@
 # dotdog
 
+[![npm version](https://img.shields.io/npm/v/dotdog)](https://www.npmjs.com/package/dotdog)
+[![Tests](https://github.com/specdog/dotdog/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/specdog/dotdog/actions/workflows/test.yml)
+[![MIT license](https://img.shields.io/npm/l/dotdog)](https://github.com/specdog/dotdog/blob/main/LICENSE)
+
 Local-first spec and code graphs for coding agents. Keep human intent, observed implementation, and imported analysis evidence distinct and queryable.
 
 ## Install

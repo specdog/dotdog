@@ -5,6 +5,10 @@ title: Dotdog
 
 # dotdog
 
+[![npm version](https://img.shields.io/npm/v/dotdog)](https://www.npmjs.com/package/dotdog)
+[![Tests](https://github.com/specdog/dotdog/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/specdog/dotdog/actions/workflows/test.yml)
+[![MIT license](https://img.shields.io/npm/l/dotdog)](https://github.com/specdog/dotdog/blob/main/LICENSE)
+
 Local-first spec and code graphs for coding agents. Keep human intent, observed implementation, and imported analysis evidence distinct and queryable.
 
 ## Install
@@ -174,3 +178,7 @@ Run the built CLI with `node packages/dotdog/dist/cli.js` from this checkout. Wh
 See [path-search measurements](path-performance.md) for the tested optimization scope.
 
 The release check packs the actual npm artifact and tests it outside the repository with Node and Bun. MIT licensed.
+
+## Further reading
+
+[Practical type-driven development guide](https://specdog.github.io/guides/type-driven-development/) · [REA/Ghidra graph guide](https://specdog.github.io/guides/rea-graphs/) · [Research and product notes](https://specdog.github.io/blog/)
