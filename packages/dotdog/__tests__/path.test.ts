@@ -97,7 +97,12 @@ describe('shortest graph path', () => {
           if (result.ok) {
             expect(result.hops).toBe(distance[from][to]);
             expect(result.nodes.map(node => node.id).filter((_, i) => i === 0 || i === result.nodes.length - 1)).toEqual(from === to ? [`n${from}`] : [`n${from}`, `n${to}`]);
-            for (const edge of result.edges) expect(edge.evidence).toEqual(edges.find(item => item.id === edge.id)?.evidence);
+            for (const [i, edge] of result.edges.entries()) {
+              expect(edge.evidence).toEqual(edges.find(item => item.id === edge.id)?.evidence);
+              const first = result.nodes[i].id, second = result.nodes[i + 1].id;
+              expect(direction !== 'incoming' && edge.sourceId === first && edge.targetId === second || direction !== 'outgoing' && edge.sourceId === second && edge.targetId === first).toBe(true);
+              if (verb) expect(edge.verb).toBe(verb);
+            }
           } else expect(result.error).toBe('no_path');
         }
       }

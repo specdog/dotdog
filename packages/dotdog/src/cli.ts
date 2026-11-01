@@ -25,6 +25,7 @@ import { readGraphText } from './graph/io';
 import { registerSpecChecks } from './spec/checks';
 import { registerAutomation } from './automation';
 import { registerGraphCommands } from './graph/commands';
+import { registerTypeCommands } from './types/inspect';
 
 
 function writeFileSync(file: string, data: string | Uint8Array, encoding: BufferEncoding = 'utf8') {
@@ -2009,4 +2010,5 @@ program
 registerAutomation(program);
 registerSpecChecks(program);
 registerGraphCommands(program);
+registerTypeCommands(program);
 try { await program.parseAsync(); } catch (error) { console.error(error instanceof Error ? error.message : String(error)); process.exitCode = 1; }

@@ -13,4 +13,4 @@ Run `dotdog refresh --if-stale`, query the relevant project, and verify cited so
 
 - [Security audit](https://specdog.github.io/dotdog/v1-security-audit): Reproduced repairs, dependency updates and unverified boundaries.
 - [Peer research](https://specdog.github.io/dotdog/graph-peer-research): Dated high-star graph/context comparison.
-- [Embodied evidence](https://specdog.github.io/dotdog/embodied-systems): Advisory artifact and relationship checks, not device control.
+- [Type contracts](https://specdog.github.io/dotdog/type-contracts): Optional selected TypeScript 7.0.2 contracts, diagnostics and bounded graph references.

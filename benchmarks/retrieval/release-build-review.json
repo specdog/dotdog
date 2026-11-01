@@ -1,0 +1,284 @@
+{
+  "schema": 1,
+  "date": "2026-11-01",
+  "scope": "Same-source Node CLI build comparison: non-split versus shared chunks. Synthetic 200-file static-import fixture; not end-to-end agent productivity.",
+  "runtime": {
+    "node": "26.8.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "compiler": "7.0.2"
+  },
+  "samples": 20,
+  "warmup": 3,
+  "order": "Alternating variant order within each case; sequential commands; warm OS filesystem cache",
+  "revision": "85eb2250c62f43f5ed1e428a57000c05b8e84e76",
+  "sourceDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "entrySha256": {
+    "nonSplit": "28b79cc9d300cc7acb0c64a89b88cc23a9a5d42de8135125a8ed183e7c9c5775",
+    "shared": "594ba3c09ad3f49c51016c0de544ae6f895a728fcc5eb66f32d2afab83020d14"
+  },
+  "cases": {
+    "version": {
+      "nonSplit": {
+        "latencyMs": {
+          "p50": 104.74591600000008,
+          "p95": 106.47962499999994
+        },
+        "osMaxRssBytes": {
+          "p50": 94928896,
+          "max": 96976896
+        },
+        "serializedBytes": {
+          "min": 6,
+          "max": 6
+        }
+      },
+      "shared": {
+        "latencyMs": {
+          "p50": 61.12287500000002,
+          "p95": 63.918874999999844
+        },
+        "osMaxRssBytes": {
+          "p50": 53067776,
+          "max": 53673984
+        },
+        "serializedBytes": {
+          "min": 6,
+          "max": 6
+        }
+      }
+    },
+    "coldRefresh": {
+      "nonSplit": {
+        "latencyMs": {
+          "p50": 218.91483399999925,
+          "p95": 220.8099170000005
+        },
+        "osMaxRssBytes": {
+          "p50": 116211712,
+          "max": 118554624
+        },
+        "serializedBytes": {
+          "min": 8204,
+          "max": 8204
+        }
+      },
+      "shared": {
+        "latencyMs": {
+          "p50": 164.21670900000026,
+          "p95": 168.9195409999993
+        },
+        "osMaxRssBytes": {
+          "p50": 76447744,
+          "max": 77692928
+        },
+        "serializedBytes": {
+          "min": 8204,
+          "max": 8204
+        }
+      }
+    },
+    "warmRefresh": {
+      "nonSplit": {
+        "latencyMs": {
+          "p50": 127.22591599999942,
+          "p95": 130.30716700000085
+        },
+        "osMaxRssBytes": {
+          "p50": 100499456,
+          "max": 103022592
+        },
+        "serializedBytes": {
+          "min": 302,
+          "max": 302
+        }
+      },
+      "shared": {
+        "latencyMs": {
+          "p50": 83.33454200000051,
+          "p95": 84.77737499999967
+        },
+        "osMaxRssBytes": {
+          "p50": 59932672,
+          "max": 60293120
+        },
+        "serializedBytes": {
+          "min": 302,
+          "max": 302
+        }
+      }
+    },
+    "singleFileEdit": {
+      "nonSplit": {
+        "latencyMs": {
+          "p50": 200.19737499999974,
+          "p95": 204.8996249999982
+        },
+        "osMaxRssBytes": {
+          "p50": 116801536,
+          "max": 119685120
+        },
+        "serializedBytes": {
+          "min": 410,
+          "max": 410
+        }
+      },
+      "shared": {
+        "latencyMs": {
+          "p50": 154.08949999999822,
+          "p95": 158.18429200000173
+        },
+        "osMaxRssBytes": {
+          "p50": 77234176,
+          "max": 77856768
+        },
+        "serializedBytes": {
+          "min": 410,
+          "max": 410
+        }
+      }
+    },
+    "context": {
+      "nonSplit": {
+        "latencyMs": {
+          "p50": 110.5837079999983,
+          "p95": 111.57487499999843
+        },
+        "osMaxRssBytes": {
+          "p50": 99188736,
+          "max": 102105088
+        },
+        "serializedBytes": {
+          "min": 3799,
+          "max": 3799
+        }
+      },
+      "shared": {
+        "latencyMs": {
+          "p50": 66.91812500000015,
+          "p95": 69.30083400000149
+        },
+        "osMaxRssBytes": {
+          "p50": 57016320,
+          "max": 57540608
+        },
+        "serializedBytes": {
+          "min": 3799,
+          "max": 3799
+        }
+      }
+    },
+    "impact": {
+      "nonSplit": {
+        "latencyMs": {
+          "p50": 110.69387500000084,
+          "p95": 112.47912500000166
+        },
+        "osMaxRssBytes": {
+          "p50": 99713024,
+          "max": 101236736
+        },
+        "serializedBytes": {
+          "min": 2515,
+          "max": 2515
+        }
+      },
+      "shared": {
+        "latencyMs": {
+          "p50": 67.39879099999962,
+          "p95": 69.7532080000019
+        },
+        "osMaxRssBytes": {
+          "p50": 57098240,
+          "max": 57507840
+        },
+        "serializedBytes": {
+          "min": 2515,
+          "max": 2515
+        }
+      }
+    },
+    "path": {
+      "nonSplit": {
+        "latencyMs": {
+          "p50": 111.19162499999948,
+          "p95": 113.89958299999853
+        },
+        "osMaxRssBytes": {
+          "p50": 98074624,
+          "max": 99827712
+        },
+        "serializedBytes": {
+          "min": 4455,
+          "max": 4455
+        }
+      },
+      "shared": {
+        "latencyMs": {
+          "p50": 67.16058399999747,
+          "p95": 69.28587499999412
+        },
+        "osMaxRssBytes": {
+          "p50": 57442304,
+          "max": 57704448
+        },
+        "serializedBytes": {
+          "min": 4455,
+          "max": 4455
+        }
+      }
+    },
+    "types": {
+      "nonSplit": {
+        "latencyMs": {
+          "p50": 419.88270800000464,
+          "p95": 466.0246659999975
+        },
+        "osMaxRssBytes": {
+          "p50": 98189312,
+          "max": 101629952
+        },
+        "serializedBytes": {
+          "min": 4025,
+          "max": 4025
+        }
+      },
+      "shared": {
+        "latencyMs": {
+          "p50": 373.093458000003,
+          "p95": 413.75616699999955
+        },
+        "osMaxRssBytes": {
+          "p50": 98533376,
+          "max": 103809024
+        },
+        "serializedBytes": {
+          "min": 4025,
+          "max": 4025
+        }
+      }
+    }
+  },
+  "equivalentPayloadSha256": {
+    "context": "a32689bcd99dbf2e25f556023b0e0d23f829db0c97ab6109156a6c171165bd7d",
+    "impact": "a9769f94ac7c742362345ba516190d5e0a74e0d50eebc6234b48bc3c2ade832c",
+    "path": "99f10afab107a0b6b23f184f07cfe78a747af98a9e195e204a5cc95c265401f4",
+    "types": "fb2f44a9b8e13791a1a4312b91325f49ae8c47214f691000116a0e62ab8908be"
+  },
+  "limitations": [
+    "Cold refresh removes generated artifacts, not the OS page cache.",
+    "Wall time includes the time wrapper and process creation.",
+    "Darwin time -l reports OS maximum resident set size, not aggregate simultaneous process-tree memory or a memory guarantee.",
+    "Refresh assertions check successful regeneration and change detection; exact result hashes apply only to the listed read-only queries/type contracts.",
+    "CLI results do not establish user-task success, billing savings or universal performance improvements."
+  ],
+  "fixture": {
+    "sourceFiles": 200,
+    "shape": "Static import chain m0.ts through m199.ts; separate single-source selected-type project; generated artifacts removed for cold refresh only"
+  },
+  "bundler": {
+    "name": "bun",
+    "version": "1.3.14",
+    "difference": "--splitting only; same source and minification"
+  }
+}

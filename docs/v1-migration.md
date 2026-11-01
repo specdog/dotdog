@@ -5,7 +5,7 @@ title: Dotdog 1.0 migration
 
 # Migrating to Dotdog 1.0
 
-1.0 is being prepared on the modernization branch. Do not assume an npm tag, Homebrew formula or Spec Kit release asset exists until its release is published.
+This guide covers the 1.0 npm/Bun release. Homebrew and Spec Kit extension assets are separately maintained distributions; verify their published versions before installing.
 
 ## Distribution
 
@@ -53,6 +53,8 @@ Legacy initialization revisions and modern 2026-07-28 discovery/per-request meta
 Path/context/impact/traverse results retain supplied graph coverage and limitations; absent coverage is reported as unknown. A bounded `no_path` is not proof that two procedures are independent. Inspect `maxHops` and `truncated`. MCP `traverse` keeps legacy node `name`/`edges` fields and adds full node identity/provenance. Token-budget failures report `budget_too_small` rather than returning an oversized or scope-free successful result.
 
 Workspace manifests now validate nested shape before registry construction. Optional properties must be omitted or have their declared type; explicit `null`/`undefined` is not omission. Invalid manifests report validation errors instead of `TypeError`. The internal parser exposes typed `data` only on success; the existing validation JSON shape is unchanged.
+
+Ambiguous MCP context candidates now contain exact node IDs rather than repeated display labels. Context/impact/traverse report `truncated: true` when candidate IDs are omitted. Claude hook installation refuses malformed settings/hook collections before changing settings or registering ownership; repair the existing file rather than replacing unrelated configuration.
 
 ## Interpretation limits
 

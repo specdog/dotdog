@@ -16,6 +16,7 @@ assert.ok(values.tokenizer && values.output, '--tokenizer <gpt-tokenizer package
 const implementation = resolve(values.implementation || fileURLToPath(new URL('..', import.meta.url)));
 const { createMcpHandler } = await import(pathToFileURL(join(implementation, 'packages/dotdog/src/serve.ts')).href);
 const { normalizeGraph } = await import(pathToFileURL(join(implementation, 'packages/dotdog/src/graph/model.ts')).href);
+const { shortestGraphPath } = await import(pathToFileURL(join(implementation, 'packages/dotdog/src/graph/path.ts')).href);
 const nodeCount = Number(values.nodes), samples = Number(values.samples);
 assert.ok(Number.isInteger(nodeCount) && nodeCount >= 64 && nodeCount <= 100000, 'nodes must be 64–100000');
 assert.ok(Number.isInteger(samples) && samples >= 20 && samples <= 1000, 'samples must be 20–1000');
@@ -46,19 +47,24 @@ try {
     return { ms: performance.now() - start, result };
   };
   const cold = await timed('context', { q: 'component:16', depth: 2 });
-  const latencies: Record<string, number[]> = { getEntity: [], context: [], impact: [] };
+  const latencies: Record<string, number[]> = { getEntity: [], context: [], impact: [], path: [] };
   const fullGroups = Math.floor(nodeCount / groupSize);
   for (let i = 0; i < samples + 10; i++) {
     const center = (i % fullGroups) * groupSize + 16, id = `component:${center}`;
     for (const name of Object.keys(latencies)) {
-      const args = name === 'getEntity' ? { name: id } : name === 'context' ? { q: id, depth: 2 } : { from: id, depth: 2 };
+      const args = name === 'getEntity' ? { name: id } : name === 'context' ? { q: id, depth: 2 } : name === 'path' ? { from: id, to: `component:${center + 2}`, direction: 'outgoing', maxHops: 2 } : { from: id, depth: 2 };
       const { ms, result } = await timed(name, args);
       if (i >= 10) latencies[name].push(ms);
       const data = result.structuredContent;
       if (name === 'getEntity') assert.equal(data.name, `Component ${center}`);
+      else if (name === 'path') {
+        assert.equal(data.ok, true); assert.equal(data.hops, 2);
+        assert.deepEqual(data.nodes.map((node: any) => node.id), [center, center + 1, center + 2].map(i => `component:${i}`));
+        assert.ok(data.edges.every((edge: any) => edge.evidence.line === 3));
+      }
       else {
         const expected = (name === 'context' ? [-2, -1, 0, 1, 2] : [-2, -1, 0]).map(offset => `component:${center + offset}`).sort();
-        assert.equal(data.ok, true); assert.equal(data.truncated, false);
+        assert.equal(data.ok, true); assert.equal(data.truncated, true);
         assert.deepEqual(data.nodes.map((node: any) => node.id).sort(), expected);
         assert.equal(data.edges.length, expected.length - 1);
         assert.ok(data.edges.every((edge: any) => edge.evidence.line === 3));
@@ -71,6 +77,26 @@ try {
   writeFileSync(graphFile, JSON.stringify(replacement));
   assert.equal((await call('context', { q: 'component:16', depth: 0 })).structuredContent.nodes[0].description, 'Fresh replacement description');
   const retrievalRssBytes = process.memoryUsage().rss;
+  const percentile = (values: number[], fraction: number) => [...values].sort((a, b) => a - b)[Math.ceil(values.length * fraction) - 1];
+  const tree = { nodes, edges: nodes.slice(1).map((node, i) => ({ sourceId: nodes[Math.floor(i / 4)].id, targetId: node.id, verb: 'calls', evidence: { line: 3 } })) };
+  const pathStress: Record<string, unknown> = {};
+  for (const target of [0, nodeCount - 1]) {
+    const expected: string[] = [];
+    for (let i = target; ; i = Math.floor((i - 1) / 4)) { expected.unshift(nodes[i].id); if (i === 0) break; }
+    const times: number[] = [];
+    let payloadSha256 = '';
+    for (let i = 0; i < samples + 10; i++) {
+      const start = performance.now();
+      const result = shortestGraphPath(tree, nodes[0].id, nodes[target].id, { direction: 'outgoing', maxHops: 12 });
+      const elapsed = performance.now() - start;
+      if (i >= 10) times.push(elapsed);
+      assert.equal(result.ok, true); assert.equal(result.hops, expected.length - 1);
+      assert.deepEqual(result.nodes.map((node: any) => node.id), expected);
+      assert.ok(result.edges.every((edge: any) => edge.evidence.line === 3));
+      payloadSha256 = createHash('sha256').update(JSON.stringify(result)).digest('hex');
+    }
+    pathStress[target === 0 ? 'zeroHop' : 'wideTree'] = { p50: percentile(times, 0.5), p95: percentile(times, 0.95), raw: times, payloadSha256 };
+  }
   const tokenizerRoot = resolve(values.tokenizer);
   const tokenizerPkg = JSON.parse(readFileSync(join(tokenizerRoot, 'package.json'), 'utf8'));
   assert.equal(tokenizerPkg.name, 'gpt-tokenizer'); assert.equal(tokenizerPkg.version, '4.1.0');
@@ -90,6 +116,7 @@ try {
         return [name, { p50: sorted[Math.ceil(sorted.length * 0.5) - 1], p95: sorted[Math.ceil(sorted.length * 0.95) - 1], raw: values }];
       })),
     },
+    pathStress: { scope: '4-way synthetic tree; includes normalization and path search, excludes CLI/MCP and isolated memory measurement', nodes: nodeCount, edges: tree.edges.length, cases: pathStress },
     tokens: { tokenizer: `${tokenizerPkg.name}@${tokenizerPkg.version}`, encoding: 'o200k_base',
       baseline: 'entire normalized synthetic graph JSON, not the previous context implementation',
       wholeGraphTokens, contextTextTokens, contextResultEnvelopeTokens: count(JSON.stringify(cold.result)),

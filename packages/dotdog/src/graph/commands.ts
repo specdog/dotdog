@@ -84,7 +84,7 @@ export function registerGraphCommands(program: Command) {
       const data = normalizeGraph(JSON.parse(readGraphText(resolveUserPath(opts.dag))));
       const result = auditGraph(data, process.cwd(), { profile: opts.profile, maxAgeDays: Number(opts.maxAgeDays) });
       if (!result.ok) process.exitCode = 1;
-      console.log(opts.json ? JSON.stringify(result, null, 2) : `${result.ok ? 'Evidence checks passed' : 'Evidence gaps found'}: ${result.validEvidence}/${result.evidence} current artifacts\n${result.findings.map(item => `${item.node}: ${item.code}: ${item.message}`).join('\n')}\nAdvisory only; not safety certification or actuation permission.`);
+      console.log(opts.json ? JSON.stringify(result, null, 2) : `${result.ok ? 'Evidence checks passed' : 'Evidence gaps found'}: ${result.validEvidence}/${result.evidence} current artifacts\n${result.findings.map(item => `${item.node}: ${item.code}: ${item.message}`).join('\n')}\n${result.limitations.join('\n')}`);
     });
   graph.command('import <file>')
     .option('--format <format>', 'dotdog or rea-callgraph', 'dotdog')
