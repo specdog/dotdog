@@ -151,13 +151,20 @@ test('embodied evidence checks detect stale, changed, failing and omitted covera
 
 test('real MCP SDK connects, discovers schemas, and calls Dotdog over stdio', async () => {
   const root = fixture();
-  writeFileSync(join(root, 'example.dag'), JSON.stringify({ project: 'example', nodes: [{ id: 'a', label: 'A' }], edges: [] }));
+  writeFileSync(join(root, 'example.dag'), JSON.stringify({ project: 'example', nodes: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], edges: [{ sourceId: 'a', targetId: 'b', verb: 'references' }] }));
   const transport = new StdioClientTransport({ command: process.execPath, args: [cli, 'serve'], cwd: root, stderr: 'pipe' });
   const client = new Client({ name: 'dotdog-regression', version: '1.0.0' });
   try {
     await client.connect(transport);
     const tools = await client.listTools();
     expect(tools.tools).toHaveLength(11);
+    const Ajv = (await import('ajv/dist/2020')).default, ajv = new Ajv({ strict: false });
+    const inputs: Record<string, object> = { getEntity: { name: 'A' }, traverse: { from: 'A' }, path: { from: 'A', to: 'B' }, search: { q: 'A' }, schema: { entity: 'A' }, context: { q: 'A' }, impact: { from: 'B' }, infraVerify: { summary: true } };
+    for (const tool of tools.tools) {
+      const response = await client.callTool({ name: tool.name, arguments: inputs[tool.name] || {} });
+      expect(response.isError).toBe(false);
+      expect(ajv.compile(tool.outputSchema!)(response.structuredContent)).toBe(true);
+    }
     const response = await client.callTool({ name: 'getEntity', arguments: { project: 'example', name: 'A' } });
     expect(response.isError).toBe(false);
     expect(response.structuredContent?.name).toBe('A');

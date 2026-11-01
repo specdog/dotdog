@@ -5,7 +5,7 @@ title: Dotdog 1.0 migration
 
 # Migrating to Dotdog 1.0
 
-1.0 is being prepared on the modernization branch. Do not assume an npm tag, Homebrew formula or Spec Kit release asset exists until its release is published.
+This guide covers the 1.0 npm/Bun release. Homebrew and Spec Kit extension assets are separately maintained distributions; verify their published versions before installing.
 
 ## Distribution
 

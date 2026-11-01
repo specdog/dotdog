@@ -27,7 +27,7 @@ Code paths below are relative to `packages/dotdog/src/`.
 
 ## Verification record
 
-The full local candidate suite passes **133 tests, 2,102 assertions and one snapshot**, plus lint, validate/doctor, frozen dependency installation and package checks. The [release review PR](https://github.com/specdog/dotdog/pull/340) tracks current-head Linux Node 22/24/26, macOS/Windows Node 24 and Bun 1.3.14/1.4.4 checks, Spec Kit compatibility and final artifact evidence. Historical checkpoints are not relabeled as results for new bytes.
+The full local candidate suite passes **133 tests, 2,124 assertions and one snapshot**, plus lint, validate/doctor, frozen dependency installation and package checks. The [release review PR](https://github.com/specdog/dotdog/pull/340) tracks current-head Linux Node 22/24/26, macOS/Windows Node 24 and Bun 1.3.14/1.4.4 checks, Spec Kit compatibility and final artifact evidence. Historical checkpoints are not relabeled as results for new bytes.
 
 Actual Codex app-server checks cover project skill discovery, command invocation, edit refresh, protected agent configuration and fixture-owner removal discovery. Actual Claude Code checks cover skill discovery, stdio MCP connection, hook removal, unrelated-settings preservation and skill removal discovery. Model-driven Claude invocation/edit refresh remains unverified; deterministic host checks are not a model-output evaluation.
 

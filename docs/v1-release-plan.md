@@ -95,13 +95,13 @@ The focused [path-search comparison](path-performance.md) measures parent-link B
 | Compatibility | Supported graph formats, CLI exits, JSON/MCP contracts and removable integrations pass regression checks. User-owned specs/settings are preserved. |
 | Security | Parser, filesystem, child-process, hook and provider boundaries are reviewed; reproduced findings have regressions. No unresolved high-impact release defects. Advisory scans supplement manual review. |
 | Runtimes | Linux/macOS/Windows CI passes; clean consumers exercise the packaged CLI on supported Node/Bun runtimes, including the declared Node minimum. |
-| Agent hosts | Codex/Claude skill discovery, invocation, edit refresh and removal are verified in the actual hosts. Installed files alone are not sufficient. |
+| Agent integrations | Actual-host skill/MCP discovery and removal, CLI command/refresh behavior and settings preservation are verified; installed files alone are insufficient. Model-driven behavior studies are separate from local CLI/MCP release contracts. |
 | Documentation | Stable installation and development-candidate instructions are distinct. Commands, migration notes, package/extension versions and supported limitations agree. |
 | Release integrity | Approve the final commit; pack once, retain hashes, test those bytes, resolve prerelease findings and publish only the verified archive with provenance. |
 
 ## Implementation status
 
-The completed candidate combines the [spec/REA foundation](https://github.com/specdog/dotdog/pull/332), [spec-check boundaries](https://github.com/specdog/dotdog/pull/337), [path optimization](https://github.com/specdog/dotdog/pull/338), [bounded type module](https://github.com/specdog/dotdog/pull/339) and [final boundary review](https://github.com/specdog/dotdog/pull/340). The full local suite passes 133 tests/2,102 assertions. Hosted checks cover Linux Node 22/24/26, macOS/Windows Node 24, Bun 1.3.14/1.4.4 and pinned Spec Kit 0.12.0/1.2.5. Each changed head must pass its own checks.
+The completed candidate combines the [spec/REA foundation](https://github.com/specdog/dotdog/pull/332), [spec-check boundaries](https://github.com/specdog/dotdog/pull/337), [path optimization](https://github.com/specdog/dotdog/pull/338), [bounded type module](https://github.com/specdog/dotdog/pull/339) and [final boundary review](https://github.com/specdog/dotdog/pull/340). The full local suite passes 133 tests/2,124 assertions. Hosted checks cover Linux Node 22/24/26, macOS/Windows Node 24, Bun 1.3.14/1.4.4 and pinned Spec Kit 0.12.0/1.2.5. Each changed head must pass its own checks.
 
 Fresh forward/backward Ghidra fixture checks preserve the target digest without executing it. Actual Codex app-server checks exercise discovery, command execution, edit refresh and removal discovery; actual Claude Code checks exercise skill/MCP discovery, settings preservation and removal. A model-driven Claude invocation/edit-refresh run remains unverified. Internal driver/state/log files stay outside the public package.
 
@@ -112,7 +112,7 @@ Freeze features before final review. Reconcile findings against the complete rel
 ## Outstanding launch gates
 
 - Reconcile current-head cross-platform/package results with the completed source review; broader compiler/reference or semantic/VSA research is not a 1.0 prerequisite.
-- Resolve the unverified model-driven Claude invocation/edit-refresh gate explicitly; do not relabel deterministic host checks as a model turn.
+- Retain the model-driven Claude limitation explicitly; actual host discovery/removal and deterministic CLI/MCP contracts, not a paid model account or model-output study, are the scoped integration gates.
 - Freeze the final candidate, verify minimum-runtime/package behavior and resolve prerelease feedback.
 - Verify npm trusted-publisher configuration and obtain release approval. Tests of the publishing script do not verify registry permissions.
 

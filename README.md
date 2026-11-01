@@ -2,11 +2,9 @@
 
 Local-first spec and code graphs for coding agents. Keep human intent, observed implementation, and imported analysis evidence distinct and queryable.
 
-**1.0 development:** this branch prepares the next major release. The published npm `latest` version audited for this update was 0.9.0. No 1.0 release has been published by this change.
-
 ## Install
 
-These commands install the published stable package. The examples on this branch describe the unreleased 1.0 candidate; build this checkout using [Development](#development) to try them before publication.
+These commands install the stable package. This guide covers Dotdog 1.0.
 
 ```sh
 npm install -g dotdog
@@ -100,7 +98,7 @@ The server supports legacy initialization revisions 2024-11-05, 2025-06-18 and 2
 
 ## Selected type contracts
 
-The unreleased candidate also supports opt-in `types inspect` for selected TypeScript 7.0.2 contracts, compiler diagnostics and bounded type-reference graphs. See [type contracts](docs/type-contracts.md) for built-checkout commands, requirements and limits. No compiler is auto-installed, and no MCP query executes one.
+Dotdog 1.0 supports opt-in `types inspect` for selected TypeScript 7.0.2 contracts, compiler diagnostics and bounded type-reference graphs. See [type contracts](docs/type-contracts.md) for commands, requirements and limits. No compiler is auto-installed, and no MCP query executes one.
 
 ## REA / Ghidra evidence
 
