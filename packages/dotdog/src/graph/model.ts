@@ -1,4 +1,4 @@
-import { isAbsolute } from 'path';
+import { isAbsolute, win32 } from 'path';
 
 export type GraphNode = {
   id: string;
@@ -69,7 +69,7 @@ function safeOrigin(origin: any): Record<string, unknown> | undefined {
   for (const key of ['type', 'line', 'provider', 'digest']) {
     if (origin[key] !== undefined) result[key] = origin[key];
   }
-  if (typeof origin.file === 'string' && !isAbsolute(origin.file)) result.file = origin.file;
+  if (typeof origin.file === 'string' && !isAbsolute(origin.file) && !win32.isAbsolute(origin.file)) result.file = origin.file;
   return Object.keys(result).length ? result : undefined;
 }
 

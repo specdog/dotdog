@@ -97,3 +97,12 @@ test('ambiguous labels cannot silently retarget edges; exact IDs remain usable',
   expect(graphNeighborhood(graph, 'Duplicate').ok).toBe(false);
   expect(graphNeighborhood(graph, 'one').ok).toBe(true);
 });
+
+test('origin paths omit absolute Windows and POSIX paths on every host', () => {
+  for (const file of ['/outside/module.ts', 'C:\\workspace\\module.ts', '\\\\server\\share\\module.ts']) {
+    const graph = normalizeGraph({ nodes: [{ id: 'one', origin: { type: 'imported', file } }], edges: [] });
+    expect(graph.nodes[0].origin).toEqual({ type: 'imported' });
+  }
+  const graph = normalizeGraph({ nodes: [{ id: 'one', origin: { file: 'src/module.ts', line: 4 } }], edges: [] });
+  expect(graph.nodes[0].origin).toEqual({ file: 'src/module.ts', line: 4 });
+});

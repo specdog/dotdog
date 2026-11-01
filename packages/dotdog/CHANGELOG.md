@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3 — Unreleased
+
+- Reject unmatched punctuation/Unicode path endpoints; return at most 100 exact IDs for ambiguous endpoints and disclose truncation.
+- Omit Windows as well as POSIX absolute origin paths regardless of host platform.
+
 ## 1.0.2 — Unreleased
 
 - Apply the shared graph input limit to scenario/reference diagnostics; reject ambiguous entity labels while preserving exact-ID mappings.

@@ -10,7 +10,7 @@
     },
     "packages/dotdog": {
       "name": "dotdog",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "bin": {
         "dotdog": "dist/cli.js",
         "spec": "dist/cli.js",

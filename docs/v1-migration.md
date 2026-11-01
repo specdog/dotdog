@@ -62,6 +62,8 @@ Repository extraction covers inventory plus JS/TS top-level declarations and sta
 
 ## Security and provider changes
 
+Path endpoint matching no longer treats an empty ASCII-word query as a match for every node. Exact IDs/labels and genuine substring matches remain usable, including Unicode. Ambiguous path results now return at most 100 exact candidate IDs rather than labels; `truncated` reports a cut candidate list as well as a bounded search. Absolute origin file paths are omitted using both POSIX and Windows path rules, independent of the current host. This is not general redaction of arbitrary graph properties or evidence.
+
 Generated destinations reject symlinks; Git inventory cannot follow redirected directories outside the repository. Hook ownership metadata must match the expected installation, not arbitrary file/hash claims. MCP lines are capped at 1 MiB and graph inputs at 32 MiB. Regenerate graphs after upgrading.
 
 Provider verification no longer launches guessed MCP tools or unauthenticated remote MCP sessions. Cloudflare requires both `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`; D1/KV mappings use IDs. Railway uses `service:<service-id>`, `RAILWAY_API_TOKEN` for account/workspace tokens or `RAILWAY_TOKEN` for project tokens. Supabase project checks do not claim table validation. Strict `live --exit-code` fails for skipped/warning infrastructure checks. Endpoint JSON contracts now compare nested values/types, not merely field presence; redirects are rejected and response bodies/timeouts are bounded.

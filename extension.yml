@@ -3,7 +3,7 @@
   "extension": {
     "id": "dotdog",
     "name": "Dotdog",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Import GitHub Spec Kit artifacts into local knowledge graphs for validation, analysis, search, and MCP queries.",
     "author": "specdog",
     "repository": "https://github.com/specdog/dotdog",

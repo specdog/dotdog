@@ -121,7 +121,7 @@ The separate TypeScript 7.0.2 CLI probe checked valid → invalid → repaired c
 
 ## 6. Release integrity and approval
 
-After required gates pass, approve the final commit and version. The current development version is 1.0.2; align metadata to the approved version without silently downgrading it. Follow the repository's source/package version-bump rule. Do not commit build output.
+After required gates pass, approve the final commit and version. The current development version is 1.0.3; align metadata to the approved version without silently downgrading it. Follow the repository's source/package version-bump rule. Do not commit build output.
 
 Pack the final candidate once, retain commit/version/file manifest/digests, test those exact bytes and publish only that archive. Changed candidate bytes invalidate the previous artifact approval. Resolve approved prerelease feedback before stable publication; prerelease publication also requires approval.
 

@@ -70,6 +70,8 @@ A separate TypeScript 7.0.2 probe confirmed two adapter-plan risks: an existing 
 
 ### Earlier checkpoints
 
+The `1.0.3` follow-up adds regressions for arbitrary-node selection by unmatched punctuation/Unicode queries, unbounded/duplicate-label path ambiguity responses and Windows absolute origin paths retained on POSIX hosts. All three reproduced before their repairs. Exact candidate IDs are capped at 100 with explicit truncation; relative origin paths remain intact. An independent all-pairs-distance oracle also exercises directed cyclic graphs, verb filters, hop limits, zero-hop paths and retained edge evidence. Arbitrary graph properties/evidence are not globally redacted.
+
 The initial consolidated suite passed with 96 tests, 391 assertions and one snapshot. Hosted CI status is recorded in PR #332. Typechecking, build, frozen install, skill validation, extension manifest, real demo, and Dotdog's own validate/check/doctor/status checks passed. Packed consumer checks passed under Node 22.12.0, 24.22.1, 26.8.1 and Bun 1.3.14, including a synthetic embodied evidence success/tamper-failure case. That earlier candidate tarball measured 181,077 bytes; it was larger than the original 0.9 artifact and no compression improvement is claimed.
 
 Follow-up security finding: a generated output hard-linked to an external fixture was truncated before atomic-write repair. The regression now preserves the external bytes. A concurrent writer is rejected; killing the owning process leaves a lock that the next graph refresh recovers. These cases were tested locally; Windows gate results are tracked in the PR.
