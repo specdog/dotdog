@@ -1,7 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
-import { basename, dirname, join } from 'path';
+import { basename, join } from 'path';
 import type { Command } from 'commander';
 import { normalizeGraph } from '../graph/model';
+import { readGraphText } from '../graph/io';
 import { resolveUserPath } from '../workspace/paths';
 
 function projects(root: string, name?: string) {
@@ -18,7 +19,7 @@ const token = (text: string, word: string) => new RegExp(`(?<![\\w$])${word.repl
 
 export function scenarioCheck(directory: string, name: string) {
   const project = basename(directory);
-  const graph = normalizeGraph(JSON.parse(readFileSync(resolveUserPath(`${project}.dag`, directory), 'utf8')));
+  const graph = normalizeGraph(JSON.parse(readGraphText(resolveUserPath(`${project}.dag`, directory))));
   const lines = readFileSync(resolveUserPath('SPEC.dog', directory), 'utf8').split(/\r?\n/);
   let level = 0, selected = false, matches = 0;
   const steps: string[] = [];
@@ -39,12 +40,15 @@ export function referenceCheck(root: string, directory: string) {
   if (!existsSync(planFile)) return { project: basename(directory), ok: false, mappings: [], limitation: 'No plan.dog with explicit Verify mappings' };
   const plan = readFileSync(planFile, 'utf8');
   const section = plan.match(/^## Verify\s*\r?\n([\s\S]*?)(?=^##\s|$(?![\s\S]))/m)?.[1] || '';
-  const graph = normalizeGraph(JSON.parse(readFileSync(resolveUserPath(`${basename(directory)}.dag`, directory), 'utf8')));
+  const graph = normalizeGraph(JSON.parse(readGraphText(resolveUserPath(`${basename(directory)}.dag`, directory))));
   const mappings = [...section.matchAll(/^### Entity:\s*(.+?)\s*\r?\n([\s\S]*?)(?=^###\s|$(?![\s\S]))/gm)].map(([, entity, body]) => {
     const file = body.match(/^\s*file:\s*(.+)$/m)?.[1].trim();
     const properties = body.match(/^\s*properties:\s*\[([^\]]*)\]/m)?.[1].split(',').map(value => value.trim()).filter(Boolean) || [];
     try {
-      if (!graph.nodes.some(node => node.id === entity || node.label === entity)) throw new Error('Unknown graph entity');
+      const exact = graph.nodes.find(node => node.id === entity);
+      const matches = exact ? [exact] : graph.nodes.filter(node => node.label === entity);
+      if (!matches.length) throw new Error('Unknown graph entity');
+      if (matches.length > 1) throw new Error(`Ambiguous graph entity: ${entity}`);
       if (!file) throw new Error('No explicit file mapping');
       const path = resolveUserPath(file, root);
       const code = readFileSync(path, 'utf8');

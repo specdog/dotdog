@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2 — Unreleased
+
+- Apply the shared graph input limit to scenario/reference diagnostics; reject ambiguous entity labels while preserving exact-ID mappings.
+
 ## 1.0.1 — Unreleased
 
 - Validate nested workspace JSON before exposing typed data; preserve existing validation JSON and reject malformed/incomplete groups without crashes.

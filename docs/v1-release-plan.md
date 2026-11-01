@@ -60,8 +60,10 @@ Code paths below are relative to `packages/dotdog/src/`.
 - Start with the tested 7.0.2 CLI capability, not the incompatible legacy `createProgram` prototype or a mandatory 7.1 beta API. Declare supported versions/configurations only after adapter tests pass.
 - Proposed surface: `dotdog types inspect <export> --file <path> --project <tsconfig> --json`. Confirm its result/exit contract before implementation; this command does not exist yet. Import saved results through existing graph machinery. MCP queries must not implicitly launch compilers.
 - Run diagnostics with original semantic options. A separate declaration-inspection pass may change only necessary emit/output settings; direct all output/build metadata into managed temporary storage. Never loosen strictness or silently replace project configuration.
+- Explicitly contain `declarationDir` as well as `outDir`; an original declaration directory otherwise overrides the temporary output location. Record inspection-only option differences. With `stripInternal`, declarations may omit contracts still referenced by public signatures: retain them through an explicit inspection override or report the missing dependency, never silently claim completeness. See the [TypeScript emit options](https://www.typescriptlang.org/tsconfig/#declarationDir).
 - Initially reject unproved configurations such as project-reference/composite/outFile builds. Test extends/path aliases and re-exports explicitly; unresolved dependencies remain partial rather than guessed.
 - Use fixed subprocess arguments, no shell, bounded time/output and cancellation/cleanup. Record compiler version, configuration identity, source digests and scope. Detect changes during inspection and reject stale mixed results.
+- Keep persisted paths repository-relative. Treat compiler diagnostics and declaration maps as untrusted text/paths, not instructions or fetchable URLs; reject escaping output/source-map paths and avoid copying raw absolute-path diagnostics into saved/public evidence.
 
 ### Contracts and graph integration
 
@@ -119,7 +121,7 @@ The separate TypeScript 7.0.2 CLI probe checked valid → invalid → repaired c
 
 ## 6. Release integrity and approval
 
-After required gates pass, approve the final commit and version. The current development version is 1.0.1; align metadata to the approved version without silently downgrading it. Follow the repository's source/package version-bump rule. Do not commit build output.
+After required gates pass, approve the final commit and version. The current development version is 1.0.2; align metadata to the approved version without silently downgrading it. Follow the repository's source/package version-bump rule. Do not commit build output.
 
 Pack the final candidate once, retain commit/version/file manifest/digests, test those exact bytes and publish only that archive. Changed candidate bytes invalidate the previous artifact approval. Resolve approved prerelease feedback before stable publication; prerelease publication also requires approval.
 

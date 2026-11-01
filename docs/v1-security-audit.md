@@ -60,6 +60,16 @@ The full local candidate suite passed 116 tests; dependency advisory output was 
 
 ## Local verification record
 
+### Spec-check follow-up
+
+The `1.0.2` development candidate closes two additional gaps in `spec/checks.ts`. Scenario/reference diagnostics previously read graphs without the shared size/type guard, and reference mappings accepted duplicate labels without resolving a unique entity. Both now use `readGraphText`; mappings prioritize exact IDs and reject ambiguous labels. Two regressions failed before repair and passed afterward, including exact-ID precedence and unknown entities. These lexical diagnostics still do not establish graph freshness or semantic correctness; migration guidance now states that distinction explicitly.
+
+Local verification passed 118 tests, 566 assertions and one snapshot, plus typecheck/build, frozen install, validate/doctor, extension/package checks and the Node 26/Bun packed-consumer check. A built-CLI fixture returned nonzero for ambiguous references and an oversized scenario graph, accepted an exact ID and preserved its plan bytes. Hosted checks for this revision and the final release audit remain separate gates.
+
+A separate TypeScript 7.0.2 probe confirmed two adapter-plan risks: an existing `declarationDir` can bypass an `outDir`-only temporary destination, and `stripInternal` can omit a type still referenced by an emitted public signature. Explicit inspection-only settings contained declarations and retained that type in the probe. The production adapter must record overrides, contain every output and expose partial dependencies; it is not implemented by this repair. See the [compiler option reference](https://www.typescriptlang.org/tsconfig/#stripInternal) and #333. No compiler framework or dependency was added.
+
+### Earlier checkpoints
+
 The initial consolidated suite passed with 96 tests, 391 assertions and one snapshot. Hosted CI status is recorded in PR #332. Typechecking, build, frozen install, skill validation, extension manifest, real demo, and Dotdog's own validate/check/doctor/status checks passed. Packed consumer checks passed under Node 22.12.0, 24.22.1, 26.8.1 and Bun 1.3.14, including a synthetic embodied evidence success/tamper-failure case. That earlier candidate tarball measured 181,077 bytes; it was larger than the original 0.9 artifact and no compression improvement is claimed.
 
 Follow-up security finding: a generated output hard-linked to an external fixture was truncated before atomic-write repair. The regression now preserves the external bytes. A concurrent writer is rejected; killing the owning process leaves a lock that the next graph refresh recovers. These cases were tested locally; Windows gate results are tracked in the PR.

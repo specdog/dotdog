@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, truncateSync } from 'fs';
 import { spawnSync } from 'child_process';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -12,6 +12,7 @@ import { auditGraph } from '../src/graph/audit';
 import { graphStatus } from '../src/automation';
 import { scenarioCheck, referenceCheck } from '../src/spec/checks';
 import { createMcpHandler } from '../src/serve';
+import { MAX_GRAPH_BYTES } from '../src/graph/io';
 import { setupTempProject } from './helpers';
 
 const dirs: string[] = [];
@@ -56,6 +57,37 @@ test('reference checks reject escapes, unknown entities, and retired mapping gen
   const before = readFileSync(plan);
   expect(run(root, 'verify', '--init').status).toBe(1);
   expect(readFileSync(plan)).toEqual(before);
+});
+
+test('spec checks enforce the shared graph input limit', () => {
+  const root = fixture(), directory = join(root, 'example');
+  mkdirSync(directory);
+  writeFileSync(join(directory, 'plan.dog'), '## Verify\n');
+  const graph = join(directory, 'example.dag');
+  writeFileSync(graph, '');
+  truncateSync(graph, MAX_GRAPH_BYTES + 1);
+  expect(() => scenarioCheck(directory, 'example')).toThrow('32 MiB');
+  expect(() => referenceCheck(root, directory)).toThrow('32 MiB');
+});
+
+test('reference checks reject ambiguous labels and prioritize exact entity IDs', () => {
+  const root = fixture(), directory = join(root, 'example');
+  mkdirSync(directory);
+  const graph = join(directory, 'example.dag'), plan = join(directory, 'plan.dog');
+  writeFileSync(join(root, 'model.ts'), 'export const id = 1;');
+  writeFileSync(graph, JSON.stringify({ nodes: [{ id: 'first', label: 'Node' }, { id: 'second', label: 'Node' }], edges: [] }));
+  const mapping = (entity: string) => writeFileSync(plan, `## Verify\n### Entity: ${entity}\nfile: model.ts\nproperties: [id]\n`);
+  mapping('Node');
+  const ambiguous = referenceCheck(root, directory);
+  expect(ambiguous.ok).toBe(false);
+  expect(ambiguous.mappings[0]).toMatchObject({ error: 'Ambiguous graph entity: Node' });
+  mapping('first');
+  expect(referenceCheck(root, directory).ok).toBe(true);
+  mapping('missing');
+  expect(referenceCheck(root, directory).ok).toBe(false);
+  writeFileSync(graph, JSON.stringify({ nodes: [{ id: 'Node', label: 'Other' }, { id: 'second', label: 'Node' }], edges: [] }));
+  mapping('Node');
+  expect(referenceCheck(root, directory).ok).toBe(true);
 });
 
 test('embodied evidence checks detect stale, changed, failing and omitted coverage', () => {
