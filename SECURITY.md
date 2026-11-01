@@ -10,7 +10,7 @@ Use [GitHub private vulnerability reporting](https://github.com/specdog/dotdog/s
 
 | Version | Supported |
 |---------|-----------|
-| 1.0.x   | In development |
+| 1.0.x   | Yes |
 | 0.9.x   | Yes |
 | 0.8.x   | Yes |
 | < 0.8.0 | No |
@@ -28,9 +28,9 @@ The bundled `dotdog serve` MCP server uses stdio and does not open a network lis
 
 Workspace responses use repository-relative paths. The legacy `cwd` field remains as a relative compatibility alias for `path` and must not be treated as an absolute process working directory.
 
-## 1.0 candidate hardening
+## 1.0 hardening
 
-The unpublished 1.0 candidate adds static symlink/output-boundary checks, validated hook ownership, bounded MCP lines and graph inputs, and explicit read-only provider calls. Graph descriptions, source and imported evidence remain untrusted data, not agent instructions or execution authority.
+Dotdog 1.0 adds static symlink/output-boundary checks, validated hook ownership, bounded MCP lines and graph inputs, and explicit read-only provider calls. Graph descriptions, source and imported evidence remain untrusted data, not agent instructions or execution authority.
 
 `live` intentionally contacts declared HTTP(S) destinations, including local endpoints. Review untrusted specs before running it. Cloud provider credentials remain in the user's configured environment/CLI; fixed-origin HTTP requests reject redirects. Redaction and credential-file exclusions are best-effort, not a guarantee that exports contain no private data.
 

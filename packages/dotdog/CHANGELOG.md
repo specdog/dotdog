@@ -38,7 +38,7 @@
 - Import saved REA NativeCallGraph bodies without launching or reconfiguring REA/Ghidra.
 - Fix destructive init, minimal scaffolds, v3 token accounting, lexical search scoring, live endpoint detection and false-success exits.
 - Replace nonfunctional linting with TypeScript checks; verify packed releases under Node and Bun and test CI on Node 22/24 and macOS/Linux.
-- Breaking: generated graph IDs change; regenerate with refresh. Node.js minimum is 22.12.0. JSON errors now return nonzero where appropriate. No release published yet.
+- Breaking: generated graph IDs change; regenerate with refresh. Node.js minimum is 22.12.0. JSON errors now return nonzero where appropriate. See the [1.0 migration guide](https://specdog.github.io/dotdog/v1-migration).
 
 ## 0.9.0 — 2026-07-18
 

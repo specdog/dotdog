@@ -101,7 +101,7 @@ The focused [path-search comparison](path-performance.md) measures parent-link B
 
 ## Implementation status
 
-The completed candidate combines the [spec/REA foundation](https://github.com/specdog/dotdog/pull/332), [spec-check boundaries](https://github.com/specdog/dotdog/pull/337), [path optimization](https://github.com/specdog/dotdog/pull/338), [bounded type module](https://github.com/specdog/dotdog/pull/339) and [final boundary review](https://github.com/specdog/dotdog/pull/340). The full local suite passes 133 tests/2,124 assertions. Hosted checks cover Linux Node 22/24/26, macOS/Windows Node 24, Bun 1.3.14/1.4.4 and pinned Spec Kit 0.12.0/1.2.5. Each changed head must pass its own checks.
+The released implementation combines the [spec/REA foundation](https://github.com/specdog/dotdog/pull/332), [spec-check boundaries](https://github.com/specdog/dotdog/pull/337), [path optimization](https://github.com/specdog/dotdog/pull/338), [bounded type module](https://github.com/specdog/dotdog/pull/339) and [final boundary review](https://github.com/specdog/dotdog/pull/340). The full local suite passes 133 tests/2,124 assertions. Hosted checks cover Linux Node 22/24/26, macOS/Windows Node 24, Bun 1.3.14/1.4.4 and pinned Spec Kit 0.12.0/1.2.5. Each changed head must pass its own checks.
 
 Fresh forward/backward Ghidra fixture checks preserve the target digest without executing it. Actual Codex app-server checks exercise discovery, command execution, edit refresh and removal discovery; actual Claude Code checks exercise skill/MCP discovery, settings preservation and removal. A model-driven Claude invocation/edit-refresh run remains unverified. Internal driver/state/log files stay outside the public package.
 
@@ -109,14 +109,15 @@ The [type research](https://github.com/specdog/specdog.github.io/pull/66) preser
 
 Freeze features before final review. Reconcile findings against the complete release diff. A failed or skipped required gate is not a release pass. Do not hide failures by reducing coverage or replacing real integrations with mocks. A SolidState wrapper pass establishes only what its underlying check exercised.
 
-## Outstanding launch gates
+## Release record
 
-- Reconcile current-head cross-platform/package results with the completed source review; broader compiler/reference or semantic/VSA research is not a 1.0 prerequisite.
-- Retain the model-driven Claude limitation explicitly; actual host discovery/removal and deterministic CLI/MCP contracts, not a paid model account or model-output study, are the scoped integration gates.
-- Freeze the final candidate, verify minimum-runtime/package behavior and resolve prerelease feedback.
-- Verify npm trusted-publisher configuration and obtain release approval. Tests of the publishing script do not verify registry permissions.
+- Stable release: [Dotdog 1.0.0](https://github.com/specdog/dotdog/releases/tag/v1.0.0), published 2026-11-01 to [npm](https://www.npmjs.com/package/dotdog/v/1.0.0). Bun installs this same registry package.
+- Approved source: `1d6ebeed3f390ce7dbd8408bed8177114489ea3c`; [post-merge runtime CI](https://github.com/specdog/dotdog/actions/runs/41291852617) passed all six rows.
+- [Publisher run](https://github.com/specdog/dotdog/actions/runs/41292307924) retained and tested one archive, then published with provenance. `dotdog-1.0.0.tgz` is 1,222,323 bytes; SHA-256 `ec66261ab2127225ebe0167ff88d661d566291eb577a6ae0931fab128093da97`. The release receipt records the SHA-512 integrity and 35-file manifest.
+- Fresh public-registry npm and Bun installations passed version/bin, spec refresh, context/impact, real TypeScript invalid/repair, evidence-tamper, REA import/path and stdio MCP checks. npm signature verification passed; the provenance subject, source commit and workflow match the retained archive. Registry README content matches its packaged README.
+- The optional Spec Kit release ZIP and checksum passed download/hash/install verification against pinned Spec Kit 0.12.0 and 1.2.5 in the [published-asset matrix](https://github.com/specdog/dotdog/actions/runs/41293459817).
 
-The release remains unmerged and unpublished until these gates are complete. Existing live-provider behavior requires real-target evidence before making live-integration claims; it is not a cloud-provisioning prerequisite for the scoped graph workflows.
+The model-driven Claude limitation above remains explicit; no authenticated model-output or productivity study is claimed. Existing live-provider behavior requires real-target evidence before making live-integration claims; it is not a cloud-provisioning prerequisite for the scoped graph workflows. Documentation corrections after publication do not replace the immutable npm archive or move its source tag.
 
 Historical declaration-emission probes are distinct from the implemented read-only native adapter and from final archived package bytes. Runtime/host and performance checks establish only their stated cases, not complete correctness or end-to-end model productivity.
 

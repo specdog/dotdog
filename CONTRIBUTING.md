@@ -90,6 +90,8 @@ Documentation-only changes follow their own cycle — no version bump required f
 4. Obtain release approval before merging or creating a release tag.
 5. Tag only the approved commit already on `main`; push that specific tag, not all local tags.
 6. The tag workflow verifies the candidate and publishes only its checked tarball with provenance.
+7. Verify the public registry version, provenance, integrity and fresh npm/Bun consumer behavior. Retain the original archive, receipt and checksums on the GitHub release.
+8. Publish release notes with highlights, breaking changes, migration guidance and known limits. Verify the deployed docs/site and separately distributed assets before closing release tracking.
 
 ## Questions
 
