@@ -45,5 +45,5 @@ dotdog status       → read-only graph freshness (not correctness)
 
 1. Use conventional commits (feat:, fix:, docs:, chore:)
 2. Never commit dist/
-3. Every code change touching `packages/dotdog/src/` or `package.json` must bump version
+3. Keep the first unreleased 1.0 candidate at `1.0.0`; bump versions per release, not per development commit
 4. Dogfood: test against `npx dotdog@latest validate` before shipping

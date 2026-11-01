@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.1 — Unreleased
+## 1.0.0 — Unreleased
 
 - Validate nested workspace JSON before exposing typed data; preserve existing validation JSON and reject malformed/incomplete groups without crashes.
 - Retain graph coverage/limitations and MCP node provenance, distinguish bounded searches, and keep token-budget errors bounded without silently dropping scope.

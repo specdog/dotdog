@@ -50,7 +50,7 @@ See [migration](v1-migration.md), [peer research](graph-peer-research.md) and [e
 
 ## Scoped gap repair
 
-The unreleased `1.0.1` candidate repairs malformed nested workspace input before registry construction and removes the resolver's unchecked JSON-to-config assertion. Success-only typed data passes real `strict`/`exactOptionalPropertyTypes` compiler checks; invalid-result data access is rejected with TS2339. No runtime schema dependency was added.
+The workspace-boundary repair at `22b0b7e` repairs malformed nested workspace input before registry construction and removes the resolver's unchecked JSON-to-config assertion. Success-only typed data passes real `strict`/`exactOptionalPropertyTypes` compiler checks; invalid-result data access is rejected with TS2339. No runtime schema dependency was added.
 
 `path --dag` previously bypassed repository and file-size checks. It now uses the shared safe reader; a regression confirms that an external graph cannot be returned. Traversal results retain supplied coverage and node provenance, disclose search boundaries, and fail explicitly when scope metadata cannot fit the requested token budget.
 
