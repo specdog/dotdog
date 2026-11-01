@@ -35,13 +35,23 @@ try {
   writeFileSync(graphFile, JSON.stringify(body, null, 2) + '\n', { mode: 0o600 });
   writeFileSync(join(output, 'evidence.private.json'), JSON.stringify(evidence, null, 2) + '\n', { mode: 0o600 });
   const run = (...args) => execFileSync(process.execPath, [cli, ...args], { cwd: output, encoding: 'utf8' });
-  const imported = JSON.parse(run('graph', 'import', 'native-callgraph.json', '--format', 'rea-callgraph', '--project', 'native-fixture', '--artifact-sha256', binarySha256));
+  const imported = JSON.parse(run('graph', 'import', 'native-callgraph.json', '--format', 'rea-callgraph', '--project', 'native-fixture', '--artifact-sha256', binarySha256, '--rea-direction', 'forward'));
   const path = JSON.parse(run('path', start.address, start.calls[0], '--dag', '.doghouse/imported/native-fixture.dag', '--json'));
   assert.equal(path.ok, true); assert.equal(path.hops, 1);
+  const callersResponse = await client.callTool({ name: 'get_call_graph', arguments: { address: start.calls[0], direction: 'backward' } }, undefined, { timeout: 180000 });
+  assert.ok(!callersResponse.isError, JSON.stringify(callersResponse));
+  const callersEvidence = callersResponse.structuredContent;
+  assert.equal(callersEvidence.subject.digest.sha256, binarySha256);
+  const callersFile = join(output, 'native-callers.json');
+  writeFileSync(callersFile, JSON.stringify(callersEvidence.normalized_result, null, 2) + '\n', { mode: 0o600 });
+  writeFileSync(join(output, 'callers-evidence.private.json'), JSON.stringify(callersEvidence, null, 2) + '\n', { mode: 0o600 });
+  run('graph', 'import', 'native-callers.json', '--format', 'rea-callgraph', '--project', 'native-callers', '--artifact-sha256', binarySha256, '--rea-direction', 'backward');
+  const callersPath = JSON.parse(run('path', start.address, start.calls[0], '--dag', '.doghouse/imported/native-callers.dag', '--direction', 'outgoing', '--json'));
+  assert.equal(callersPath.ok, true); assert.equal(callersPath.hops, 1);
   assert.equal(digest(binary), binarySha256);
-  const verification = { binarySha256, exportSha256: digest(graphFile), operation: evidence.operation, profile: evidence.analysis_profile, importedNodes: imported.nodes, importedEdges: imported.edges, verifiedPathHops: path.hops, targetExecuted: false, limitations: body.limitations };
+  const verification = { binarySha256, exportSha256: digest(graphFile), callersExportSha256: digest(callersFile), operation: evidence.operation, profile: evidence.analysis_profile, importedNodes: imported.nodes, importedEdges: imported.edges, verifiedPathHops: path.hops, backwardVerifiedPathHops: callersPath.hops, targetExecuted: false, limitations: body.limitations };
   writeFileSync(join(output, 'verification.json'), JSON.stringify(verification, null, 2) + '\n', { mode: 0o600 });
-  console.log(JSON.stringify({ binarySha256, importedNodes: imported.nodes, importedEdges: imported.edges, verifiedPathHops: path.hops, targetExecuted: false }));
+  console.log(JSON.stringify({ binarySha256, importedNodes: imported.nodes, importedEdges: imported.edges, verifiedPathHops: path.hops, backwardVerifiedPathHops: callersPath.hops, targetExecuted: false }));
 } finally {
   try {
     if (opened) { const closed = await client.callTool({ name: 'close_binary', arguments: {} }); assert.ok(!closed.isError, 'Provider did not confirm session close'); }

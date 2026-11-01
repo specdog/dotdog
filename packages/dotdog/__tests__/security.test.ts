@@ -82,9 +82,11 @@ test('world queries cannot load graphs outside the selected repository', () => {
   const root = fixture(), outside = fixture();
   const file = join(outside, 'private.dag');
   writeFileSync(file, JSON.stringify({ version: '0.1', nodes: [{ id: 'private-secret' }], edges: [] }));
-  const result = spawnSync(process.execPath, [join(import.meta.dir, '../src/cli.ts'), 'query', 'private', '--dag', file], { cwd: root, encoding: 'utf8' });
-  expect(result.status).toBe(1);
-  expect(result.stdout).not.toContain('private-secret');
+  for (const args of [['query', 'private'], ['path', 'private-secret', 'private-secret', '--json']]) {
+    const result = spawnSync(process.execPath, [join(import.meta.dir, '../src/cli.ts'), ...args, '--dag', file], { cwd: root, encoding: 'utf8' });
+    expect(result.status).toBe(1);
+    expect(result.stdout).not.toContain('private-secret');
+  }
 });
 
 test('ambiguous labels cannot silently retarget edges; exact IDs remain usable', () => {

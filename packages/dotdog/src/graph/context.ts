@@ -9,6 +9,8 @@ type Context = {
   error?: string;
   direction?: string;
   depth?: number;
+  coverage?: unknown;
+  limitations?: string[];
 };
 
 const words = (text: string) => new Set(text.slice(0, 4096).replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().match(/[\p{L}\p{N}]+/gu) || []);
@@ -20,14 +22,16 @@ export async function budgetContext(context: Context, maxTokens: number, task = 
   const count = (value: unknown) => countTokens(JSON.stringify(value), { disallowedSpecial: new Set() });
   const fits = (value: unknown) => isWithinTokenLimit(JSON.stringify(value), maxTokens, { disallowedSpecial: new Set() }) !== false;
   const budget = { maxTokens, encoding: 'o200k_base', tokenizer: 'gpt-tokenizer@4.1.0', scope: 'compact-json-text', excludes: 'MCP envelope, structured-content duplication, chat framing and other messages' };
+  const insufficient = (minimumTokens: number) => ({ ok: false as const, error: 'budget_too_small', nodes: [], edges: [], truncated: true, budget, minimumTokens,
+    scopeOmitted: context.coverage !== undefined || context.limitations !== undefined });
   if (!context.ok) {
     const candidates = [...(context.candidates || [])];
-    const result = { ok: false, error: context.error || 'endpoint_not_found', nodes: [], edges: [], truncated: true, candidates, budget, omittedCandidates: 0 };
+    const result = { ...context, ok: false as const, error: context.error || 'endpoint_not_found', nodes: [], edges: [], truncated: true, candidates, budget, omittedCandidates: 0 };
     while (candidates.length && !fits(result)) {
       candidates.splice(Math.floor(candidates.length / 2));
       result.omittedCandidates = (context.candidates?.length || 0) - candidates.length;
     }
-    return result;
+    return fits(result) ? result : insufficient(count(result));
   }
   const nodes = context.nodes || [], edges = context.edges || [];
   const nodeById = new Map(nodes.map(node => [node.id, node]));
@@ -39,11 +43,11 @@ export async function budgetContext(context: Context, maxTokens: number, task = 
   for (const edge of edges) selectedEdges.add(edge.id);
   if (fits(payload())) return payload();
   selected.clear(); selectedEdges.clear();
-  if (!nodes.length) return payload();
-  const root = nodes[0].id;
-  selected.add(root);
+  const root = nodes[0]?.id;
+  if (root !== undefined) selected.add(root);
   const minimumTokens = count(payload());
-  if (minimumTokens > maxTokens) return { ok: false, error: 'budget_too_small', nodes: [], edges: [], truncated: true, budget, minimumTokens };
+  if (minimumTokens > maxTokens) return insufficient(minimumTokens);
+  if (root === undefined) return payload();
   const adjacency = new Map<string, { next: string; edge: GraphEdge }[]>();
   const add = (id: string, next: string, edge: GraphEdge) => {
     if (!adjacency.has(id)) adjacency.set(id, []);

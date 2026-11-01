@@ -14,7 +14,7 @@ node scripts/check-native.mjs --solidstate /absolute/path/to/solidstate.mjs --bi
 
 Supply the actual installed SolidState CLI entry point. The checker uses only `solidstate reverse mcp`; it does not register REA directly, install providers or alter runtime configuration. The output directory must not already exist. The configured Ghidra/Java/provider must be usable before running the check.
 
-The checker opens the binary, requests real Ghidra call relationships, saves the NativeCallGraph body, imports it through the built Dotdog CLI and asserts a one-hop path. It verifies the binary digest before/after analysis and closes the provider session. Full provider evidence is saved as `evidence.private.json` and can include local paths; keep it private. The call-graph body and separately reviewed verification metadata are suitable for an example, not the full unreviewed provider response.
+The checker opens the binary, requests real Ghidra call relationships in both forward and backward directions, imports the bodies with their explicit producer directions and asserts a one-hop caller → callee path for each. It verifies the binary digest before/after analysis and closes the provider session. Full provider evidence is saved as `evidence.private.json` and `callers-evidence.private.json` and can include local paths; keep it private. The call-graph bodies and separately reviewed verification metadata are suitable for an example, not the full unreviewed provider responses.
 
 ## Recorded evidence
 

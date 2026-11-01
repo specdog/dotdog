@@ -1,6 +1,10 @@
 # Changelog
 
-## 1.0.0 — Unreleased
+## 1.0.1 — Unreleased
+
+- Validate nested workspace JSON before exposing typed data; preserve existing validation JSON and reject malformed/incomplete groups without crashes.
+- Retain graph coverage/limitations and MCP node provenance, distinguish bounded searches, and keep token-budget errors bounded without silently dropping scope.
+- Require explicit REA export direction and orient backward caller evidence correctly; route path reads through repository and file-size checks.
 
 - Add opt-in exact `o200k_base` context-text budgets and lexical task ranking with whole-record/provenance preservation, connected selections and omission reporting; verify independent tiktoken vectors and frozen tasks on two real repositories.
 - Reuse MCP entity/adjacency indexes and compare content fingerprints without re-escaping graph text; retain reproducible lookup/token measurements and graph/vector/superposition research.

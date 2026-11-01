@@ -1,6 +1,10 @@
 # Changelog
 
-## 1.0.0 — Unreleased
+## 1.0.1 — Unreleased
+
+- Validate nested workspace JSON before exposing typed data; preserve existing validation JSON and reject malformed/incomplete groups without crashes.
+- Retain graph coverage/limitations and MCP node provenance, distinguish bounded searches, and keep token-budget errors bounded without silently dropping scope.
+- Require explicit REA export direction and orient backward caller evidence correctly; route path reads through repository and file-size checks.
 
 - Replace generated outputs atomically, preserve hard-linked evidence and serialize refresh/map/compile with recoverable ownership locks; handle CRLF input and add Windows CI.
 - Verify and publish one hashed tarball; add a real SolidState/Ghidra → REA → Dotdog example with recorded provenance.

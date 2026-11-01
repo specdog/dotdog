@@ -1,4 +1,4 @@
-import { normalizeGraph, type GraphNode, type GraphEdge, type NormalizedGraph } from './model';
+import { normalizeGraph, graphScope, type GraphNode, type GraphEdge, type NormalizedGraph } from './model';
 
 export type PathDirection = 'outgoing' | 'incoming' | 'any';
 
@@ -12,6 +12,10 @@ export type GraphPathResult = {
   to?: { query: string; id: string; label: string };
   error?: 'endpoint_not_found' | 'ambiguous_endpoint' | 'no_path';
   candidates?: string[];
+  maxHops: number;
+  truncated: boolean;
+  coverage: unknown;
+  limitations: string[];
 };
 
 function endpoint(graph: NormalizedGraph, query: string): { node?: GraphNode; candidates?: string[] } {
@@ -42,16 +46,16 @@ export function shortestGraphPath(
 ): GraphPathResult {
   const direction = options.direction || 'any';
   if (!['outgoing', 'incoming', 'any'].includes(direction)) throw new Error('Invalid path direction');
+  const maxHops = options.maxHops ?? 8;
+  if (!Number.isInteger(maxHops) || maxHops < 1 || maxHops > 12) throw new Error('maxHops must be an integer from 1 to 12');
   const graph = normalizeGraph(dag);
   const from = endpoint(graph, fromQuery);
   const to = endpoint(graph, toQuery);
-  const base = { ok: false, direction, hops: 0, nodes: [], edges: [] } as GraphPathResult;
+  const base: GraphPathResult = { ...graphScope(graph), ok: false, direction, maxHops, truncated: false, hops: 0, nodes: [], edges: [] };
   if (!from.node) return { ...base, ok: false, error: from.candidates ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: from.candidates };
   if (!to.node) return { ...base, ok: false, error: to.candidates ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: to.candidates };
   const fromInfo = { query: fromQuery, id: from.node.id, label: from.node.label };
   const toInfo = { query: toQuery, id: to.node.id, label: to.node.label };
-  const maxHops = options.maxHops ?? 8;
-  if (!Number.isInteger(maxHops) || maxHops < 1 || maxHops > 12) throw new Error('maxHops must be an integer from 1 to 12');
   const verb = (options.verb || '').toLowerCase();
   const adjacency = new Map<string, Array<{ edge: GraphEdge; next: string }>>();
   const add = (id: string, edge: GraphEdge, next: string) => {
@@ -65,18 +69,22 @@ export function shortestGraphPath(
   }
   const queue: Array<{ id: string; nodes: string[]; edges: GraphEdge[] }> = [{ id: from.node.id, nodes: [from.node.id], edges: [] }];
   const visited = new Set([from.node.id]);
+  let truncated = false;
   for (let cursor = 0; cursor < queue.length; cursor++) {
     const current = queue[cursor];
     if (current.id === to.node.id) {
       const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
-      return { ok: true, direction, hops: current.edges.length, from: fromInfo, to: toInfo, nodes: current.nodes.map((id) => nodeById.get(id)!).filter(Boolean), edges: current.edges };
+      return { ...base, ok: true, hops: current.edges.length, from: fromInfo, to: toInfo, nodes: current.nodes.map((id) => nodeById.get(id)!).filter(Boolean), edges: current.edges };
     }
-    if (current.edges.length >= maxHops) continue;
+    if (current.edges.length >= maxHops) {
+      truncated ||= (adjacency.get(current.id) || []).some(next => !visited.has(next.next));
+      continue;
+    }
     for (const next of adjacency.get(current.id) || []) {
       if (visited.has(next.next)) continue;
       visited.add(next.next);
       queue.push({ id: next.next, nodes: [...current.nodes, next.next], edges: [...current.edges, next.edge] });
     }
   }
-  return { ...base, ok: false, error: 'no_path', from: fromInfo, to: toInfo };
+  return { ...base, ok: false, error: 'no_path', truncated, from: fromInfo, to: toInfo };
 }

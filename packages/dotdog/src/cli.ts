@@ -1983,7 +1983,7 @@ program
   .option('-m, --max-hops <n>', 'maximum path length', '8')
   .option('--json', 'print JSON')
   .action((from, to, opts) => {
-    const dag = JSON.parse(readFileSync(resolve(opts.dag), 'utf-8'));
+    const dag = JSON.parse(readGraphText(resolveUserPath(opts.dag)));
     const result = shortestGraphPath(dag, from, to, {
       direction: opts.direction as PathDirection,
       verb: opts.verb,
@@ -1995,7 +1995,7 @@ program
       return;
     }
     if (!result.ok) {
-      console.log(`No path: ${result.error}${result.candidates?.length ? ` (${result.candidates.join(', ')})` : ''}`);
+      console.log(`No path in supplied graph${result.truncated ? ` (search stopped at ${result.maxHops} hops)` : ''}: ${result.error}${result.candidates?.length ? ` (${result.candidates.join(', ')})` : ''}`);
       process.exitCode = 1;
       return;
     }

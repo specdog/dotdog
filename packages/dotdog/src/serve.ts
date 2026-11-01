@@ -9,7 +9,7 @@ import { portableWorkspacePath } from './workspace/graph';
 import { shortestGraphPath } from './graph/path';
 import { toolOutputSchema } from './graph/contracts';
 import { budgetContext } from './graph/context';
-import { normalizeGraph, graphNeighborhood, indexGraph, type NormalizedGraph, type GraphIndex } from './graph/model';
+import { normalizeGraph, graphNeighborhood, graphScope, indexGraph, type NormalizedGraph, type GraphIndex } from './graph/model';
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const modern = '2026-07-28';
@@ -181,13 +181,13 @@ export function createMcpHandler(dir: string) {
         const exact = idMatch ? [idMatch] : index.byLabel.get(args.q) || [];
         const matches = exact.length ? exact : graph.nodes.filter(node => `${node.label} ${node.description || ''}`.toLowerCase().includes(args.q.toLowerCase()));
         const context = matches.length !== 1
-          ? { ok: false, error: matches.length ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: matches.slice(0, args.limit || 100).map(node => node.label) }
+          ? { ...graphScope(graph), ok: false, error: matches.length ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: matches.slice(0, args.limit || 100).map(node => node.label) }
           : graphNeighborhood(graph, matches[0].id, { depth: args.depth, limit: args.limit }, index);
         return success(id, args.maxTokens === undefined ? context : await budgetContext(context, args.maxTokens, args.task));
       }
       const neighborhood = graphNeighborhood(graph, args.from, { direction: name === 'impact' ? 'incoming' : 'outgoing', depth: args.depth, limit: args.limit, verb: args.verb }, index);
       if (name === 'impact') return success(id, neighborhood);
-      return success(id, { ...neighborhood, nodes: neighborhood.nodes.map(node => ({ name: node.label, edges: neighborhood.edges.filter(edge => edge.sourceId === node.id).map(edge => `${byId.get(edge.targetId)!.label}:${edge.verb}${edge.cardinality ? '(' + edge.cardinality + ')' : ''}`) })) });
+      return success(id, { ...neighborhood, nodes: neighborhood.nodes.map(node => ({ ...node, name: node.label, edges: neighborhood.edges.filter(edge => edge.sourceId === node.id).map(edge => `${byId.get(edge.targetId)!.label}:${edge.verb}${edge.cardinality ? '(' + edge.cardinality + ')' : ''}`) })) });
     } catch (error) {
       return { jsonrpc: '2.0', id, result: { resultType: 'complete', _meta: serverMeta, isError: true, content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }] } };
     }

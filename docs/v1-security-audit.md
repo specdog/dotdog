@@ -48,6 +48,16 @@ CI now includes a scheduled and dependency-change advisory audit, frozen lockfil
 
 See [migration](v1-migration.md), [peer research](graph-peer-research.md) and [embodied evidence](embodied-systems.md) for supported behavior and explicit limits. The candidate remains unmerged and unpublished until separately released.
 
+## Scoped gap repair
+
+The unreleased `1.0.1` candidate repairs malformed nested workspace input before registry construction and removes the resolver's unchecked JSON-to-config assertion. Success-only typed data passes real `strict`/`exactOptionalPropertyTypes` compiler checks; invalid-result data access is rejected with TS2339. No runtime schema dependency was added.
+
+`path --dag` previously bypassed repository and file-size checks. It now uses the shared safe reader; a regression confirms that an external graph cannot be returned. Traversal results retain supplied coverage and node provenance, disclose search boundaries, and fail explicitly when scope metadata cannot fit the requested token budget.
+
+Review of REA 6.8.0's installed request/output contracts and traversal implementation found that a bare call-graph export omits its producer direction. Imports now require an explicit forward/backward declaration and orient caller evidence correctly; the declaration is not independent verification of the producer request. The real source-fixture check passed forward and backward one-hop paths through Ghidra/REA and the built CLI, without executing or changing the target binary.
+
+The full local candidate suite passed 116 tests; dependency advisory output was `{}`. These checks and the focused boundary review do not complete the final release audit, current-head hosted matrix or the pending type-context module. Temporary full provider evidence remains private. No merge or publication occurred.
+
 ## Local verification record
 
 The initial consolidated suite passed with 96 tests, 391 assertions and one snapshot. Hosted CI status is recorded in PR #332. Typechecking, build, frozen install, skill validation, extension manifest, real demo, and Dotdog's own validate/check/doctor/status checks passed. Packed consumer checks passed under Node 22.12.0, 24.22.1, 26.8.1 and Bun 1.3.14, including a synthetic embodied evidence success/tamper-failure case. That earlier candidate tarball measured 181,077 bytes; it was larger than the original 0.9 artifact and no compression improvement is claimed.

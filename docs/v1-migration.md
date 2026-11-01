@@ -48,7 +48,11 @@ MCP offers structured output plus text fallback, bounded context/impact queries,
 
 Legacy initialization revisions and modern 2026-07-28 discovery/per-request metadata are supported. Modern clients must supply protocol version and client capabilities in `_meta`; unsupported versions are rejected. Local stdio remains the only server transport. Live infrastructure verification remains an explicit operation.
 
-`graph import --format rea-callgraph` accepts a saved REA NativeCallGraph body. This is not a general-purpose Ghidra loader or REA Evidence-envelope parser. Evidence addresses, coverage and limitations are retained. A supplied binary SHA-256 scopes identities to that binary; otherwise the export digest scopes them and binary identity is unknown. Dotdog never invokes or reconfigures REA/Ghidra.
+`graph import --format rea-callgraph` accepts a saved REA NativeCallGraph body. Supply `--rea-direction forward` or `--rea-direction backward` matching the original producer request: the bare export omits direction, so guessing could reverse call edges. Regenerate earlier imports whose direction was not recorded. This is not a general-purpose Ghidra loader or REA Evidence-envelope parser. Evidence addresses, coverage and limitations are retained. A supplied binary SHA-256 scopes identities to that binary; otherwise the export digest scopes them and binary identity is unknown. Dotdog never invokes or reconfigures REA/Ghidra.
+
+Path/context/impact/traverse results retain supplied graph coverage and limitations; absent coverage is reported as unknown. A bounded `no_path` is not proof that two procedures are independent. Inspect `maxHops` and `truncated`. MCP `traverse` keeps legacy node `name`/`edges` fields and adds full node identity/provenance. Token-budget failures report `budget_too_small` rather than returning an oversized or scope-free successful result.
+
+Workspace manifests now validate nested shape before registry construction. Optional properties must be omitted or have their declared type; explicit `null`/`undefined` is not omission. Invalid manifests report validation errors instead of `TypeError`. The internal parser exposes typed `data` only on success; the existing validation JSON shape is unchanged.
 
 ## Interpretation limits
 

@@ -33,5 +33,22 @@ describe('shortest graph path', () => {
     expect(ambiguous.error).toBe('ambiguous_endpoint');
     const limited = shortestGraphPath(graph, 'User Service', 'Audit Log', { maxHops: 1 });
     expect(limited.error).toBe('no_path');
+    expect(limited.truncated).toBe(true);
+    expect(limited.maxHops).toBe(1);
+  });
+
+  test('preserves graph coverage on positive, missing and bounded negative results', () => {
+    const partial = { ...graph, coverage: { status: 'partial', scope: 'supplied traversal' }, limitations: ['Indirect calls unresolved'] };
+    for (const result of [
+      shortestGraphPath(partial, 'a', 'c'),
+      shortestGraphPath(partial, 'a', 'missing'),
+      shortestGraphPath(partial, 'c', 'a', { direction: 'outgoing' }),
+    ]) {
+      expect(result.coverage).toEqual(partial.coverage);
+      expect(result.limitations).toContain('Indirect calls unresolved');
+    }
+    expect(shortestGraphPath(graph, 'a', 'b').coverage).toEqual({ status: 'unknown', scope: 'supplied graph' });
+    expect(shortestGraphPath(graph, 'a', 'c', { maxHops: 2 }).truncated).toBe(false);
+    expect(shortestGraphPath({ nodes: [{ id: 'a' }, { id: 'b' }], edges: [] }, 'a', 'b').truncated).toBe(false);
   });
 });

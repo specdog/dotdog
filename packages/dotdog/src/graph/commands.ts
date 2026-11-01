@@ -9,16 +9,17 @@ import { readGraphText } from './io';
 import { resolveUserPath, safeOutputPath } from '../workspace/paths';
 import { normalizeGraph, graphNeighborhood, type GraphNode, type GraphEdge } from './model';
 
-export function importReaCallGraph(input: any, project: string, source: string, digest: string, artifact?: string) {
+export function importReaCallGraph(input: any, project: string, source: string, digest: string, artifact?: string, direction?: string) {
   if (!input?.graph || typeof input.graph !== 'object' || Array.isArray(input.graph) || !Array.isArray(input.limitations) || input.limitations.some((item: any) => typeof item !== 'string')) throw new Error('Expected a REA NativeCallGraph export: graph and limitations');
+  if (!['forward', 'backward'].includes(direction || '')) throw new Error('REA exports omit call direction; supply --rea-direction forward or backward matching the producer request');
   if (artifact && !/^[a-f0-9]{64}$/i.test(artifact)) throw new Error('artifact-sha256 must be a SHA-256 digest');
-  const namespace = artifact || digest;
+  const namespace = (artifact || digest).toLowerCase();
   const nodes = new Map<string, GraphNode>(), edges = new Map<string, GraphEdge>();
   const id = (address: string) => `rea:${namespace}:${address}`;
   const add = (address: string) => {
     if (typeof address !== 'string' || !address) throw new Error('REA address must be a nonempty string');
     if (!nodes.has(id(address))) nodes.set(id(address), {
-      id: id(address), label: address, kind: 'function', properties: { address, artifactSha256: artifact || 'unknown' },
+      id: id(address), label: address, kind: 'function', properties: { address, artifactSha256: artifact?.toLowerCase() || 'unknown', traversalDirection: direction },
       schema: {}, states: [], lifecycle: [], confidence: 'unknown', source,
       origin: { type: 'imported', provider: 'rea', file: source, digest },
     });
@@ -40,12 +41,13 @@ export function importReaCallGraph(input: any, project: string, source: string, 
       partial ||= row.relationship_coverage.status !== 'complete';
       node.confidence = 'certain';
       for (const address of row.calls) {
-        const target = add(address), edgeId = `${node.id}:calls:${target.id}`;
-        edges.set(edgeId, { id: edgeId, sourceId: node.id, targetId: target.id, verb: 'calls', confidence: 'certain', origin: node.origin, evidence: { source, sha256: digest, relationship_coverage: row.relationship_coverage } });
+        const related = add(address), caller = direction === 'forward' ? node : related, callee = direction === 'forward' ? related : node;
+        const edgeId = `${caller.id}:calls:${callee.id}`;
+        edges.set(edgeId, { id: edgeId, sourceId: caller.id, targetId: callee.id, verb: 'calls', confidence: 'certain', origin: node.origin, evidence: { source, sha256: digest, traversalDirection: direction, relationship_coverage: row.relationship_coverage } });
       }
     }
   }
-  return { project, version: '1.0', nodes: [...nodes.values()], edges: [...edges.values()], coverage: { status: partial ? 'partial' : 'unknown', scope: 'supplied REA traversal only' }, limitations };
+  return { project, version: '1.0', nodes: [...nodes.values()], edges: [...edges.values()], coverage: { status: partial ? 'partial' : 'unknown', scope: 'supplied REA traversal only', direction, directionSource: 'import-option' }, limitations };
 }
 
 export function registerGraphCommands(program: Command) {
@@ -67,7 +69,7 @@ export function registerGraphCommands(program: Command) {
         else {
           for (const item of result.nodes || []) console.log(`${item.kind} ${item.label}${item.source ? ' [' + item.source + ']' : ''}`);
           if (!result.ok) console.error(result.error);
-          if (result.truncated) console.error('Result truncated; increase --limit or narrow the query.');
+          if (result.truncated) console.error('Result truncated; inspect --depth/--limit or narrow the query.');
         }
       });
     if (command === 'context') query.option('--max-tokens <n>', 'compact JSON text budget in o200k_base tokens (128–131072)')
@@ -88,13 +90,15 @@ export function registerGraphCommands(program: Command) {
     .option('--format <format>', 'dotdog or rea-callgraph', 'dotdog')
     .requiredOption('--project <name>', 'project namespace')
     .option('--artifact-sha256 <digest>', 'binary content identity for REA addresses')
+    .option('--rea-direction <direction>', 'forward or backward, matching the REA producer request (required for REA)')
     .option('--force', 'replace a previously imported project')
     .action((file, opts) => {
       if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(opts.project)) throw new Error('Invalid project name');
       const input = resolveUserPath(file), source = relative(process.cwd(), input).replace(/\\/g, '/');
       const bytes = readGraphText(input), raw = JSON.parse(bytes);
       const digest = createHash('sha256').update(bytes).digest('hex');
-      const imported = opts.format === 'rea-callgraph' ? importReaCallGraph(raw, opts.project, source, digest, opts.artifactSha256) : opts.format === 'dotdog' ? { ...normalizeGraph(raw), project: opts.project } : undefined;
+      if (opts.reaDirection !== undefined && opts.format !== 'rea-callgraph') throw new Error('--rea-direction requires --format rea-callgraph');
+      const imported = opts.format === 'rea-callgraph' ? importReaCallGraph(raw, opts.project, source, digest, opts.artifactSha256, opts.reaDirection) : opts.format === 'dotdog' ? { ...normalizeGraph(raw), project: opts.project } : undefined;
       if (!imported) throw new Error('Unsupported graph format');
       normalizeGraph(imported);
       const directory = resolveUserPath('.doghouse/imported');

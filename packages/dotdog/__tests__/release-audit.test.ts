@@ -11,6 +11,7 @@ import { importReaCallGraph } from '../src/graph/commands';
 import { auditGraph } from '../src/graph/audit';
 import { graphStatus } from '../src/automation';
 import { scenarioCheck, referenceCheck } from '../src/spec/checks';
+import { createMcpHandler } from '../src/serve';
 import { setupTempProject } from './helpers';
 
 const dirs: string[] = [];
@@ -115,10 +116,39 @@ test('the recorded real Ghidra export retains its observed call and coverage in 
   const bodyBytes = readFileSync(join(base, 'callgraph-ghidra.json'));
   expect(createHash('sha256').update(bodyBytes).digest('hex')).toBe(verification.exportSha256);
   const raw = JSON.parse(bodyBytes.toString('utf8'));
-  const imported = importReaCallGraph(raw, 'native-fixture', 'callgraph-ghidra.json', verification.exportSha256, verification.binarySha256);
+  const imported = importReaCallGraph(raw, 'native-fixture', 'callgraph-ghidra.json', verification.exportSha256, verification.binarySha256, 'forward');
   expect(imported.nodes).toHaveLength(2);
   expect(imported.edges).toHaveLength(1);
   expect(imported.edges[0].evidence.relationship_coverage.status).toBe('complete');
   expect(imported.nodes[0].id).toContain(verification.binarySha256);
   expect(imported.coverage.scope).toBe('supplied REA traversal only');
+});
+
+test('MCP traversal retains node identity, provenance and coverage on success and missing queries', async () => {
+  const root = fixture();
+  const imported = importReaCallGraph({ graph: { '0': [{ address: 'a', status: 'ok', calls: ['b'], relationship_coverage: { status: 'partial', limitations: ['Indirect calls unresolved'] } }] }, limitations: ['Static calls only'] }, 'native', 'export.json', 'a'.repeat(64), 'b'.repeat(64), 'forward');
+  writeFileSync(join(root, 'native.dag'), JSON.stringify(imported));
+  const handle = createMcpHandler(root);
+  const tools = await handle({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
+  const Ajv = (await import('ajv/dist/2020')).default;
+  const ajv = new Ajv({ strict: false });
+  for (const name of ['traverse', 'context', 'impact', 'path']) {
+    const schema = tools.result.tools.find((tool: any) => tool.name === name).outputSchema;
+    const validate = ajv.compile(schema);
+    for (const target of ['a', 'missing']) {
+      const args = name === 'context' ? { q: target } : name === 'path' ? { from: target, to: 'b' } : { from: target };
+      const response = await handle({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name, arguments: { project: 'native', ...args } } });
+      const result = response.result.structuredContent;
+      expect(validate(result)).toBe(true);
+      expect(result.coverage).toEqual(imported.coverage);
+      expect(result.limitations).toContain('Static calls only');
+      if (name === 'traverse' && target === 'a') {
+        expect(result.nodes[0].id).toBe(imported.nodes[0].id);
+        expect(result.nodes[0].origin).toEqual(imported.nodes[0].origin);
+        expect(result.nodes[0].evidence).toEqual(imported.nodes[0].evidence);
+        expect(result.nodes[0].name).toBe('a');
+        expect(result.nodes[0].edges).toEqual(['b:calls']);
+      }
+    }
+  }
 });

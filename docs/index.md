@@ -97,7 +97,7 @@ Configure a local stdio server with the installed `dotdog` executable and argume
 
 Tools: `listProjects`, `workspace.list`, `search`, `getEntity`, `schema`, `summary`, `traverse`, `path`, `context`, `impact`, and `infraVerify`.
 
-Query an explicit project when more than one is loaded. Observed repository graphs use `<repository>:observed` names in MCP, keeping them separate from same-named spec projects. Every tool returns structured JSON plus text fallback. Search supports `limit` and `cursor`; traversal/impact/context are bounded and disclose truncation. Invalid graphs are reported separately by `listProjects`; deleted graphs are evicted.
+Query an explicit project when more than one is loaded. Observed repository graphs use `<repository>:observed` names in MCP, keeping them separate from same-named spec projects. Every tool returns structured JSON plus text fallback. Search supports `limit` and `cursor`; traversal/impact/context are bounded and disclose truncation. Graph queries retain supplied coverage/limitations; MCP traversal also retains node identities and provenance. `no_path` means no path in the supplied graph within `maxHops`, not proof of runtime independence; `truncated` reports an unexplored search boundary. Invalid graphs are reported separately by `listProjects`; deleted graphs are evicted.
 
 The server supports legacy initialization revisions 2024-11-05, 2025-06-18 and 2025-11-25, plus 2026-07-28 discovery and per-request metadata. `infraVerify` is an explicit live network/provider operation; other graph queries stay local.
 
@@ -106,14 +106,14 @@ The server supports legacy initialization revisions 2024-11-05, 2025-06-18 and 2
 Dotdog can import a saved **REA NativeCallGraph body**:
 
 ```sh
-dotdog graph import native-calls.json --format rea-callgraph --project native --artifact-sha256 <binary-sha256>
+dotdog graph import native-calls.json --format rea-callgraph --project native --artifact-sha256 <binary-sha256> --rea-direction forward
 dotdog context "0x1000" --dag .doghouse/imported/native.dag --json
 dotdog graph export --dag .doghouse/imported/native.dag --format json
 ```
 
-Replace the digest and address with actual evidence values. The importer retains traversal coverage, limitations, evidence references, addresses and the export digest. Without a binary digest, identifiers are scoped to the export bytes and binary identity remains unknown. Imported projects are also served by MCP. Imports create separate named graphs; automatic source-to-binary reconciliation and cross-project links are not provided.
+Replace the digest and address with actual evidence values. Supply `--rea-direction forward` or `backward` to match the original REA request; the bare export does not encode it. Backward exports are imported as caller → callee edges, not reversed calls. The importer retains traversal coverage, limitations, evidence references, addresses and the export digest. Without a binary digest, identifiers are scoped to the export bytes and binary identity remains unknown. Imported projects are also served by MCP. Imports create separate named graphs; automatic source-to-binary reconciliation and cross-project links are not provided.
 
-This is an export adapter, not a direct Ghidra provider or a verified binary-analysis integration. REA/SolidState retains ownership of Ghidra, target selection, analysis sessions and authority. Dotdog never launches targets, installs REA/Ghidra, or registers another provider. NativeCallGraph bodies are supported; arbitrary REA Evidence envelopes and other Ghidra export formats are not implicitly accepted.
+This is a saved-export adapter, not a direct Ghidra analysis provider. REA/SolidState retains ownership of Ghidra, target selection, analysis sessions and authority. Dotdog never launches targets, installs REA/Ghidra, or registers another provider. NativeCallGraph bodies are supported; arbitrary REA Evidence envelopes and other Ghidra export formats are not implicitly accepted.
 
 ## Existing integrations
 
@@ -133,7 +133,7 @@ Workspaces retain `workspace init`, `add`, `list`, `validate`, `graph`, `observe
 dotdog status --json
 dotdog scenario-check checkout --project shop --json
 dotdog reference-check --project shop --json
-dotdog graph audit --dag .doghouse/imported/system.dag --profile embodied --json
+dotdog graph audit --dag .doghouse/imported/system.dag --profile evidence --json
 ```
 
 `status` is read-only and exits nonzero when graphs are stale or absent. `scenario-check` checks one named Scenario/Flow for lexical compiled-entity references. `reference-check` checks explicit Verify file/property mappings without writing human plans. None proves application correctness. `staleness`, `simulate` and `verify` are deprecated compatibility names; `verify --init` is retired.

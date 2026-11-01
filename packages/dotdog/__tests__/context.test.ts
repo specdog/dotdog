@@ -64,6 +64,19 @@ describe('token-budgeted context', () => {
     expect('omittedCandidates' in result && result.omittedCandidates).toBeGreaterThan(0);
   });
 
+  test('preserves graph scope in errors and refuses scope metadata that cannot fit the budget', async () => {
+    const coverage = { status: 'partial' }, limitations = ['Indirect calls unresolved'];
+    const result = await budgetContext({ ok: false, error: 'endpoint_not_found', coverage, limitations }, 512);
+    expect(result.coverage).toEqual(coverage);
+    expect(result.limitations).toEqual(limitations);
+    for (const ok of [true, false]) {
+      const oversized = await budgetContext({ ok, error: 'endpoint_not_found', nodes: [], edges: [], coverage, limitations: ['unknown '.repeat(4000)] }, 128);
+      expect(oversized.ok).toBe(false);
+      expect(oversized.error).toBe('budget_too_small');
+      expect(tokens(oversized)).toBeLessThanOrEqual(128);
+    }
+  });
+
   test('CLI emits counted compact JSON; MCP exposes the same budget and rejects ignored task arguments', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'dotdog-budget-'));
     try {

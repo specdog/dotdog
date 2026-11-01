@@ -71,19 +71,37 @@ describe('1.0 graph contracts', () => {
     expect(query({ verb: 'calls', depth: 1 }).nodes.map(node => node.id)).toEqual(['a', 'b']);
     expect(graphNeighborhood(graph, 'Shared', {}, index).error).toBe('ambiguous_endpoint');
     expect(query({ depth: 0 }).nodes.map(node => node.id)).toEqual(['a']);
+    expect(query({ depth: 0 }).truncated).toBe(true);
+    expect(query({ direction: 'outgoing', depth: 1 }).truncated).toBe(false);
     expect(() => graphNeighborhood({ ...graph }, 'a', {}, index)).toThrow('different graph');
   });
 
   test('REA import preserves incomplete traversal evidence and binary scope', () => {
     const raw = { graph: { '0': [{ address: '0x1000', status: 'ok', calls: ['0x2000'], relationship_coverage: { status: 'partial', limitations: ['bounded'] } }] }, limitations: ['static only'] };
-    const imported = importReaCallGraph(raw, 'native', 'evidence.json', 'a'.repeat(64), 'b'.repeat(64));
+    const imported = importReaCallGraph(raw, 'native', 'evidence.json', 'a'.repeat(64), 'b'.repeat(64), 'forward');
     const normalized = normalizeGraph(imported);
     expect(normalized.nodes.length).toBe(2);
     expect(normalized.edges[0].verb).toBe('calls');
-    expect(normalized.edges[0].evidence).toEqual({ source: 'evidence.json', sha256: 'a'.repeat(64), relationship_coverage: raw.graph['0'][0].relationship_coverage });
+    expect(normalized.edges[0].evidence).toEqual({ source: 'evidence.json', sha256: 'a'.repeat(64), traversalDirection: 'forward', relationship_coverage: raw.graph['0'][0].relationship_coverage });
     expect(imported.coverage.status).toBe('partial');
     expect(normalized.nodes[0].id).toContain('b'.repeat(64));
+    expect(importReaCallGraph(raw, 'native', 'evidence.json', 'a'.repeat(64), 'B'.repeat(64), 'forward').nodes[0].id).toBe(normalized.nodes[0].id);
     expect(() => importReaCallGraph({ graph: { '0': [{}] }, limitations: [] }, 'native', 'x', 'a')).toThrow();
+  });
+
+  test('REA caller exports cannot silently reverse call edges or guess missing direction', () => {
+    const raw = { graph: { '0': [{ address: 'callee', status: 'ok', calls: ['caller'], relationship_coverage: { status: 'complete' } }] }, limitations: [] };
+    expect(() => importReaCallGraph(raw, 'native', 'x', 'a')).toThrow('direction');
+    expect(() => importReaCallGraph(raw, 'native', 'x', 'a', undefined, 'outgoing')).toThrow('direction');
+    const backward = importReaCallGraph(raw, 'native', 'x', 'a', undefined, 'backward');
+    expect(shortestGraphPath(backward, 'caller', 'callee', { direction: 'outgoing' }).ok).toBe(true);
+    expect(shortestGraphPath(backward, 'callee', 'caller', { direction: 'outgoing' }).ok).toBe(false);
+    expect(backward.coverage.direction).toBe('backward');
+    const root = fixture();
+    writeFileSync(join(root, 'calls.json'), JSON.stringify(raw));
+    expect(run(root, 'graph', 'import', 'calls.json', '--format', 'rea-callgraph', '--project', 'native').code).toBe(1);
+    expect(existsSync(join(root, '.doghouse/imported/native.dag'))).toBe(false);
+    expect(run(root, 'graph', 'import', 'calls.json', '--format', 'rea-callgraph', '--project', 'native', '--rea-direction', 'backward').code).toBe(0);
   });
 
   test('multiline optional booleans and ASCII lifecycle arrows retain semantics', () => {
@@ -273,7 +291,7 @@ describe('1.0 MCP compatibility', () => {
     const handle = createMcpHandler(dir);
     const init = await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-11-25' } });
     expect(init.result.protocolVersion).toBe('2025-11-25');
-    expect(init.result.serverInfo.version).toBe('1.0.0');
+    expect(init.result.serverInfo.version).toBe(JSON.parse(readFileSync(join(import.meta.dir, '../package.json'), 'utf8')).version);
     expect(await handle({ jsonrpc: '2.0', method: 'notifications/initialized' })).toBeUndefined();
     expect((await handle({ jsonrpc: '2.0', id: 1, method: 'ping' })).result).toEqual({});
     const meta = { 'io.modelcontextprotocol/protocolVersion': '2026-07-28', 'io.modelcontextprotocol/clientCapabilities': {} };
