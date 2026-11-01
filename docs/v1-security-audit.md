@@ -1,69 +1,53 @@
 ---
 layout: default
-title: Dotdog 1.0 security and release sweep
+title: Dotdog 1.0 security and release review
 ---
 
-# Dotdog 1.0 security and release sweep
+# Dotdog 1.0 security and release review
 
-Date: 2026-10-29. Scope: the unpublished npm/Bun 1.0 candidate in PR #332, following the [0.9.0 artifact audit](npm-0.9-audit.md). This is a source review plus local regression testing, not a third-party penetration test or a safety certification.
+Reviewed 2026-11-01 for the first 1.0.0 npm/Bun release. Scope: CLI registrations/aliases, saved graph formats and MCP consumers, spec import/checks, repository/workspace boundaries, generated writes/locks, optional compiler execution, hooks, provider dispatch and package publishing. This is a source review with regressions and integration checks, not an independent penetration test or a guarantee of bug freedom.
 
-## Confirmed findings and repairs
+## Findings and dispositions
 
-| Finding | Observed failure / precondition | Repair and regression |
+Code paths below are relative to `packages/dotdog/src/`.
+
+| Boundary | Finding and disposition | Verification |
 | --- | --- | --- |
-| Dangling output symlink | A repository symlink to an absent external file passed path resolution | Detect dangling symlink components; refuse writes through symlinked output paths |
-| Generated-file overwrite | `map` followed an existing `repo.dag` symlink and overwrote an external fixture | Check each generated/cache/compiled destination, not only its directory |
-| Git inventory escape | A tracked source directory replaced with an external symlink was still included | Resolve and reject symlinked inventory paths before reading/hashing |
-| Forged hook ownership | A crafted hook manifest could name and hash an unrelated repo file; remove deleted it | Validate the expected Git/Claude target and the exact installed hook identity; preserve edited hooks |
-| Parser denial of service | `[1/1]` steps and non-table pipe lines stalled compilation | Guarantee parser progress; reject unclosed plain fences; keep fenced headings out of section splitting |
-| Unbounded MCP input | Line buffering had no explicit size limit | Stream requests sequentially, enforce a 1 MiB line limit and respect output backpressure |
-| Provider dispatch guesses | Railway selected discovered tools by substring; Cloudflare used literal `:account_id`; remote MCP probes lacked auth | Remove the unused hand-written external MCP client and probes; use explicit documented read-only API routes |
-| Railway query construction | Resource text was interpolated into GraphQL source | Use a fixed query with variables; use service IDs and token-specific headers |
-| Provider false passes | Supabase project fallback ignored requested tables; provider/entity filters did not intersect | Report tables unverified, intersect filters, and fail strict live checks for non-pass results |
-| Endpoint false passes | Expected values/types were ignored; missing-body handling was truthiness-based | Compare expected JSON recursively, including false/zero/null and arrays; extra object keys remain allowed |
-| Endpoint resource handling | Timeout was cleared before the body finished; failure paths could double-count | Keep timeout through body reads, cap JSON bodies at 1 MiB, reject redirects/embedded URL credentials, count once |
-| Ambiguous graph references | Duplicate labels could resolve to whichever node was last/first | Prefer exact IDs; reject ambiguous labels and expose candidate IDs |
-| Stale extractor cache | Cache key did not include package/parser upgrades | Include package, parser and extraction-schema versions in the key |
+| Filesystem writes/inventory | **Fixed:** static symlink escapes, dangling output symlinks, redirected Git inventory and hard-link truncation. Generated replacement uses fsync and atomic rename; cooperating graph writers have ownership locks and dead-process recovery. | `security.test.ts`, `writes.test.ts`; external fixture bytes remain unchanged; concurrent writers fail explicitly. |
+| Parsing/spec checks | **Fixed:** parser non-progress on step/table lines, graph reads bypassing the size guard and ambiguous reference labels passing checks. Exact IDs take precedence. | Parser/security/release-audit regressions; ambiguous and oversized inputs fail without changing authored plans. |
+| Workspace input | **Fixed:** malformed nested JSON reached unchecked typed data. Shape/reference checks precede registry construction; only successful parser results expose typed data. | Nested-input cases and real strict/exact-optional compiler checks in `workspace.test.ts`. |
+| Graph/query contracts | **Fixed:** arbitrary-node matches for punctuation/Unicode, ambiguous duplicate labels, omitted-candidate flags, lost node provenance and scope-free token errors. Ambiguity candidates use exact IDs and disclose truncation. | Independent distance oracle, context token vectors/budgets, changed/deleted/corrupt graph cases and CLI/MCP schema regressions. |
+| MCP transport | **Fixed:** unbounded line buffering. Local stdio handles requests sequentially, enforces a 1 MiB line cap and output backpressure, and validates tool arguments. | Real SDK stdio discovery/invocation; all eleven tool contracts and legacy/modern protocol cases. |
+| REA import | **Fixed:** bare exports omitted producer direction and could reverse caller meaning. Require the declared direction; retain binary/export identity, coverage and evidence. | Fresh SolidState-owned Ghidra forward/backward fixture checks; both one-hop paths pass, binary digest unchanged, target never executed. |
+| Optional types | **Reviewed:** exact TypeScript 7.0.2 project compiler, original options/diagnostics, no emit/build writes, bounded Node worker and process-tree cleanup. Saved evidence survives generic import/MCP. | Valid → TS2322 → repaired, inherited JSONC/aliases, repeated names, overloads/unions, Unicode, limits, unsupported inputs and timeout/child cleanup. Coverage remains partial. |
+| Skills/hooks | **Fixed:** forged ownership could remove unrelated files; malformed Claude settings could falsely report installation. Validate owned targets and mutation shape; preserve edited skills/hooks and unrelated settings. | Pre-repair failures then passing regressions; idempotence, staged-index checks and actual-host discovery/removal checks. |
+| Live/provider operations | **Fixed:** guessed remote MCP dispatch, literal provider identifiers, interpolated GraphQL, ignored filters and false endpoint passes. Use fixed origins/variables, reject redirects, bound response bodies/timeouts and fail strict checks on unverified results. | Request/response regressions in `providers.test.ts` and endpoint contract tests. Live account/resource permissions are not established by mocked requests. |
+| Release integrity | **Strengthened:** require tag/version agreement and a main-history commit; manifest records source commit, file list and archive hashes. Publisher refuses mismatched source commits or tampered bytes and publishes the checked archive with provenance. | Negative commit/digest regressions, clean-consumer checks and workflow review. Registry authorization/provenance still require the actual publishing result. |
+| Bloat/compatibility | **Removed:** unused legacy `@spec/*` packages, unwired keyword/MCP code, scratch parser copies, obsolete scripts and invalid historical-log benchmark machinery. Retain supported aliases with explicit limitations. Share existing parser chunks rather than duplicate bundled code. | Caller/package inventory, command/legacy-format regressions and package allowlist. No mandatory runtime npm dependency or service was added. |
 
-The symlink/hook regressions were run before repair and all four failed; after repair they passed while external evidence bytes and unrelated files were preserved. Parser and provider/contract cases have dedicated regressions. These are local malicious-checkout scenarios, not evidence of an observed compromise in a user's installation.
+## Verification record
 
-## Dependencies and release integrity
+The full local candidate suite passes **133 tests, 2,124 assertions and one snapshot**, plus lint, validate/doctor, frozen dependency installation and package checks. The [release review PR](https://github.com/specdog/dotdog/pull/340) tracks current-head Linux Node 22/24/26, macOS/Windows Node 24 and Bun 1.3.14/1.4.4 checks, Spec Kit compatibility and final artifact evidence. Historical checkpoints are not relabeled as results for new bytes.
 
-The original development tree had known advisory matches, including SDK 1.29.0 and transitive HTTP/schema packages. SDK is now 1.32.2. Explicit root overrides select patched compatible transitive packages where ordinary Bun updates retained vulnerable resolutions. Babel stays on 7.29.11 because Babel 8's engine range excludes the supported Node 22.12 baseline. Chalk is updated to 6.0.1.
+Actual Codex app-server checks cover project skill discovery, command invocation, edit refresh, protected agent configuration and fixture-owner removal discovery. Actual Claude Code checks cover skill discovery, stdio MCP connection, hook removal, unrelated-settings preservation and skill removal discovery. Model-driven Claude invocation/edit refresh remains unverified; deterministic host checks are not a model-output evaluation.
 
-`bun audit --json` returned `{}` after these changes. This is an advisory-database snapshot, not malware detection or proof that all dependencies are safe. The shipped CLI remains self-contained with no declared runtime npm dependencies; SDK/AJV and their HTTP stacks are development/test dependencies, not bundled runtime services. Babel, Chalk and Commander are bundled and retain third-party notices.
+The published 0.9.0 package also passed the required validation dogfood check. Its registry metadata contains provenance, but that does not prove authorization for a future release. No local package test constitutes npm publication.
 
-CI now includes a scheduled and dependency-change advisory audit, frozen lockfile installation, pinned action revisions, packed-consumer checks and a real MCP SDK stdio client regression. Dependabot is configured for Bun and GitHub Actions using GitHub's [documented Bun ecosystem support](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference). The npm publish job checks tag/version agreement, tests/builds the candidate, requests provenance and requires its tagged commit to belong to main history. Trusted-publisher/account configuration and branch protection remain external settings; this PR does not prove they are enabled.
+## Dependencies and licenses
 
-## Boundaries and remaining gaps
+`bun audit --json` returned `{}` for the frozen candidate dependencies. This is an advisory snapshot, not malware detection or proof of complete safety. SDK 1.32.2 and patched transitive resolutions are development/test dependencies, not a hosted runtime service.
 
-- `serve` is local stdio, not an HTTP service. Graph content and imported descriptions are untrusted data, not permission or agent instructions.
-- Graph reads/imports use a 32 MiB input cap, 100,000-node/500,000-edge normalization limits; MCP combined graph text is capped at 128 MiB. These are finite processing limits, not CPU/memory guarantees. Local repository mapping and all legacy command outputs are not globally quota-managed.
-- Generated writes and inventory traversal reject static symlink escapes. Generated writes now use fsync plus same-directory atomic replacement, preserving other owners of hard-linked files; cooperating refresh/map/compile writers use an ownership lock with dead-process recovery. No claim is made of race-free multi-user filesystem isolation; an OS sandbox remains authoritative.
-- Credential-file exclusions and output redaction are best-effort. Specs, source, filenames and derived graphs can contain private data. Review exports; do not put credentials in graph properties.
-- `live` explicitly contacts spec-defined HTTP(S) URLs, including permitted local endpoints. Review untrusted contracts before running it. Provider calls use fixed API origins and reject redirects; AWS uses the installed CLI and its existing credential configuration. No blanket SSRF-proof claim is made.
-- Provider tests use mocked API responses and request assertions. Live cloud accounts, current provider permissions, rate limits and modern client UI sessions remain unverified. Hosted Windows checks passed at `0569319` alongside macOS/Linux; later commits must pass their own matrix.
-- REA import passed source-schema fixture validation and a real Ghidra 12.1.4 → REA 6.8.0 → Dotdog fixture on macOS arm64; broader target/host coverage remains unverified. See [native fixture](../examples/native/README.md). No separate REA provider was installed or registered.
-- Embodied support checks supplied evidence relationships only. It discovers neither missing real-world hazards nor measurement quality and grants no physical authority.
+Bundled Babel parser, Commander, Chalk and gpt-tokenizer/o200k_base license notices ship in `THIRD_PARTY_NOTICES.md`. The project compiler is consumer-installed and not bundled. Package inspection excludes node_modules, tests, private state and raw test evidence. Two unused imports were removed without changing emitted bundle bytes.
 
-See [migration](v1-migration.md), [peer research](graph-peer-research.md) and [embodied evidence](embodied-systems.md) for supported behavior and explicit limits. The candidate remains unmerged and unpublished until separately released.
+## Accepted limitations
 
-## Scoped gap repair
+- Saved graphs describe supplied/observed facts, not requirement satisfaction, complete semantic closure or every runtime effect. Missing edges and bounded negative searches do not prove independence.
+- Graph input/normalization, context, MCP and compiler bounds are finite processing limits, not global peak-memory or CPU guarantees. [Measured performance](path-performance.md) distinguishes fixtures, startup, output bytes and OS-reported memory from general speed claims.
+- Static path guards and atomic replacement are not race-free multi-user filesystem isolation. Malformed/foreign-host writer locks require inspection rather than guessed ownership.
+- Source/config/compiler identity is not authenticity. TypeScript configuration can weaken checks; trusted project compiler code is executable. Re-inspect after project/compiler/dependency changes; saved audits cannot discover new or unloaded files.
+- Credential exclusions/redaction are best-effort. Source, signatures, filenames, authored text and arbitrary graph properties can contain sensitive data; review exports before sharing. Imported strings are data, never permission or agent instructions.
+- Live endpoint checks intentionally contact reviewed spec-defined URLs, including local endpoints. Real cloud accounts, provider permissions/rate limits and all client/model versions are not covered by fixture tests. They are not prerequisites for local spec/REA/type graph workflows.
+- The existing optional evidence profile does not add a simulator, device operation or cloud prerequisite. It does not discover omitted physical hazards, establish measurement quality or authorize actuation.
+- Feature review, publication authorization and successful registry deployment are separate. Final source/artifact/provenance and post-publication install results remain authoritative; never infer deployment from a green build.
 
-The workspace-boundary repair at `22b0b7e` repairs malformed nested workspace input before registry construction and removes the resolver's unchecked JSON-to-config assertion. Success-only typed data passes real `strict`/`exactOptionalPropertyTypes` compiler checks; invalid-result data access is rejected with TS2339. No runtime schema dependency was added.
-
-`path --dag` previously bypassed repository and file-size checks. It now uses the shared safe reader; a regression confirms that an external graph cannot be returned. Traversal results retain supplied coverage and node provenance, disclose search boundaries, and fail explicitly when scope metadata cannot fit the requested token budget.
-
-Review of REA 6.8.0's installed request/output contracts and traversal implementation found that a bare call-graph export omits its producer direction. Imports now require an explicit forward/backward declaration and orient caller evidence correctly; the declaration is not independent verification of the producer request. The real source-fixture check passed forward and backward one-hop paths through Ghidra/REA and the built CLI, without executing or changing the target binary.
-
-The full local candidate suite passed 116 tests; dependency advisory output was `{}`. These checks and the focused boundary review do not complete the final release audit, current-head hosted matrix or the pending type-context module. Temporary full provider evidence remains private. No merge or publication occurred.
-
-## Local verification record
-
-The initial consolidated suite passed with 96 tests, 391 assertions and one snapshot. Hosted CI status is recorded in PR #332. Typechecking, build, frozen install, skill validation, extension manifest, real demo, and Dotdog's own validate/check/doctor/status checks passed. Packed consumer checks passed under Node 22.12.0, 24.22.1, 26.8.1 and Bun 1.3.14, including a synthetic embodied evidence success/tamper-failure case. That earlier candidate tarball measured 181,077 bytes; it was larger than the original 0.9 artifact and no compression improvement is claimed.
-
-Follow-up security finding: a generated output hard-linked to an external fixture was truncated before atomic-write repair. The regression now preserves the external bytes. A concurrent writer is rejected; killing the owning process leaves a lock that the next graph refresh recovers. These cases were tested locally; Windows gate results are tracked in the PR.
-
-The retrieval follow-up passed 102 tests, 420 assertions and one snapshot locally, plus typecheck/build and own validate/doctor/check/status. A same-size graph edit with restored timestamps updates the cached relationships and names; invalid graphs evict their previous indexes. The content-read and normalization limits are unchanged. `bun audit --json` again returned `{}`. The newly packed 182,795-byte candidate passed the retained-artifact Node 26.8.1/Bun checks with SHA-256 `973ef8ebb260f1b6f6b1794a9c41b4ab2722b35c09ab200cf6c2792ee13cec83`. Earlier runtime/host results are not relabeled as checks of these new bytes. The [retrieval report](retrieval-benchmarks.md) distinguishes measured latency/token counts from untested semantic/VSA claims.
-
-Hosted follow-up logs exposed forced Node 24 execution of deprecated Node 20 action runtimes. After checking upstream release notes, manifests and resolved commit identities, workflows now pin [checkout 7.0.1](https://github.com/actions/checkout/releases/tag/v7.0.1) (`3d3c42e5aac5ba805825da76410c181273ba90b1`) and [setup-node 7.1.0](https://github.com/actions/setup-node/releases/tag/v7.1.0) (`949feb2413d6458794dcd2491c4babbbce0c15c1`), both native Node 24 actions. Checkout keeps `persist-credentials: false` and does not opt into unsafe fork checkout; setup-node explicitly disables automatic package-manager caching. Its removed dummy auth token is not needed by the intended npm OIDC publisher. Hosted PR checks verify the workflows they execute; actual publication/extension-release workflows remain unexecuted, and older self-hosted runners are not claimed supported.
+See [migration](v1-migration.md), [release gates](v1-release-plan.md) and [native fixture](../examples/native/README.md).

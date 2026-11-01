@@ -37,6 +37,37 @@ jobs:
       - run: bun run build
       - run: node scripts/check-pack.mjs
       - name: Pack once and verify the release artifact
-        run: node scripts/check-release.mjs --output "$RUNNER_TEMP/dotdog-release"
+        run: |
+          node scripts/check-release.mjs --output "$RUNNER_TEMP/dotdog-release"
+          echo "DOTDOG_RELEASE_ARCHIVE=$RUNNER_TEMP/dotdog-release/$(node -p "require(process.env.RUNNER_TEMP + '/dotdog-release/release.json').artifact")" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          package-manager-cache: false
+          node-version: '22.12.0'
+      - name: Verify the same archive on the minimum Node runtime
+        run: node scripts/check-release.mjs --tarball "$DOTDOG_RELEASE_ARCHIVE"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          package-manager-cache: false
+          node-version: '26'
+      - name: Verify the same archive on Node 26
+        run: node scripts/check-release.mjs --tarball "$DOTDOG_RELEASE_ARCHIVE"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          package-manager-cache: false
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: '1.4.4'
+      - name: Verify the same archive on current Bun and publishing Node
+        run: node scripts/check-release.mjs --tarball "$DOTDOG_RELEASE_ARCHIVE"
+      - name: Retain the checked archive and source manifest
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: dotdog-${{ github.ref_name }}
+          path: ${{ runner.temp }}/dotdog-release/*
+          if-no-files-found: error
+          retention-days: 30
       - name: Publish only the verified artifact
         run: node scripts/publish-release.mjs "$RUNNER_TEMP/dotdog-release/release.json"

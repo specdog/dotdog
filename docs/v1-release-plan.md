@@ -56,22 +56,22 @@ Code paths below are relative to `packages/dotdog/src/`.
 
 ### Compiler boundary
 
-- Add one module under `types/`, connected through `cli.ts` and existing graph modules. Resolve the consumer project's installed TypeScript compiler explicitly; never auto-install one.
-- Start with the tested 7.0.2 CLI capability, not the incompatible legacy `createProgram` prototype or a mandatory 7.1 beta API. Declare supported versions/configurations only after adapter tests pass.
-- Proposed surface: `dotdog types inspect <export> --file <path> --project <tsconfig> --json`. Confirm its result/exit contract before implementation; this command does not exist yet. Import saved results through existing graph machinery. MCP queries must not implicitly launch compilers.
-- Run diagnostics with original semantic options. A separate declaration-inspection pass may change only necessary emit/output settings; direct all output/build metadata into managed temporary storage. Never loosen strictness or silently replace project configuration.
-- Initially reject unproved configurations such as project-reference/composite/outFile builds. Test extends/path aliases and re-exports explicitly; unresolved dependencies remain partial rather than guessed.
-- Use fixed subprocess arguments, no shell, bounded time/output and cancellation/cleanup. Record compiler version, configuration identity, source digests and scope. Detect changes during inspection and reject stale mixed results.
+- Use one module under `types/`, connected through `cli.ts` and existing graph modules. Resolve the consumer project's installed compiler; never auto-install one.
+- The 7.0.2 package exposes `typescript/unstable/sync`. The implemented adapter uses its configured snapshot/checker in a bounded Node worker, not the incompatible legacy `createProgram` prototype or a mandatory 7.1 beta compiler. Support is explicitly version-specific.
+- Surface: `dotdog types inspect <export> --file <path> --project <tsconfig> --json`. Import successful saved results through existing graph machinery. MCP queries do not launch compilers.
+- Preserve original project options and cached input bytes; do not emit declarations, edit configuration or write project build output. JSONC, inherited options, aliases and re-exports have integration coverage. Omitted checking options remain unspecified rather than being falsely reported as disabled.
+- The earlier declaration-emission probe exposed `declarationDir` and `stripInternal` risks. The native read-only adapter avoids that emit path; it does not claim all configurations are supported. Reference/composite builds and `noCheck` remain unsupported.
+- Use fixed worker arguments, no shell, bounded inputs/output/time and process-tree cleanup. Retain compiler/config/input identities on graph-node evidence so generic import and MCP retrieval cannot discard them. Keep saved paths repository-relative and raw absolute-path diagnostic output out of artifacts.
 
 ### Contracts and graph integration
 
-- Parse compiler-produced declarations/source maps with the existing parser where supported. Retain selected signatures, tagged unions and referenced contracts; declaration syntax alone is not complete semantic dependency closure.
+- Use the configured compiler checker and source declaration handles for selected signatures, tagged unions and bounded type references. Exclude implementation bodies; this is not complete semantic dependency closure.
 - Resolve supported local aliases/re-exports to file-qualified identities. For external types, overloads, generics, declaration merging or computed types, preserve supported contracts faithfully or report limitations. Matching names are not symbol identity.
 - Reuse normalization, evidence, coverage, context and impact. Keep compiler diagnostics separate from graph completeness: failed compilation, partial graph and successful check are different states.
 - Keep spec → source/type/check links explicit and reviewable. Do not join binary/source symbols automatically by name or treat compatibility as requirement proof.
 - Reuse runtime input validation. No schema framework, second graph index, language-plugin ecosystem or mandatory runtime npm dependency is planned.
 
-**Exit:** production integration resolves a selected re-exported contract, accepts valid code, rejects an invalid transition with the real diagnostic, detects an imported contract change, reports affected nodes and passes after repair. Cover repeated names, missing symbols/compiler, unsupported version/configuration, malformed runtime input, partial dependencies, timeouts, stale inputs and cleanup. If declaration extraction cannot meet this bounded contract, revise #333 before expanding scope.
+**Exit:** production integration resolves a selected re-exported contract, accepts valid code, rejects an invalid transition with the real diagnostic, detects an imported contract change, reports affected nodes and passes after repair. Cover repeated names, missing symbols/compiler, unsupported version/configuration, malformed runtime input, partial dependencies, timeouts, stale inputs and cleanup. The candidate now exercises these paths; see [type contracts](type-contracts.md). Broader compiler/version support needs separate evidence, not scope expansion.
 
 ## 4. Measure, then optimize
 
@@ -83,6 +83,8 @@ Profile first. Reduce repeated parsing/index construction, duplicated traversal 
 
 **Exit:** sanitized before/after report, unchanged correctness and documented tradeoffs. No unexplained material regression. No arbitrary percentage/line-count target, unsafe cache or dropped provenance to improve a metric.
 
+The focused [path-search comparison](path-performance.md) measures parent-link BFS and zero-hop handling against `d94a8f4`, with matching result hashes and a reverse-order replay. It does not complete the other workflow measurements in #335.
+
 ## 5. Verify the completed candidate
 
 | Area | Release requirement |
@@ -93,29 +95,30 @@ Profile first. Reduce repeated parsing/index construction, duplicated traversal 
 | Compatibility | Supported graph formats, CLI exits, JSON/MCP contracts and removable integrations pass regression checks. User-owned specs/settings are preserved. |
 | Security | Parser, filesystem, child-process, hook and provider boundaries are reviewed; reproduced findings have regressions. No unresolved high-impact release defects. Advisory scans supplement manual review. |
 | Runtimes | Linux/macOS/Windows CI passes; clean consumers exercise the packaged CLI on supported Node/Bun runtimes, including the declared Node minimum. |
-| Agent hosts | Codex/Claude skill discovery, invocation, edit refresh and removal are verified in the actual hosts. Installed files alone are not sufficient. |
+| Agent integrations | Actual-host skill/MCP discovery and removal, CLI command/refresh behavior and settings preservation are verified; installed files alone are insufficient. Model-driven behavior studies are separate from local CLI/MCP release contracts. |
 | Documentation | Stable installation and development-candidate instructions are distinct. Commands, migration notes, package/extension versions and supported limitations agree. |
 | Release integrity | Approve the final commit; pack once, retain hashes, test those bytes, resolve prerelease findings and publish only the verified archive with provenance. |
 
 ## Implementation status
 
-The core implementation at `22b0b7e` passed 116 local tests and the [Linux Node 22/24, macOS Node 24 and Windows Node 24 matrix](https://github.com/specdog/dotdog/actions/runs/41268166006). Its fixes include checked workspace data, traversal provenance/coverage, bounded search and context errors, repository-safe path reads and explicit REA direction. Real forward/backward Ghidra fixture checks passed without executing or changing the target. See [audit](v1-security-audit.md), [migration](v1-migration.md) and [native fixture](../examples/native/README.md).
+The completed candidate combines the [spec/REA foundation](https://github.com/specdog/dotdog/pull/332), [spec-check boundaries](https://github.com/specdog/dotdog/pull/337), [path optimization](https://github.com/specdog/dotdog/pull/338), [bounded type module](https://github.com/specdog/dotdog/pull/339) and [final boundary review](https://github.com/specdog/dotdog/pull/340). The full local suite passes 133 tests/2,124 assertions. Hosted checks cover Linux Node 22/24/26, macOS/Windows Node 24, Bun 1.3.14/1.4.4 and pinned Spec Kit 0.12.0/1.2.5. Each changed head must pass its own checks.
 
-The [type research](https://github.com/specdog/specdog.github.io/pull/66) has 62 passing checks, including native TypeScript 7.1 beta symbol/signature and snapshot probes. This is not the production adapter: the 5/6 extractor is not compatible with the candidate's installed 7.0.2 API. Full project/reference handling and a supported adapter remain work in #333. Do not require a beta compiler for all users or infer requirement satisfaction from a compiler pass.
+Fresh forward/backward Ghidra fixture checks preserve the target digest without executing it. Actual Codex app-server checks exercise discovery, command execution, edit refresh and removal discovery; actual Claude Code checks exercise skill/MCP discovery, settings preservation and removal. A model-driven Claude invocation/edit-refresh run remains unverified. Internal driver/state/log files stay outside the public package.
+
+The [type research](https://github.com/specdog/specdog.github.io/pull/66) preserves its separate 62-check checkpoint and historical compiler probes. The production candidate uses the tested 7.0.2 interface, not the incompatible 5/6 extractor or a required beta compiler. Reference builds remain unsupported; compiler success is not requirement proof. [Source-review dispositions](v1-security-audit.md), [measured workflow comparison](path-performance.md), [migration](v1-migration.md) and the [native fixture](../examples/native/README.md) retain the implementation evidence and limitations.
 
 Freeze features before final review. Reconcile findings against the complete release diff. A failed or skipped required gate is not a release pass. Do not hide failures by reducing coverage or replacing real integrations with mocks. A SolidState wrapper pass establishes only what its underlying check exercised.
 
 ## Outstanding launch gates
 
-- Complete #333 and its production integration/compatibility tests.
-- Complete #334 code/bloat audit and #335 measured optimization report.
-- Complete actual Codex/Claude host acceptance and final security review in #336.
+- Reconcile current-head cross-platform/package results with the completed source review; broader compiler/reference or semantic/VSA research is not a 1.0 prerequisite.
+- Retain the model-driven Claude limitation explicitly; actual host discovery/removal and deterministic CLI/MCP contracts, not a paid model account or model-output study, are the scoped integration gates.
 - Freeze the final candidate, verify minimum-runtime/package behavior and resolve prerelease feedback.
 - Verify npm trusted-publisher configuration and obtain release approval. Tests of the publishing script do not verify registry permissions.
 
 The release remains unmerged and unpublished until these gates are complete. Existing live-provider behavior requires real-target evidence before making live-integration claims; it is not a cloud-provisioning prerequisite for the scoped graph workflows.
 
-The separate TypeScript 7.0.2 CLI probe checked valid → invalid → repaired code, compiler-emitted signatures, a re-export and declaration maps without changing the project configuration. The current packaged candidate passed clean-consumer checks on Node 22.12.0, Node 24, Node 26 and Bun. These bounded checks do not establish production type integration, complete audit coverage or a measured speedup.
+Historical declaration-emission probes are distinct from the implemented read-only native adapter and from final archived package bytes. Runtime/host and performance checks establish only their stated cases, not complete correctness or end-to-end model productivity.
 
 ## 6. Release integrity and approval
 

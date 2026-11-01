@@ -5,7 +5,7 @@ title: Dotdog 1.0 migration
 
 # Migrating to Dotdog 1.0
 
-1.0 is being prepared on the modernization branch. Do not assume an npm tag, Homebrew formula or Spec Kit release asset exists until its release is published.
+This guide covers the 1.0 npm/Bun release. Homebrew and Spec Kit extension assets are separately maintained distributions; verify their published versions before installing.
 
 ## Distribution
 
@@ -54,13 +54,17 @@ Path/context/impact/traverse results retain supplied graph coverage and limitati
 
 Workspace manifests now validate nested shape before registry construction. Optional properties must be omitted or have their declared type; explicit `null`/`undefined` is not omission. Invalid manifests report validation errors instead of `TypeError`. The internal parser exposes typed `data` only on success; the existing validation JSON shape is unchanged.
 
+Ambiguous MCP context candidates now contain exact node IDs rather than repeated display labels. Context/impact/traverse report `truncated: true` when candidate IDs are omitted. Claude hook installation refuses malformed settings/hook collections before changing settings or registering ownership; repair the existing file rather than replacing unrelated configuration.
+
 ## Interpretation limits
 
 Repository extraction covers inventory plus JS/TS top-level declarations and static relative imports/re-exports. Alias resolution, dynamic calls, whole-program behavior and non-JS/TS symbol extraction remain unverified. Git ignore rules are honored when a Git root is present. Scan/read errors fail rather than justify deleting an unseen suffix.
 
-`analyze` remains a heuristic helper. `staleness`, `simulate`, and `verify` are deprecated aliases for read-only `status`, `scenario-check`, and `reference-check`. Stale, absent, ambiguous or unmatched inputs return nonzero. `verify --init` is retired; author explicit mappings instead. These commands do not prove application correctness. Search is lexical TF-IDF, not an embedding model. Reported token figures use a byte-based estimate; savings vary and can be negative when retained metadata exceeds the source size.
+`analyze` remains a heuristic helper. `staleness`, `simulate`, and `verify` are deprecated aliases for read-only `status`, `scenario-check`, and `reference-check`. `status` detects stale or absent outputs; scenario/reference diagnostics do not independently establish graph freshness. Invalid or unmatched diagnostics return nonzero. Reference mappings prefer an exact entity ID and reject ambiguous labels; both diagnostics use the shared 32 MiB graph input limit. `verify --init` is retired; author explicit mappings instead. These commands do not prove application correctness. Search is lexical TF-IDF, not an embedding model. Compile-time token figures use a byte-based estimate; context token budgets use the declared tokenizer/encoding and exclude host framing. Savings vary and can be negative when retained metadata exceeds the source size.
 
 ## Security and provider changes
+
+Path endpoint matching no longer treats an empty ASCII-word query as a match for every node. Exact IDs/labels and genuine substring matches remain usable, including Unicode. Ambiguous path results now return at most 100 exact candidate IDs rather than labels; `truncated` reports a cut candidate list as well as a bounded search. Absolute origin file paths are omitted using both POSIX and Windows path rules, independent of the current host. This is not general redaction of arbitrary graph properties or evidence.
 
 Generated destinations reject symlinks; Git inventory cannot follow redirected directories outside the repository. Hook ownership metadata must match the expected installation, not arbitrary file/hash claims. MCP lines are capped at 1 MiB and graph inputs at 32 MiB. Regenerate graphs after upgrading.
 

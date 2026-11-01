@@ -18,24 +18,25 @@ export type GraphPathResult = {
   limitations: string[];
 };
 
-function endpoint(graph: NormalizedGraph, query: string): { node?: GraphNode; candidates?: string[] } {
+function endpoint(graph: NormalizedGraph, query: string): { node?: GraphNode; candidates?: string[]; truncated?: boolean } {
+  const ambiguous = (nodes: GraphNode[]) => ({ candidates: nodes.map(node => node.id).sort().slice(0, 100), truncated: nodes.length > 100 });
   const byId = graph.nodes.find(node => node.id === query);
   if (byId) return { node: byId };
   const needle = query.trim().toLowerCase();
   if (!needle) return {};
   const exact = graph.nodes.filter((node) => node.id.toLowerCase() === needle || node.label.toLowerCase() === needle);
   if (exact.length === 1) return { node: exact[0] };
-  if (exact.length > 1) return { candidates: exact.map((node) => node.label).sort() };
+  if (exact.length > 1) return ambiguous(exact);
   const terms = needle.split(/[^a-z0-9]+/).filter(Boolean);
-  const full = graph.nodes.filter((node) => {
+  const full = terms.length ? graph.nodes.filter((node) => {
     const labels = node.label.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
     return terms.every((term) => labels.includes(term));
-  });
+  }) : [];
   if (full.length === 1) return { node: full[0] };
-  if (full.length > 1) return { candidates: full.map((node) => node.label).sort() };
+  if (full.length > 1) return ambiguous(full);
   const partial = graph.nodes.filter((node) => node.label.toLowerCase().includes(needle));
   if (partial.length === 1) return { node: partial[0] };
-  return partial.length > 1 ? { candidates: partial.map((node) => node.label).sort() } : {};
+  return partial.length > 1 ? ambiguous(partial) : {};
 }
 
 export function shortestGraphPath(
@@ -52,10 +53,11 @@ export function shortestGraphPath(
   const from = endpoint(graph, fromQuery);
   const to = endpoint(graph, toQuery);
   const base: GraphPathResult = { ...graphScope(graph), ok: false, direction, maxHops, truncated: false, hops: 0, nodes: [], edges: [] };
-  if (!from.node) return { ...base, ok: false, error: from.candidates ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: from.candidates };
-  if (!to.node) return { ...base, ok: false, error: to.candidates ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: to.candidates };
+  if (!from.node) return { ...base, ok: false, error: from.candidates ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: from.candidates, truncated: Boolean(from.truncated) };
+  if (!to.node) return { ...base, ok: false, error: to.candidates ? 'ambiguous_endpoint' : 'endpoint_not_found', candidates: to.candidates, truncated: Boolean(to.truncated) };
   const fromInfo = { query: fromQuery, id: from.node.id, label: from.node.label };
   const toInfo = { query: toQuery, id: to.node.id, label: to.node.label };
+  if (from.node.id === to.node.id) return { ...base, ok: true, from: fromInfo, to: toInfo, nodes: [from.node] };
   const verb = (options.verb || '').toLowerCase();
   const adjacency = new Map<string, Array<{ edge: GraphEdge; next: string }>>();
   const add = (id: string, edge: GraphEdge, next: string) => {
@@ -67,23 +69,28 @@ export function shortestGraphPath(
     if (direction === 'outgoing' || direction === 'any') add(edge.sourceId, edge, edge.targetId);
     if (direction === 'incoming' || direction === 'any') add(edge.targetId, edge, edge.sourceId);
   }
-  const queue: Array<{ id: string; nodes: string[]; edges: GraphEdge[] }> = [{ id: from.node.id, nodes: [from.node.id], edges: [] }];
+  const queue: Array<{ id: string; depth: number; parent?: number; edge?: GraphEdge }> = [{ id: from.node.id, depth: 0 }];
   const visited = new Set([from.node.id]);
   let truncated = false;
   for (let cursor = 0; cursor < queue.length; cursor++) {
     const current = queue[cursor];
     if (current.id === to.node.id) {
       const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
-      return { ...base, ok: true, hops: current.edges.length, from: fromInfo, to: toInfo, nodes: current.nodes.map((id) => nodeById.get(id)!).filter(Boolean), edges: current.edges };
+      const nodes: GraphNode[] = [], edges: GraphEdge[] = [];
+      for (let i: number | undefined = cursor; i !== undefined; i = queue[i].parent) {
+        nodes.push(nodeById.get(queue[i].id)!);
+        if (queue[i].edge) edges.push(queue[i].edge!);
+      }
+      return { ...base, ok: true, hops: current.depth, from: fromInfo, to: toInfo, nodes: nodes.reverse(), edges: edges.reverse() };
     }
-    if (current.edges.length >= maxHops) {
+    if (current.depth >= maxHops) {
       truncated ||= (adjacency.get(current.id) || []).some(next => !visited.has(next.next));
       continue;
     }
     for (const next of adjacency.get(current.id) || []) {
       if (visited.has(next.next)) continue;
       visited.add(next.next);
-      queue.push({ id: next.next, nodes: [...current.nodes, next.next], edges: [...current.edges, next.edge] });
+      queue.push({ id: next.next, depth: current.depth + 1, parent: cursor, edge: next.edge });
     }
   }
   return { ...base, ok: false, error: 'no_path', truncated, from: fromInfo, to: toInfo };

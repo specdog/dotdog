@@ -1,6 +1,19 @@
 # Changelog
 
-## 1.0.0 — Unreleased
+## 1.0.0 — 2026-11-01
+
+- Reject malformed Claude hook settings without overwriting them; disclose omitted ambiguity candidates with exact IDs in graph/MCP context errors.
+- Bind verified release archives to source commits and retain package file manifests; share parser chunks and defer tokenizer loading without adding runtime dependencies.
+
+- Add opt-in selected TypeScript 7.0.2 contract inspection with original project diagnostics, bounded declared-type references and retained compiler/config/source evidence; no declaration emit or automatic compiler installation.
+
+- Store BFS parent links instead of copying full path histories for each queued node; skip adjacency construction for zero-hop paths.
+- Extend the retrieval benchmark with path queries and wide-tree/zero-hop cases while preserving result/evidence checks.
+
+- Reject unmatched punctuation/Unicode path endpoints; return at most 100 exact IDs for ambiguous endpoints and disclose truncation.
+- Omit Windows as well as POSIX absolute origin paths regardless of host platform.
+
+- Apply the shared graph input limit to scenario/reference diagnostics; reject ambiguous entity labels while preserving exact-ID mappings.
 
 - Validate nested workspace JSON before exposing typed data; preserve existing validation JSON and reject malformed/incomplete groups without crashes.
 - Retain graph coverage/limitations and MCP node provenance, distinguish bounded searches, and keep token-budget errors bounded without silently dropping scope.
