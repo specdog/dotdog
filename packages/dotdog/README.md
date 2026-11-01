@@ -98,6 +98,10 @@ Query an explicit project when more than one is loaded. Observed repository grap
 
 The server supports legacy initialization revisions 2024-11-05, 2025-06-18 and 2025-11-25, plus 2026-07-28 discovery and per-request metadata. `infraVerify` is an explicit live network/provider operation; other graph queries stay local.
 
+## Selected type contracts
+
+The unreleased candidate also supports opt-in `types inspect` for selected TypeScript 7.0.2 contracts, compiler diagnostics and bounded type-reference graphs. See [type contracts](https://github.com/specdog/dotdog/blob/main/docs/type-contracts.md) for built-checkout commands, requirements and limits. No compiler is auto-installed, and no MCP query executes one.
+
 ## REA / Ghidra evidence
 
 Dotdog can import a saved **REA NativeCallGraph body**:

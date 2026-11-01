@@ -56,24 +56,22 @@ Code paths below are relative to `packages/dotdog/src/`.
 
 ### Compiler boundary
 
-- Add one module under `types/`, connected through `cli.ts` and existing graph modules. Resolve the consumer project's installed TypeScript compiler explicitly; never auto-install one.
-- Start with the tested 7.0.2 CLI capability, not the incompatible legacy `createProgram` prototype or a mandatory 7.1 beta API. Declare supported versions/configurations only after adapter tests pass.
-- Proposed surface: `dotdog types inspect <export> --file <path> --project <tsconfig> --json`. Confirm its result/exit contract before implementation; this command does not exist yet. Import saved results through existing graph machinery. MCP queries must not implicitly launch compilers.
-- Run diagnostics with original semantic options. A separate declaration-inspection pass may change only necessary emit/output settings; direct all output/build metadata into managed temporary storage. Never loosen strictness or silently replace project configuration.
-- Explicitly contain `declarationDir` as well as `outDir`; an original declaration directory otherwise overrides the temporary output location. Record inspection-only option differences. With `stripInternal`, declarations may omit contracts still referenced by public signatures: retain them through an explicit inspection override or report the missing dependency, never silently claim completeness. See the [TypeScript emit options](https://www.typescriptlang.org/tsconfig/#declarationDir).
-- Initially reject unproved configurations such as project-reference/composite/outFile builds. Test extends/path aliases and re-exports explicitly; unresolved dependencies remain partial rather than guessed.
-- Use fixed subprocess arguments, no shell, bounded time/output and cancellation/cleanup. Record compiler version, configuration identity, source digests and scope. Detect changes during inspection and reject stale mixed results.
-- Keep persisted paths repository-relative. Treat compiler diagnostics and declaration maps as untrusted text/paths, not instructions or fetchable URLs; reject escaping output/source-map paths and avoid copying raw absolute-path diagnostics into saved/public evidence.
+- Use one module under `types/`, connected through `cli.ts` and existing graph modules. Resolve the consumer project's installed compiler; never auto-install one.
+- The 7.0.2 package exposes `typescript/unstable/sync`. The implemented adapter uses its configured snapshot/checker in a bounded Node worker, not the incompatible legacy `createProgram` prototype or a mandatory 7.1 beta compiler. Support is explicitly version-specific.
+- Surface: `dotdog types inspect <export> --file <path> --project <tsconfig> --json`. Import successful saved results through existing graph machinery. MCP queries do not launch compilers.
+- Preserve original project options and cached input bytes; do not emit declarations, edit configuration or write project build output. JSONC, inherited options, aliases and re-exports have integration coverage. Omitted checking options remain unspecified rather than being falsely reported as disabled.
+- The earlier declaration-emission probe exposed `declarationDir` and `stripInternal` risks. The native read-only adapter avoids that emit path; it does not claim all configurations are supported. Reference/composite builds and `noCheck` remain unsupported.
+- Use fixed worker arguments, no shell, bounded inputs/output/time and process-tree cleanup. Retain compiler/config/input identities on graph-node evidence so generic import and MCP retrieval cannot discard them. Keep saved paths repository-relative and raw absolute-path diagnostic output out of artifacts.
 
 ### Contracts and graph integration
 
-- Parse compiler-produced declarations/source maps with the existing parser where supported. Retain selected signatures, tagged unions and referenced contracts; declaration syntax alone is not complete semantic dependency closure.
+- Use the configured compiler checker and source declaration handles for selected signatures, tagged unions and bounded type references. Exclude implementation bodies; this is not complete semantic dependency closure.
 - Resolve supported local aliases/re-exports to file-qualified identities. For external types, overloads, generics, declaration merging or computed types, preserve supported contracts faithfully or report limitations. Matching names are not symbol identity.
 - Reuse normalization, evidence, coverage, context and impact. Keep compiler diagnostics separate from graph completeness: failed compilation, partial graph and successful check are different states.
 - Keep spec → source/type/check links explicit and reviewable. Do not join binary/source symbols automatically by name or treat compatibility as requirement proof.
 - Reuse runtime input validation. No schema framework, second graph index, language-plugin ecosystem or mandatory runtime npm dependency is planned.
 
-**Exit:** production integration resolves a selected re-exported contract, accepts valid code, rejects an invalid transition with the real diagnostic, detects an imported contract change, reports affected nodes and passes after repair. Cover repeated names, missing symbols/compiler, unsupported version/configuration, malformed runtime input, partial dependencies, timeouts, stale inputs and cleanup. If declaration extraction cannot meet this bounded contract, revise #333 before expanding scope.
+**Exit:** production integration resolves a selected re-exported contract, accepts valid code, rejects an invalid transition with the real diagnostic, detects an imported contract change, reports affected nodes and passes after repair. Cover repeated names, missing symbols/compiler, unsupported version/configuration, malformed runtime input, partial dependencies, timeouts, stale inputs and cleanup. The candidate now exercises these paths; see [type contracts](type-contracts.md). Broader compiler/version support needs separate evidence, not scope expansion.
 
 ## 4. Measure, then optimize
 
@@ -105,13 +103,13 @@ The focused [path-search comparison](path-performance.md) measures parent-link B
 
 The core implementation at `22b0b7e` passed 116 local tests and the [Linux Node 22/24, macOS Node 24 and Windows Node 24 matrix](https://github.com/specdog/dotdog/actions/runs/41268166006). Its fixes include checked workspace data, traversal provenance/coverage, bounded search and context errors, repository-safe path reads and explicit REA direction. Real forward/backward Ghidra fixture checks passed without executing or changing the target. See [audit](v1-security-audit.md), [migration](v1-migration.md) and [native fixture](../examples/native/README.md).
 
-The [type research](https://github.com/specdog/specdog.github.io/pull/66) has 62 passing checks, including native TypeScript 7.1 beta symbol/signature and snapshot probes. This is not the production adapter: the 5/6 extractor is not compatible with the candidate's installed 7.0.2 API. Full project/reference handling and a supported adapter remain work in #333. Do not require a beta compiler for all users or infer requirement satisfaction from a compiler pass.
+The [type research](https://github.com/specdog/specdog.github.io/pull/66) preserves its 62-check research checkpoint, including native TypeScript 7.1 beta probes. The candidate now implements a separate bounded 7.0.2 adapter with real compiler/graph integration tests, rather than treating the old 5/6 extractor as compatible. Reference builds remain unsupported. No beta compiler is required, and a compiler pass does not establish requirement satisfaction.
 
 Freeze features before final review. Reconcile findings against the complete release diff. A failed or skipped required gate is not a release pass. Do not hide failures by reducing coverage or replacing real integrations with mocks. A SolidState wrapper pass establishes only what its underlying check exercised.
 
 ## Outstanding launch gates
 
-- Complete #333 and its production integration/compatibility tests.
+- Complete current-head cross-platform/package and boundary review for the #333 implementation; broader compiler/reference support is not a 1.0 prerequisite.
 - Complete #334 code/bloat audit and #335 measured optimization report.
 - Complete actual Codex/Claude host acceptance and final security review in #336.
 - Freeze the final candidate, verify minimum-runtime/package behavior and resolve prerelease feedback.

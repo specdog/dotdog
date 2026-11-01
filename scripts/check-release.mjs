@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
-import { join, resolve, basename } from 'node:path';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, rmSync, symlinkSync } from 'node:fs';
+import { join, resolve, basename, dirname } from 'node:path';
 import { parseArgs } from 'node:util';
 import { npm } from './lib/npm.mjs';
 import { tmpdir } from 'node:os';
@@ -52,6 +52,18 @@ try {
   }
   assert.equal(JSON.parse(run('check', '--json')).ok, true);
   assert.equal(JSON.parse(run('status', '--json')).fresh, true);
+  writeFileSync(join(project, 'tsconfig.json'), JSON.stringify({ compilerOptions: { strict: true, noEmit: true, types: [], target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler' }, files: ['src/a.ts', 'src/b.ts'] }));
+  const inspectArgs = ['types', 'inspect', 'value', '--file', 'src/b.ts', '--project', 'tsconfig.json', '--json'];
+  assert.throws(() => run(...inspectArgs), error => error.status === 1 && JSON.parse(error.stdout).error === 'compiler_missing');
+  mkdirSync(join(project, 'node_modules'));
+  symlinkSync(dirname(require.resolve('typescript/package.json')), join(project, 'node_modules/typescript'), process.platform === 'win32' ? 'junction' : 'dir');
+  const typed = JSON.parse(run(...inspectArgs));
+  assert.equal(typed.ok, true); assert.equal(typed.compiler.version, '7.0.2');
+  assert.equal(JSON.parse(execFileSync('bun', [cli, ...inspectArgs], { cwd: project, encoding: 'utf8' })).ok, true);
+  writeFileSync(join(project, 'src/b.ts'), 'export const value: number = "invalid";');
+  assert.throws(() => run(...inspectArgs), error => error.status === 1 && JSON.parse(error.stdout).diagnostics.some(item => item.code === 2322));
+  writeFileSync(join(project, 'src/b.ts'), 'export const value = 1;\n');
+  assert.equal(JSON.parse(run(...inspectArgs)).ok, true);
   const evidence = 'Synthetic release fixture only; not a hardware measurement.\n';
   writeFileSync(join(project, 'evidence.txt'), evidence);
   const system = { project: 'bench-fixture', nodes: [
