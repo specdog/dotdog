@@ -35,3 +35,31 @@ The 100-test hosted green candidate at `0569319` is a baseline, not completion. 
 4. Mark pending checks precisely. Claude CLI was not found on the current PATH. The Ghidra/REA/Dotdog macOS arm64 fixture has run successfully; see examples/native/verification.json. Earlier hosted checks and [retrieval measurements](retrieval-benchmarks.md) apply only to their recorded candidates. No cloud account or simulator is needed for the scoped internal demos. Existing live-provider behavior remains unverified without a real target; do not claim that mocks verify it.
 5. Keep credentials, raw private exports and temporary demo artifacts out of public commits. Keep internal setup details out of product flows. Retain existing tested behavior unless a focused removal is justified; this scope correction is not a blanket code deletion.
 6. Implement only the three scoped feature areas and necessary release fixes. Then run the complete release matrix, audit the candidate, resolve findings and request final release authorization. No merge, tag or publication before testing, audit and explicit approval.
+
+## Research assessment
+
+**Decision: the three-part architecture is a good fit; the candidate is not release-ready.** This is an engineering judgment from the existing code, primary sources and internal probes, not evidence of user demand or improved coding-agent success.
+
+| Area | Useful role | 1.0 boundary |
+| --- | --- | --- |
+| Spec-driven upgrades | Preserve intended requirements and connect them to code/change evidence | Finish the existing import, validation, freshness and query workflows; do not replace the specification process |
+| REA/Ghidra traversal | Navigate observed binary call relationships and their evidence | Import existing exports into the current graph/query tools; do not build another decompiler or treat missing edges as proof of independence |
+| Type-driven module | Show selected type contracts and compiler diagnostics alongside affected code | One opt-in, explicitly versioned compiler adapter; no new language engine, mandatory hosted service or universal correctness claim |
+
+The separation is deliberate. [Spec Kit's SDD description](https://github.com/github/spec-kit/blob/main/docs/concepts/sdd.md) puts intended behavior before implementation. [Ghidra's Function API](https://ghidra.re/ghidra_docs/api/ghidra/program/model/listing/Function.html#getCalledFunctions(ghidra.util.task.TaskMonitor)) supplies caller/callee relationships. [TypeScript narrowing](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#exhaustiveness-checking) can reject unhandled variants when an exhaustive contract is actually encoded. These sources support distinct capabilities, not automatic equivalence between a requirement, source type and recovered binary function.
+
+Use one graph model and existing traversal commands, but retain each provider's identity, direction, provenance and coverage. Source symbols must not be joined to binary addresses by matching names. [SCIP](https://github.com/scip-code/scip/blob/main/docs/scip.md) is an existing reference for semantic symbol identities, signatures and relationships; it is not a new required backend for 1.0.
+
+### Findings reproduced against `3da92fa`
+
+- **Input boundary defects remain.** `validateWorkspaceConfig` throws for `repos: [null]` and a non-array `groups` object; it accepts a named group missing its `repos` array. Fix these existing boundary checks before adding another adapter. No schema-library dependency is justified solely by these findings.
+- **Traversal needs clearer completeness semantics.** REA import retains partial coverage, and path/MCP top-level edges retain relationship evidence. However, path and neighborhood results omit graph-level coverage/limitations; `no_path` does not distinguish missing observed evidence from a complete negative result. MCP `traverse` also omits node-level origin/evidence when projecting nodes. Preserve that context in existing results rather than adding a parallel traversal engine.
+- **The type prototype cannot be dropped into the installed compiler.** The candidate uses TypeScript `7.0.2`, whose loaded package has no legacy `createProgram` export. The research extractor uses the 5/6 API. Microsoft's [7.1 beta API announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-1-beta/) documents different sync/async clients and disposable snapshots. A diagnostic/repair smoke test passes, but a complete selected-symbol adapter has not been ported. Test the chosen adapter/version explicitly; do not require a beta compiler for all users.
+
+Fresh internal research probes reproduced those gaps without changing production code. Separately, **21 selected-symbol/native-API research checks passed with zero failures or skips**. The earlier 108-test local candidate and successful CLI/MCP demo remain baseline evidence, not proof that these newly probed cases are correct. No new Ghidra analysis was run in this research pass.
+
+### Smallest useful implementation
+
+Repair the boundary and traversal-result gaps, then implement #333 around one explicit file/export, its selected type dependencies and compiler diagnostics under the project's actual configuration. Reuse existing graph import/context/impact. Keep spec-to-symbol links explicit and reviewed; do not infer requirement satisfaction from matching names or a compiler pass. [Project references](https://www.typescriptlang.org/docs/handbook/project-references.html) require appropriate build handling or an explicit unsupported result.
+
+One internal change/invalid/repair workflow should show both rejection and recovery, including changed dependencies and incomplete evidence. Runtime inputs still need runtime validation: TypeScript explicitly does not aim for a [sound, provably correct type system or runtime type metadata](https://github.com/microsoft/TypeScript/wiki/TypeScript-Design-Goals). Developer productivity, token savings and agent-success improvements remain unproven for this combined workflow. None of these limits calls for a simulator, cloud service, graph database or separate product.
