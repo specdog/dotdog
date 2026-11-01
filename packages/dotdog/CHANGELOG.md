@@ -1,15 +1,14 @@
 # Changelog
 
-## 1.0.3 — Unreleased
+## 1.0.0 — Unreleased
+
+- Store BFS parent links instead of copying full path histories for each queued node; skip adjacency construction for zero-hop paths.
+- Extend the retrieval benchmark with path queries and wide-tree/zero-hop cases while preserving result/evidence checks.
 
 - Reject unmatched punctuation/Unicode path endpoints; return at most 100 exact IDs for ambiguous endpoints and disclose truncation.
 - Omit Windows as well as POSIX absolute origin paths regardless of host platform.
 
-## 1.0.2 — Unreleased
-
 - Apply the shared graph input limit to scenario/reference diagnostics; reject ambiguous entity labels while preserving exact-ID mappings.
-
-## 1.0.1 — Unreleased
 
 - Validate nested workspace JSON before exposing typed data; preserve existing validation JSON and reject malformed/incomplete groups without crashes.
 - Retain graph coverage/limitations and MCP node provenance, distinguish bounded searches, and keep token-budget errors bounded without silently dropping scope.

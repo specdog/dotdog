@@ -9,7 +9,7 @@ Dotdog imports GitHub Spec Kit feature artifacts into local, queryable knowledge
 
 ## 1.0 development
 
-The next extension version is 1.0.3 and is not published yet. Its release archive will be `https://github.com/specdog/dotdog/releases/download/v1.0.3/dotdog-spec-kit-extension-v1.0.3.zip`. The installation below refers to the existing published 0.9.0 extension until the next release is created.
+The next extension version is 1.0.0 and is not published yet. Its release archive will be `https://github.com/specdog/dotdog/releases/download/v1.0.0/dotdog-spec-kit-extension-v1.0.0.zip`. The installation below refers to the existing published 0.9.0 extension until the next release is created.
 
 ## Requirements
 

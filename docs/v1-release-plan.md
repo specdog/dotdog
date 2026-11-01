@@ -85,6 +85,8 @@ Profile first. Reduce repeated parsing/index construction, duplicated traversal 
 
 **Exit:** sanitized before/after report, unchanged correctness and documented tradeoffs. No unexplained material regression. No arbitrary percentage/line-count target, unsafe cache or dropped provenance to improve a metric.
 
+The focused [path-search comparison](path-performance.md) measures parent-link BFS and zero-hop handling against `d94a8f4`, with matching result hashes and a reverse-order replay. It does not complete the other workflow measurements in #335.
+
 ## 5. Verify the completed candidate
 
 | Area | Release requirement |
@@ -121,7 +123,7 @@ The separate TypeScript 7.0.2 CLI probe checked valid → invalid → repaired c
 
 ## 6. Release integrity and approval
 
-After required gates pass, approve the final commit and version. The current development version is 1.0.3; align metadata to the approved version without silently downgrading it. Follow the repository's source/package version-bump rule. Do not commit build output.
+The first release target is `1.0.0`. Keep that version across unshipped development commits and align package, extension, lockfile and changelog metadata. Local package checks do not publish to npm. After required gates pass, approve the final commit and artifact. Do not commit build output.
 
 Pack the final candidate once, retain commit/version/file manifest/digests, test those exact bytes and publish only that archive. Changed candidate bytes invalidate the previous artifact approval. Resolve approved prerelease feedback before stable publication; prerelease publication also requires approval.
 

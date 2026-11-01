@@ -169,4 +169,6 @@ bun run release:check
 
 Run the built CLI with `node packages/dotdog/dist/cli.js` from this checkout. When working in another repository, use the absolute path to that built executable; an existing global `dotdog` installation may still be the stable release.
 
+See [path-search measurements](path-performance.md) for the tested optimization scope.
+
 The release check packs the actual npm artifact and tests it outside the repository with Node and Bun. MIT licensed.
