@@ -76,7 +76,7 @@ dotdog follows **MAJOR.MINOR.PATCH** (semver).
 | New feature | MINOR | 0.5.1 → 0.6.0 |
 | Breaking change | MAJOR | 0.6.0 → 1.0.0 |
 
-**Every code change gets a version bump.** No accumulating changes across releases.
+Version numbers identify releases, not individual commits. Keep the first unreleased 1.0 candidate at `1.0.0` while its fixes and features are developed. Choose the next version relative to the last published release when preparing a new release; keep package, extension and lockfile metadata aligned. Local `npm pack` checks create test archives and do not publish to the registry.
 
 ### Docs
 

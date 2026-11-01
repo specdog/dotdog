@@ -50,7 +50,7 @@ See [migration](v1-migration.md), [peer research](graph-peer-research.md) and [e
 
 ## Scoped gap repair
 
-The unreleased `1.0.1` candidate repairs malformed nested workspace input before registry construction and removes the resolver's unchecked JSON-to-config assertion. Success-only typed data passes real `strict`/`exactOptionalPropertyTypes` compiler checks; invalid-result data access is rejected with TS2339. No runtime schema dependency was added.
+The workspace-boundary repair at `22b0b7e` repairs malformed nested workspace input before registry construction and removes the resolver's unchecked JSON-to-config assertion. Success-only typed data passes real `strict`/`exactOptionalPropertyTypes` compiler checks; invalid-result data access is rejected with TS2339. No runtime schema dependency was added.
 
 `path --dag` previously bypassed repository and file-size checks. It now uses the shared safe reader; a regression confirms that an external graph cannot be returned. Traversal results retain supplied coverage and node provenance, disclose search boundaries, and fail explicitly when scope metadata cannot fit the requested token budget.
 
@@ -62,7 +62,7 @@ The full local candidate suite passed 116 tests; dependency advisory output was 
 
 ### Spec-check follow-up
 
-The `1.0.2` development candidate closes two additional gaps in `spec/checks.ts`. Scenario/reference diagnostics previously read graphs without the shared size/type guard, and reference mappings accepted duplicate labels without resolving a unique entity. Both now use `readGraphText`; mappings prioritize exact IDs and reject ambiguous labels. Two regressions failed before repair and passed afterward, including exact-ID precedence and unknown entities. These lexical diagnostics still do not establish graph freshness or semantic correctness; migration guidance now states that distinction explicitly.
+The spec-check repair at `743a1bb` closes two additional gaps in `spec/checks.ts`. Scenario/reference diagnostics previously read graphs without the shared size/type guard, and reference mappings accepted duplicate labels without resolving a unique entity. Both now use `readGraphText`; mappings prioritize exact IDs and reject ambiguous labels. Two regressions failed before repair and passed afterward, including exact-ID precedence and unknown entities. These lexical diagnostics still do not establish graph freshness or semantic correctness; migration guidance now states that distinction explicitly.
 
 Local verification passed 118 tests, 566 assertions and one snapshot, plus typecheck/build, frozen install, validate/doctor, extension/package checks and the Node 26/Bun packed-consumer check. A built-CLI fixture returned nonzero for ambiguous references and an oversized scenario graph, accepted an exact ID and preserved its plan bytes. Hosted checks for this revision and the final release audit remain separate gates.
 
@@ -70,7 +70,7 @@ A separate TypeScript 7.0.2 probe confirmed two adapter-plan risks: an existing 
 
 ### Earlier checkpoints
 
-The `1.0.3` follow-up adds regressions for arbitrary-node selection by unmatched punctuation/Unicode queries, unbounded/duplicate-label path ambiguity responses and Windows absolute origin paths retained on POSIX hosts. All three reproduced before their repairs. Exact candidate IDs are capped at 100 with explicit truncation; relative origin paths remain intact. An independent all-pairs-distance oracle also exercises directed cyclic graphs, verb filters, hop limits, zero-hop paths and retained edge evidence. Arbitrary graph properties/evidence are not globally redacted.
+The path-boundary follow-up at `d94a8f4` adds regressions for arbitrary-node selection by unmatched punctuation/Unicode queries, unbounded/duplicate-label path ambiguity responses and Windows absolute origin paths retained on POSIX hosts. All three reproduced before their repairs. Exact candidate IDs are capped at 100 with explicit truncation; relative origin paths remain intact. An independent all-pairs-distance oracle also exercises directed cyclic graphs, verb filters, hop limits, zero-hop paths and retained edge evidence. Arbitrary graph properties/evidence are not globally redacted.
 
 The initial consolidated suite passed with 96 tests, 391 assertions and one snapshot. Hosted CI status is recorded in PR #332. Typechecking, build, frozen install, skill validation, extension manifest, real demo, and Dotdog's own validate/check/doctor/status checks passed. Packed consumer checks passed under Node 22.12.0, 24.22.1, 26.8.1 and Bun 1.3.14, including a synthetic embodied evidence success/tamper-failure case. That earlier candidate tarball measured 181,077 bytes; it was larger than the original 0.9 artifact and no compression improvement is claimed.
 
