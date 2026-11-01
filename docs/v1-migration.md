@@ -54,6 +54,8 @@ Path/context/impact/traverse results retain supplied graph coverage and limitati
 
 Workspace manifests now validate nested shape before registry construction. Optional properties must be omitted or have their declared type; explicit `null`/`undefined` is not omission. Invalid manifests report validation errors instead of `TypeError`. The internal parser exposes typed `data` only on success; the existing validation JSON shape is unchanged.
 
+Ambiguous MCP context candidates now contain exact node IDs rather than repeated display labels. Context/impact/traverse report `truncated: true` when candidate IDs are omitted. Claude hook installation refuses malformed settings/hook collections before changing settings or registering ownership; repair the existing file rather than replacing unrelated configuration.
+
 ## Interpretation limits
 
 Repository extraction covers inventory plus JS/TS top-level declarations and static relative imports/re-exports. Alias resolution, dynamic calls, whole-program behavior and non-JS/TS symbol extraction remain unverified. Git ignore rules are honored when a Git root is present. Scan/read errors fail rather than justify deleting an unseen suffix.

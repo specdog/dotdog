@@ -101,23 +101,24 @@ The focused [path-search comparison](path-performance.md) measures parent-link B
 
 ## Implementation status
 
-The core implementation at `22b0b7e` passed 116 local tests and the [Linux Node 22/24, macOS Node 24 and Windows Node 24 matrix](https://github.com/specdog/dotdog/actions/runs/41268166006). Its fixes include checked workspace data, traversal provenance/coverage, bounded search and context errors, repository-safe path reads and explicit REA direction. Real forward/backward Ghidra fixture checks passed without executing or changing the target. See [audit](v1-security-audit.md), [migration](v1-migration.md) and [native fixture](../examples/native/README.md).
+The completed candidate combines the [spec/REA foundation](https://github.com/specdog/dotdog/pull/332), [spec-check boundaries](https://github.com/specdog/dotdog/pull/337), [path optimization](https://github.com/specdog/dotdog/pull/338), [bounded type module](https://github.com/specdog/dotdog/pull/339) and [final boundary review](https://github.com/specdog/dotdog/pull/340). The full local suite passes 133 tests/2,102 assertions. Hosted checks cover Linux Node 22/24/26, macOS/Windows Node 24, Bun 1.3.14/1.4.4 and pinned Spec Kit 0.12.0/1.2.5. Each changed head must pass its own checks.
 
-The [type research](https://github.com/specdog/specdog.github.io/pull/66) preserves its 62-check research checkpoint, including native TypeScript 7.1 beta probes. The candidate now implements a separate bounded 7.0.2 adapter with real compiler/graph integration tests, rather than treating the old 5/6 extractor as compatible. Reference builds remain unsupported. No beta compiler is required, and a compiler pass does not establish requirement satisfaction.
+Fresh forward/backward Ghidra fixture checks preserve the target digest without executing it. Actual Codex app-server checks exercise discovery, command execution, edit refresh and removal discovery; actual Claude Code checks exercise skill/MCP discovery, settings preservation and removal. A model-driven Claude invocation/edit-refresh run remains unverified. Internal driver/state/log files stay outside the public package.
+
+The [type research](https://github.com/specdog/specdog.github.io/pull/66) preserves its separate 62-check checkpoint and historical compiler probes. The production candidate uses the tested 7.0.2 interface, not the incompatible 5/6 extractor or a required beta compiler. Reference builds remain unsupported; compiler success is not requirement proof. [Source-review dispositions](v1-security-audit.md), [measured workflow comparison](path-performance.md), [migration](v1-migration.md) and the [native fixture](../examples/native/README.md) retain the implementation evidence and limitations.
 
 Freeze features before final review. Reconcile findings against the complete release diff. A failed or skipped required gate is not a release pass. Do not hide failures by reducing coverage or replacing real integrations with mocks. A SolidState wrapper pass establishes only what its underlying check exercised.
 
 ## Outstanding launch gates
 
-- Complete current-head cross-platform/package and boundary review for the #333 implementation; broader compiler/reference support is not a 1.0 prerequisite.
-- Complete #334 code/bloat audit and #335 measured optimization report.
-- Complete actual Codex/Claude host acceptance and final security review in #336.
+- Reconcile current-head cross-platform/package results with the completed source review; broader compiler/reference or semantic/VSA research is not a 1.0 prerequisite.
+- Resolve the unverified model-driven Claude invocation/edit-refresh gate explicitly; do not relabel deterministic host checks as a model turn.
 - Freeze the final candidate, verify minimum-runtime/package behavior and resolve prerelease feedback.
 - Verify npm trusted-publisher configuration and obtain release approval. Tests of the publishing script do not verify registry permissions.
 
 The release remains unmerged and unpublished until these gates are complete. Existing live-provider behavior requires real-target evidence before making live-integration claims; it is not a cloud-provisioning prerequisite for the scoped graph workflows.
 
-The separate TypeScript 7.0.2 CLI probe checked valid → invalid → repaired code, compiler-emitted signatures, a re-export and declaration maps without changing the project configuration. The current packaged candidate passed clean-consumer checks on Node 22.12.0, Node 24, Node 26 and Bun. These bounded checks do not establish production type integration, complete audit coverage or a measured speedup.
+Historical declaration-emission probes are distinct from the implemented read-only native adapter and from final archived package bytes. Runtime/host and performance checks establish only their stated cases, not complete correctness or end-to-end model productivity.
 
 ## 6. Release integrity and approval
 

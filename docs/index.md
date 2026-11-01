@@ -144,7 +144,7 @@ dotdog graph audit --dag .doghouse/imported/system.dag --profile evidence --json
 
 `status` is read-only and exits nonzero when graphs are stale or absent. `scenario-check` checks one named Scenario/Flow for lexical compiled-entity references. `reference-check` checks explicit Verify file/property mappings without writing human plans. None proves application correctness. `staleness`, `simulate` and `verify` are deprecated compatibility names; `verify --init` is retired.
 
-`graph audit` checks recorded artifact hashes, timestamps and results. Its optional embodied profile reports missing asset/requirement/sensor/actuator/hazard links. It does not operate hardware, run simulations or certify safety. See the embodied evidence guide for the exact graph conventions.
+`graph audit` checks recorded artifact hashes, timestamps and results. This establishes artifact identity and reported traceability, not requirement satisfaction or runtime correctness.
 
 ## Limits and migration
 
@@ -157,7 +157,7 @@ dotdog graph audit --dag .doghouse/imported/system.dag --profile evidence --json
 
 See [retrieval measurements and superposition assessment](retrieval-benchmarks.md) for the controlled benchmark, exact tokenizer baseline and remaining evaluation limits.
 
-See [security audit](v1-security-audit.md), [peer research](graph-peer-research.md), [embodied evidence](embodied-systems.md), [migration]({{ '/v1-migration.html' | relative_url }}), [audit and research]({{ '/npm-0.9-audit.html' | relative_url }}), and [integrations]({{ '/integrations.html' | relative_url }}). The independent Rust port remains in PR #330; npm/Bun delivery is not being replaced by it.
+See [security review](v1-security-audit.md), [migration]({{ '/v1-migration.html' | relative_url }}), and [integrations]({{ '/integrations.html' | relative_url }}).
 
 ## Development
 
