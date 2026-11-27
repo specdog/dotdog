@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 — Unreleased
+
+- Remove references to the retired benchmark project.
+- Update Hono and its Node server dependency to address known security advisories.
+
 ## 1.0.0 — 2026-11-01
 
 - Reject malformed Claude hook settings without overwriting them; disclose omitted ambiguity candidates with exact IDs in graph/MCP context errors.
