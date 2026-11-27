@@ -11,7 +11,6 @@ Current writing is published on the [specdog blog](https://specdog.github.io/blo
 - [Specs, types, and graphs: the Dotdog 1.0 research](https://specdog.github.io/blog/dotdog-1-research/) — new SDD findings, compiler APIs and release evidence.
 - [Collar: graph-backed context is not the whole agent](https://specdog.github.io/blog/collar-graph-backed-agents/) — where project context and the harness differ.
 - [Leash: keep the agent separate from device authority](https://specdog.github.io/blog/leash-control-boundaries/) — simulation-first development and runtime control boundaries.
-- [Dogbench: measure runs, not promises](https://specdog.github.io/blog/dogbench-measurement/) — useful comparisons, correctness and measurement limits.
 
 ## Practical guides
 

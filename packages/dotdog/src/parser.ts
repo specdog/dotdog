@@ -713,9 +713,9 @@ function parseInlineObject(value: string): Record<string, unknown> | null {
 // --- Compact inline format parser ---
 // Handles the [EntityName] + Key→ Value(cardinality) format
 // Example:
-//   [dogbench]
+//   [benchmark]
 //   Desc→ Real token benchmarks...(11)
-//   Run→ dogbench [task]...(11)
+//   Run→ benchmark [task]...(11)
 
 function parseCompactBlock(
   lines: string[], start: number, end: number, errors?: ParseError[]
